@@ -1,31 +1,24 @@
 {
   "name": "finance-category-tracker",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Personal finance management application",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "deploy": "vercel --prod"
-  },
-  "dependencies": {
-    "@tailwindcss/postcss": "^4.1.11",
-    "@types/node": "^24.2.1",
-    "axios": "^1.11.0",
-    "date-fns": "^4.1.0",
-    "lucide-react": "^0.539.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "recharts": "^3.1.2"
+    "install:all": "npm install && npm install --prefix apps/frontend && npm install --prefix apps/backend && npm install --prefix packages/shared",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "npm run dev --prefix apps/frontend",
+    "dev:backend": "npm run dev --prefix apps/backend",
+    "build": "npm run build --prefix apps/frontend && npm run build --prefix apps/backend",
+    "build:frontend": "npm run build --prefix apps/frontend",
+    "build:backend": "npm run build --prefix apps/backend",
+    "test": "npm test --prefix apps/frontend && npm test --prefix apps/backend",
+    "lint": "npm run lint --prefix apps/frontend && npm run lint --prefix apps/backend",
+    "start": "npm run dev"
   },
   "devDependencies": {
-    "@eslint/js": "^9.33.0",
-    "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.1.7",
-    "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.0",
     "eslint": "^9.33.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
@@ -35,5 +28,9 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }

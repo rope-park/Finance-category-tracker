@@ -1,0 +1,52 @@
+{
+  "folders": [
+    {
+      "name": "Root",
+      "path": "."
+    },
+    {
+      "name": "Frontend",
+      "path": "./apps/frontend"
+    },
+    {
+      "name": "Backend",
+      "path": "./apps/backend"
+    },
+    {
+      "name": "Shared",
+      "path": "./packages/shared"
+    }
+  ],
+  "settings": {
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "typescript.suggest.autoImports": true,
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "backend/": true,
+      "src/": true
+    },
+    "files.exclude": {
+      "backend/": true,
+      "src/": true,
+      "index.html": true,
+      "postcss.config.js": true,
+      "tailwind.config.js": true,
+      "vercel.json": true,
+      ".env": true,
+      ".gitignore-new": true,
+      "package-new.json": true,
+      "README-new.md": true,
+      "README_NEW.md": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.vscode-typescript-next",
+      "esbenp.prettier-vscode",
+      "ms-vscode.vscode-eslint",
+      "bradlc.vscode-tailwindcss"
+    ]
+  }
+}
