@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { PageErrorBoundary } from '../ui/ErrorBoundary';
 import { useApp } from '../../hooks/useApp';
+import { DashboardCharts } from '../DashboardCharts';
+import GoalTracker from '../GoalTracker';
 import { 
   PageLayout, 
   Section, 
@@ -68,15 +71,50 @@ export const DashboardPage: React.FC = () => {
     };
   }).sort((a, b) => b.percentage - a.percentage);
 
+  // 월별 트렌드 데이터 생성 (최근 6개월)
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (5 - i));
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const trend = months.map(month => {
+    const [year, m] = month.split('-').map(Number);
+    const monthTx = transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getFullYear() === year && d.getMonth() + 1 === m;
+    });
+    const income = monthTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const expense = monthTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    return { month, income, expense, balance: income - expense };
+  });
+  // 카테고리별 지출 데이터 (최근 1개월)
+  const now = new Date();
+  const catTx = transactions.filter(t => {
+    const d = new Date(t.date);
+    return t.type === 'expense' && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  });
+  const catMap: Record<string, { category_name: string; total_amount: number }> = {};
+  catTx.forEach(t => {
+    const name = getCategoryName(t.category);
+    if (!catMap[t.category]) catMap[t.category] = { category_name: name, total_amount: 0 };
+    catMap[t.category].total_amount += t.amount;
+  });
+  const categories = Object.values(catMap).sort((a, b) => b.total_amount - a.total_amount).slice(0, 10);
+
   return (
-    <PageLayout>
+    <PageErrorBoundary>
+      <PageLayout>
+
       <Section 
         title="대시보드" 
         subtitle="한눈에 보는 재정 현황과 최신 동향" 
         icon="📊"
       >
-        <div></div>
+        <DashboardCharts trend={trend} categories={categories} />
       </Section>
+
+      {/* 목표 설정 및 추적 */}
+      <GoalTracker />
 
       {/* 주요 지표 */}
       <Grid columns={4} style={{ marginBottom: '32px' }}>
@@ -285,7 +323,7 @@ export const DashboardPage: React.FC = () => {
 
       {/* 빠른 액션 */}
       <Section title="빠른 액션" subtitle="자주 사용하는 기능들을 빠르게 실행하세요">
-        <Grid columns={2}>
+        <Grid columns={3}>
           <Card interactive={true} style={{ textAlign: 'center', padding: '32px 24px' }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>➕</div>
             <h3 className="heading-4 high-contrast" style={{
@@ -327,6 +365,27 @@ export const DashboardPage: React.FC = () => {
               예산 관리
             </Button>
           </Card>
+
+          <Card interactive={true} style={{ textAlign: 'center', padding: '32px 24px' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>📤</div>
+            <h3 className="heading-4 high-contrast" style={{
+              color: darkMode ? colors.dark[100] : colors.gray[900],
+              margin: '0 0 8px 0',
+              fontFamily: "'Noto Sans KR', sans-serif"
+            }}>
+              데이터 내보내기
+            </h3>
+            <p className="text-sm readable-text" style={{
+              color: darkMode ? colors.dark[400] : colors.gray[600],
+              margin: '0 0 16px 0',
+              fontFamily: "'Noto Sans KR', sans-serif"
+            }}>
+              거래 내역을 CSV로 내보내세요
+            </p>
+            <Button variant="secondary" style={{ width: '100%' }} onClick={() => window.location.href='/transactions/export'}>
+              내보내기
+            </Button>
+          </Card>
         </Grid>
       </Section>
 
@@ -342,5 +401,6 @@ export const DashboardPage: React.FC = () => {
         onClose={() => setShowBudgetModal(false)}
       />
     </PageLayout>
+  </PageErrorBoundary>
   );
 };

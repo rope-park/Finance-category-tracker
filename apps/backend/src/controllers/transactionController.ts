@@ -1,7 +1,15 @@
 import { Response } from 'express';
 import pool from '../config/database';
-import { CreateTransactionRequest, ApiResponse } from '../types';
+import { 
+  CreateTransactionRequest, 
+  UpdateTransactionRequest,
+  ApiResponse,
+  Transaction,
+  MonthlyStats,
+  CategoryStats
+} from '@finance-tracker/shared';
 import { AuthRequest } from '../middleware/auth';
+import { transactionRepository } from '../repositories';
 
 // 거래 내역 생성
 export const createTransaction = async (req: AuthRequest, res: Response) => {
@@ -44,17 +52,21 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // 거래 내역 생성
-    const result = await pool.query(
-      `INSERT INTO transactions (user_id, category_key, transaction_type, amount, description, merchant, transaction_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [userId, category_key, transaction_type, amount, description, merchant, transaction_date]
-    );
+    // Repository를 사용하여 거래 내역 생성
+    const transactionData = {
+      user_id: userId,
+      category_key,
+      transaction_type,
+      amount: parseFloat(amount.toString()),
+      description: description || '',
+      transaction_date: new Date(transaction_date)
+    };
+
+  const transaction = await transactionRepository.createTransaction(transactionData);
 
     const response: ApiResponse = {
       success: true,
-      data: { transaction: result.rows[0] },
+      data: { transaction },
       message: '거래 내역이 생성되었습니다.'
     };
 
@@ -88,83 +100,60 @@ export const getTransactions = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    let query = `
-      SELECT t.*, c.label_ko as category_name, c.primary_category, c.secondary_category, c.icon, c.color
-      FROM transactions t
-      LEFT JOIN categories c ON t.category_key = c.category_key
-      WHERE t.user_id = $1
-    `;
+    // Repository 필터 구성
+    const filters: any = {
+      user_id: userId
+    };
 
-    const values: (string | number)[] = [userId];
-    let paramCounter = 2;
+    if (category_key) filters.category_key = category_key as string;
+    if (transaction_type) filters.transaction_type = transaction_type as 'income' | 'expense';
+    if (start_date) filters.start_date = new Date(start_date as string);
+    if (end_date) filters.end_date = new Date(end_date as string);
 
-    // 필터 조건 추가
-    if (category_key) {
-      query += ` AND t.category_key = $${paramCounter++}`;
-      values.push(category_key as string);
+    const limitNum = parseInt(limit as string);
+    const offsetNum = parseInt(offset as string);
+
+    // Repository를 사용하여 거래 조회
+    const { transactions, total } = await transactionRepository.findWithFilters(
+      filters,
+      limitNum,
+      offsetNum
+    );
+
+    // 카테고리 정보 추가를 위한 조인 쿼리 (필요시)
+    // 현재는 transactions 테이블에서 기본 정보만 조회
+    let enhancedTransactions = transactions;
+
+    // 카테고리 정보가 필요한 경우 별도 쿼리로 조회하여 조인
+    if (transactions.length > 0) {
+      const categoryKeys = [...new Set(transactions.map(t => t.category_key))];
+      const categoryResult = await pool.query(
+        'SELECT category_key, label_ko as category_name, primary_category, secondary_category, icon, color FROM categories WHERE category_key = ANY($1)',
+        [categoryKeys]
+      );
+
+      const categoryMap = new Map(
+        categoryResult.rows.map(cat => [cat.category_key, cat])
+      );
+
+      enhancedTransactions = transactions.map(transaction => ({
+        ...transaction,
+        category_name: categoryMap.get(transaction.category_key)?.category_name || transaction.category_key,
+        primary_category: categoryMap.get(transaction.category_key)?.primary_category,
+        secondary_category: categoryMap.get(transaction.category_key)?.secondary_category,
+        icon: categoryMap.get(transaction.category_key)?.icon,
+        color: categoryMap.get(transaction.category_key)?.color
+      }));
     }
-
-    if (transaction_type) {
-      query += ` AND t.transaction_type = $${paramCounter++}`;
-      values.push(transaction_type as string);
-    }
-
-    if (start_date) {
-      query += ` AND t.transaction_date >= $${paramCounter++}`;
-      values.push(start_date as string);
-    }
-
-    if (end_date) {
-      query += ` AND t.transaction_date <= $${paramCounter++}`;
-      values.push(end_date as string);
-    }
-
-    query += ` ORDER BY t.transaction_date DESC, t.created_at DESC`;
-    query += ` LIMIT $${paramCounter++} OFFSET $${paramCounter++}`;
-    values.push(parseInt(limit as string), parseInt(offset as string));
-
-    const result = await pool.query(query, values);
-
-    // 총 개수 조회 (페이지네이션용)
-    let countQuery = 'SELECT COUNT(*) FROM transactions WHERE user_id = $1';
-    const countValues: (string | number)[] = [userId];
-    let countParamCounter = 2;
-
-    if (category_key) {
-      countQuery += ` AND category_key = $${countParamCounter++}`;
-      countValues.push(category_key as string);
-    }
-
-    if (transaction_type) {
-      countQuery += ` AND transaction_type = $${countParamCounter++}`;
-      countValues.push(transaction_type as string);
-    }
-
-    if (start_date) {
-      countQuery += ` AND transaction_date >= $${countParamCounter++}`;
-      countValues.push(start_date as string);
-    }
-
-    if (end_date) {
-      countQuery += ` AND transaction_date <= $${countParamCounter++}`;
-      countValues.push(end_date as string);
-    }
-
-    const countResult = await pool.query(countQuery, countValues);
-    const totalCount = parseInt(countResult.rows[0].count);
 
     const response: ApiResponse = {
       success: true,
-      data: { 
-        transactions: result.rows,
-        pagination: {
-          total: totalCount,
-          limit: parseInt(limit as string),
-          offset: parseInt(offset as string),
-          hasMore: (parseInt(offset as string) + parseInt(limit as string)) < totalCount
-        }
-      },
-      message: '거래 내역을 조회했습니다.'
+      data: {
+        transactions: enhancedTransactions,
+        total,
+        page: Math.floor(offsetNum / limitNum) + 1,
+        totalPages: Math.ceil(total / limitNum)
+      }
     };
 
     res.json(response);
@@ -176,6 +165,9 @@ export const getTransactions = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+// 특정 거래 내역 조회
+// (중복된 에러 핸들러 및 잘못된 위치의 코드 삭제)
 
 // 단일 거래 내역 조회
 export const getTransaction = async (req: AuthRequest, res: Response) => {
@@ -190,24 +182,34 @@ export const getTransaction = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const result = await pool.query(
-      `SELECT t.*, c.label_ko as category_name, c.primary_category, c.secondary_category, c.icon, c.color
-       FROM transactions t
-       LEFT JOIN categories c ON t.category_key = c.category_key
-       WHERE t.id = $1 AND t.user_id = $2`,
-      [id, userId]
-    );
+    // Repository를 사용하여 거래 조회
+    const transaction = await transactionRepository.findById(parseInt(id), userId);
 
-    if (result.rows.length === 0) {
+    if (!transaction) {
       return res.status(404).json({
         success: false,
         error: '거래 내역을 찾을 수 없습니다.'
       });
     }
 
+    // 카테고리 정보 추가
+    const categoryResult = await pool.query(
+      'SELECT label_ko as category_name, primary_category, secondary_category, icon, color FROM categories WHERE category_key = $1',
+      [transaction.category_key]
+    );
+
+    const enhancedTransaction = {
+      ...transaction,
+      category_name: categoryResult.rows[0]?.category_name || transaction.category_key,
+      primary_category: categoryResult.rows[0]?.primary_category,
+      secondary_category: categoryResult.rows[0]?.secondary_category,
+      icon: categoryResult.rows[0]?.icon,
+      color: categoryResult.rows[0]?.color
+    };
+
     const response: ApiResponse = {
       success: true,
-      data: { transaction: result.rows[0] },
+      data: { transaction: enhancedTransaction },
       message: '거래 내역을 조회했습니다.'
     };
 
@@ -231,7 +233,6 @@ export const updateTransaction = async (req: AuthRequest, res: Response) => {
       transaction_type, 
       amount, 
       description, 
-      merchant, 
       transaction_date 
     } = req.body;
 
@@ -242,76 +243,27 @@ export const updateTransaction = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // 거래 내역 존재 여부 확인
-    const existingTransaction = await pool.query(
-      'SELECT id FROM transactions WHERE id = $1 AND user_id = $2',
-      [id, userId]
-    );
+    // Repository를 사용하여 업데이트할 데이터 구성
+    const updateData: any = {};
+    if (category_key !== undefined) updateData.category_key = category_key;
+    if (transaction_type !== undefined) updateData.transaction_type = transaction_type;
+    if (amount !== undefined) updateData.amount = parseFloat(amount.toString());
+    if (description !== undefined) updateData.description = description;
+    if (transaction_date !== undefined) updateData.transaction_date = new Date(transaction_date);
 
-    if (existingTransaction.rows.length === 0) {
+    // Repository를 사용하여 거래 업데이트
+  const updatedTransaction = await transactionRepository.updateTransaction(parseInt(id), userId, updateData);
+
+    if (!updatedTransaction) {
       return res.status(404).json({
         success: false,
         error: '거래 내역을 찾을 수 없습니다.'
       });
     }
 
-    // 업데이트할 필드들을 동적으로 구성
-    const updateFields: string[] = [];
-    const values: (string | number)[] = [];
-    let paramCounter = 1;
-
-    if (category_key !== undefined) {
-      updateFields.push(`category_key = $${paramCounter++}`);
-      values.push(category_key);
-    }
-
-    if (transaction_type !== undefined) {
-      updateFields.push(`transaction_type = $${paramCounter++}`);
-      values.push(transaction_type);
-    }
-
-    if (amount !== undefined) {
-      updateFields.push(`amount = $${paramCounter++}`);
-      values.push(amount);
-    }
-
-    if (description !== undefined) {
-      updateFields.push(`description = $${paramCounter++}`);
-      values.push(description);
-    }
-
-    if (merchant !== undefined) {
-      updateFields.push(`merchant = $${paramCounter++}`);
-      values.push(merchant);
-    }
-
-    if (transaction_date !== undefined) {
-      updateFields.push(`transaction_date = $${paramCounter++}`);
-      values.push(transaction_date);
-    }
-
-    if (updateFields.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: '업데이트할 필드가 없습니다.'
-      });
-    }
-
-    updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
-    values.push(id, userId);
-
-    const query = `
-      UPDATE transactions 
-      SET ${updateFields.join(', ')}
-      WHERE id = $${paramCounter++} AND user_id = $${paramCounter}
-      RETURNING *
-    `;
-
-    const result = await pool.query(query, values);
-
     const response: ApiResponse = {
       success: true,
-      data: { transaction: result.rows[0] },
+      data: { transaction: updatedTransaction },
       message: '거래 내역이 수정되었습니다.'
     };
 
@@ -338,24 +290,127 @@ export const deleteTransaction = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const result = await pool.query(
-      'DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING id',
-      [id, userId]
-    );
+    // Repository를 사용하여 거래 삭제
+  const deleted = await transactionRepository.deleteTransaction(parseInt(id), userId);
 
-    if (result.rows.length === 0) {
+    if (!deleted) {
       return res.status(404).json({
         success: false,
         error: '거래 내역을 찾을 수 없습니다.'
       });
     }
 
-    res.json({
+    const response: ApiResponse = {
       success: true,
       message: '거래 내역이 삭제되었습니다.'
-    });
+    };
+
+    res.json(response);
   } catch (error) {
     console.error('거래 내역 삭제 오류:', error);
+    res.status(500).json({
+      success: false,
+      error: '서버 내부 오류가 발생했습니다.'
+    });
+  }
+};
+
+// 거래 통계 조회
+export const getTransactionStats = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const { start_date, end_date } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: '인증이 필요합니다.'
+      });
+    }
+
+    // Repository를 사용하여 통계 조회
+    const startDate = start_date ? new Date(start_date as string) : undefined;
+    const endDate = end_date ? new Date(end_date as string) : undefined;
+
+    const statistics = await transactionRepository.getStatistics(userId, startDate, endDate);
+
+    const response: ApiResponse = {
+      success: true,
+      data: { statistics },
+      message: '거래 통계를 조회했습니다.'
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('거래 통계 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      error: '서버 내부 오류가 발생했습니다.'
+    });
+  }
+};
+
+// 카테고리별 요약 조회
+export const getCategorySummary = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const { start_date, end_date } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: '인증이 필요합니다.'
+      });
+    }
+
+    // Repository를 사용하여 카테고리별 요약 조회
+    const startDate = start_date ? new Date(start_date as string) : undefined;
+    const endDate = end_date ? new Date(end_date as string) : undefined;
+
+    const summary = await transactionRepository.getCategorySummary(userId, startDate, endDate);
+
+    const response: ApiResponse = {
+      success: true,
+      data: { summary },
+      message: '카테고리별 요약을 조회했습니다.'
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('카테고리 요약 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      error: '서버 내부 오류가 발생했습니다.'
+    });
+  }
+};
+
+// 월별 트렌드 조회
+export const getMonthlyTrend = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const { months = '12' } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: '인증이 필요합니다.'
+      });
+    }
+
+    // Repository를 사용하여 월별 트렌드 조회
+    const monthsNum = parseInt(months as string);
+    const trends = await transactionRepository.getMonthlyTrend(userId, monthsNum);
+
+    const response: ApiResponse = {
+      success: true,
+      data: { trends },
+      message: '월별 트렌드를 조회했습니다.'
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('월별 트렌드 조회 오류:', error);
     res.status(500).json({
       success: false,
       error: '서버 내부 오류가 발생했습니다.'

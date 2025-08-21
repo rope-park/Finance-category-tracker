@@ -103,9 +103,33 @@ export interface RegisterRequest {
   name: string;
 }
 
+export interface LoginRequest {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
 export interface AuthResponse {
   user: User;
   token: string;
+}
+
+// User profile and settings update types
+export interface ProfileUpdateRequest {
+  name?: string;
+  profile_picture?: string;
+  phone_number?: string;
+  age_group?: string;
+  bio?: string;
+}
+
+export interface SettingsUpdateRequest {
+  currency?: string;
+  dark_mode?: boolean;
+  notification_budget_warning?: boolean;
+  notification_budget_exceeded?: boolean;
+  budget_warning_threshold?: number;
+  language?: string;
 }
 
 // Transaction related types
@@ -153,6 +177,14 @@ export interface MonthlyStats {
     amount: number;
     percentage: number;
   }>;
+}
+
+export interface CategoryStats {
+  category_key: string;
+  category_name: string;
+  total_amount: number;
+  transaction_count: number;
+  transaction_type: 'income' | 'expense';
 }
 
 export interface BudgetSummary {

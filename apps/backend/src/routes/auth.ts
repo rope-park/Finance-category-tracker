@@ -1,20 +1,42 @@
 import express from 'express';
-import { register, login, getCurrentUser, verifyToken } from '../controllers/authController';
 import { authenticateToken } from '../middleware/auth';
-import { validateRegisterData, validateLoginData } from '../middleware/validation';
+import { authLimiter, registerLimiter, strictLimiter } from '../middleware/rateLimiter';
+import { validateRegister, validateLogin } from '../middleware/security';
+import { 
+  register, 
+  login, 
+  refreshToken,
+  logout,
+  logoutAll,
+  getActiveSessions,
+  getCurrentUser, 
+  verifyToken 
+} from '../controllers/authController';
 
 const router = express.Router();
 
-// 회원가입 (데이터 검증 포함)
-router.post('/register', validateRegisterData, register);
+// 회원가입
+router.post('/register', registerLimiter, validateRegister, register);
 
-// 로그인 (데이터 검증 포함)
-router.post('/login', validateLoginData, login);
+// 로그인  
+router.post('/login', authLimiter, validateLogin, login);
 
-// 현재 사용자 정보 (인증 필요)
+// 토큰 갱신
+router.post('/refresh', authLimiter, refreshToken);
+
+// 로그아웃 (현재 세션)
+router.post('/logout', authLimiter, logout);
+
+// 전체 로그아웃 (모든 세션)
+router.post('/logout-all', authenticateToken, logoutAll);
+
+// 활성 세션 조회
+router.get('/sessions', authenticateToken, getActiveSessions);
+
+// 현재 사용자 정보 조회
 router.get('/me', authenticateToken, getCurrentUser);
 
-// 토큰 검증 (인증 필요)
+// 토큰 검증
 router.get('/verify', authenticateToken, verifyToken);
 
 export default router;

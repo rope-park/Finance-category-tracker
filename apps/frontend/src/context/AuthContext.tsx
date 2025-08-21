@@ -1,5 +1,10 @@
-import React, { createContext, useReducer, useEffect } from 'react';
-import type { AuthState, User, LoginFormData, RegisterFormData, AuthResponse, AuthError } from '../types/auth';
+import React, { useReducer, useEffect } from 'react';
+import type { 
+  LoginRequest
+} from '@finance-tracker/shared';
+import type { AuthState, AuthError, User, LoginFormData, RegisterFormData } from '../types/auth';
+import { authAPI, userAPI } from '../services/api';
+import { AuthContext } from './AuthContextObject';
 
 // Auth Actions
 type AuthAction = 
@@ -13,11 +18,11 @@ type AuthAction =
 // Auth Context 타입
 interface AuthContextType {
   state: AuthState;
-  login: (formData: LoginFormData) => Promise<void>;
+  login: (formData: LoginRequest) => Promise<void>;
   register: (formData: RegisterFormData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   clearError: () => void;
-  updateUser: (userData: Partial<User>) => void;
+  updateUser: (userData: Partial<User>) => Promise<User | void>;
 }
 
 // Initial State
@@ -79,10 +84,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
     default:
       return state;
   }
-};
-
-// Auth Context
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+}
 
 // Auth Provider
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -91,173 +93,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 페이지 로드 시 저장된 토큰 확인
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
-    const userData = localStorage.getItem('user_data');
-    
-    if (token && userData) {
-      try {
-        const user = JSON.parse(userData);
-        dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
-      } catch (error) {
-        console.error('Failed to parse stored user data:', error);
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
-      }
+    if (token) {
+      authAPI.getCurrentUser()
+        .then((response) => {
+          if (response.success && response.data?.user) {
+            dispatch({ type: 'AUTH_SUCCESS', payload: { user: response.data.user, token } });
+          } else {
+            throw new Error(response.error || response.message || '자동 로그인 실패');
+          }
+        })
+        .catch((error) => {
+          console.error('자동 로그인 실패:', error);
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user_data');
+        });
     }
   }, []);
-
-  // 모의 API 함수들 (실제 프로덕션에서는 실제 API 호출로 대체)
-  const mockLogin = async (formData: LoginFormData): Promise<AuthResponse> => {
-    // 실제로는 API 호출
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 로딩 시뮬레이션
-    
-    // 간단한 유효성 검사
-    if (formData.email === 'test@example.com' && formData.password === 'password123') {
-      const user: User = {
-        id: '1',
-        email: formData.email,
-        name: '홍길동',
-        profileCompleted: true, // 기존 사용자는 프로필 완성 상태
-        createdAt: new Date().toISOString(),
-        preferences: {
-          currency: 'KRW',
-          language: 'ko',
-          darkMode: false,
-          notifications: {
-            budget: true,
-            transaction: true,
-            email: false
-          }
-        }
-      };
-      
-      return {
-        user,
-        token: 'mock_jwt_token_' + Date.now(),
-        refreshToken: 'mock_refresh_token_' + Date.now()
-      };
-    } else if (formData.email === 'admin@test.com' && formData.password === 'admin123') {
-      const user: User = {
-        id: 'admin',
-        email: formData.email,
-        name: '관리자',
-        avatar: '', // 관리자 아바타
-        phone: '010-1234-5678',
-        ageGroup: '30대',
-        bio: '가계부 앱 관리자입니다.',
-        profileCompleted: true, // 관리자는 프로필 완성 상태
-        createdAt: '2024-01-01T00:00:00.000Z',
-        preferences: {
-          currency: 'KRW',
-          language: 'ko',
-          darkMode: false,
-          notifications: {
-            budget: true,
-            transaction: true,
-            email: true
-          }
-        }
-      };
-      
-      return {
-        user,
-        token: 'mock_jwt_token_' + Date.now(),
-        refreshToken: 'mock_refresh_token_' + Date.now()
-      };
-    } else if (formData.email === 'incomplete@test.com' && formData.password === 'test123') {
-      // 프로필 미완성 테스트 계정
-      const user: User = {
-        id: 'incomplete',
-        email: formData.email,
-        name: '미완성사용자',
-        profileCompleted: false, // 프로필 미완성 상태
-        createdAt: '2024-12-01T00:00:00.000Z',
-        preferences: {
-          currency: 'KRW',
-          language: 'ko',
-          darkMode: false,
-          notifications: {
-            budget: true,
-            transaction: true,
-            email: false
-          }
-        }
-      };
-      
-      return {
-        user,
-        token: 'mock_jwt_token_' + Date.now(),
-        refreshToken: 'mock_refresh_token_' + Date.now()
-      };
-    } else {
-      throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
-    }
-  };
-
-  const mockRegister = async (formData: RegisterFormData): Promise<AuthResponse> => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // 간단한 유효성 검사
-    if (formData.password !== formData.confirmPassword) {
-      throw new Error('비밀번호가 일치하지 않습니다.');
-    }
-    
-    if (!formData.agreeToTerms) {
-      throw new Error('이용약관에 동의해주세요.');
-    }
-    
-    // 이미 존재하는 이메일 시뮬레이션
-    if (formData.email === 'existing@example.com') {
-      throw new Error('이미 사용중인 이메일입니다.');
-    }
-    
-    const user: User = {
-      id: '2',
-      email: formData.email,
-      name: formData.name,
-      profileCompleted: false, // 신규 가입자는 프로필 미완성 상태
-      createdAt: new Date().toISOString(),
-      preferences: {
-        currency: 'KRW',
-        language: 'ko',
-        darkMode: false,
-        notifications: {
-          budget: true,
-          transaction: true,
-          email: false
-        }
-      }
-    };
-    
-    return {
-      user,
-      token: 'mock_jwt_token_' + Date.now(),
-      refreshToken: 'mock_refresh_token_' + Date.now()
-    };
-  };
 
   // 로그인 함수
   const login = async (formData: LoginFormData) => {
     dispatch({ type: 'AUTH_LOADING' });
-    
     try {
-      const response = await mockLogin(formData);
-      
-      // 로컬 스토리지에 저장
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user_data', JSON.stringify(response.user));
-      
-      if (formData.rememberMe) {
-        localStorage.setItem('refresh_token', response.refreshToken);
-      }
-      
-      dispatch({ 
-        type: 'AUTH_SUCCESS', 
-        payload: { user: response.user, token: response.token } 
+      const response = await authAPI.login({
+        email: formData.email,
+        password: formData.password,
+        rememberMe: formData.rememberMe
       });
+      if (response.success && response.data) {
+        localStorage.removeItem('user_data');
+        localStorage.setItem('auth_token', response.data.token);
+        localStorage.setItem('user_data', JSON.stringify(response.data.user));
+        const userKey = `user_data_${response.data.user.id}`;
+        localStorage.setItem(userKey, JSON.stringify(response.data.user));
+  // refreshToken은 ApiResponse<{user, token}>에는 없음. 필요시 백엔드 응답 타입 확장 필요
+  // if (formData.rememberMe && response.data.refreshToken) {
+  //   localStorage.setItem('refresh_token', response.data.refreshToken);
+  // }
+        dispatch({ type: 'AUTH_SUCCESS', payload: { user: response.data.user, token: response.data.token } });
+      } else {
+        throw new Error(response.error || response.message || '로그인에 실패했습니다.');
+      }
     } catch (error) {
-      dispatch({ 
-        type: 'AUTH_ERROR', 
-        payload: { 
+      dispatch({
+        type: 'AUTH_ERROR',
+        payload: {
           code: 'LOGIN_FAILED',
           message: error instanceof Error ? error.message : '로그인에 실패했습니다.'
         }
@@ -268,22 +147,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 회원가입 함수
   const register = async (formData: RegisterFormData) => {
     dispatch({ type: 'AUTH_LOADING' });
-    
     try {
-      const response = await mockRegister(formData);
-      
-      // 로컬 스토리지에 저장
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user_data', JSON.stringify(response.user));
-      
-      dispatch({ 
-        type: 'AUTH_SUCCESS', 
-        payload: { user: response.user, token: response.token } 
+      const response = await authAPI.register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
       });
+      if (response.success && response.data) {
+        localStorage.removeItem('user_data');
+        localStorage.setItem('auth_token', response.data.token);
+        localStorage.setItem('user_data', JSON.stringify(response.data.user));
+        const userKey = `user_data_${response.data.user.id}`;
+        localStorage.setItem(userKey, JSON.stringify(response.data.user));
+        dispatch({ type: 'AUTH_SUCCESS', payload: { user: response.data.user, token: response.data.token } });
+      } else {
+        throw new Error(response.error || response.message || '회원가입에 실패했습니다.');
+      }
     } catch (error) {
-      dispatch({ 
-        type: 'AUTH_ERROR', 
-        payload: { 
+      dispatch({
+        type: 'AUTH_ERROR',
+        payload: {
           code: 'REGISTER_FAILED',
           message: error instanceof Error ? error.message : '회원가입에 실패했습니다.'
         }
@@ -292,10 +175,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // 로그아웃 함수
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // 서버에 로그아웃 요청
+      await authAPI.logout();
+    } catch (error) {
+      console.error('로그아웃 API 호출 실패:', error);
+      // API 실패해도 클라이언트는 로그아웃 처리
+    }
+    
+    // 현재 사용자의 모든 localStorage 데이터 제거
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
     localStorage.removeItem('refresh_token');
+    
+    // 사용자별 저장된 데이터도 제거 (현재 사용자만)
+    if (state.user) {
+      const userKey = `user_data_${state.user.id}`;
+      localStorage.removeItem(userKey);
+    }
+    
     dispatch({ type: 'AUTH_LOGOUT' });
   };
 
@@ -305,13 +204,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // 사용자 정보 업데이트
-  const updateUser = (userData: Partial<User>) => {
-    dispatch({ type: 'UPDATE_USER', payload: userData });
-    
-    // 로컬 스토리지 업데이트
-    if (state.user) {
-      const updatedUser = { ...state.user, ...userData };
-      localStorage.setItem('user_data', JSON.stringify(updatedUser));
+  const updateUser = async (userData: Partial<User>) => {
+    if (!state.user) return;
+    try {
+      const response = await userAPI.updateProfile({
+        name: userData.name,
+        profile_picture: userData.profile_picture,
+        phone_number: userData.phone_number,
+        age_group: userData.age_group,
+        bio: userData.bio
+      });
+      if (response.success && response.data?.user) {
+        dispatch({ type: 'UPDATE_USER', payload: response.data.user });
+        const userKey = `user_data_${response.data.user.id}`;
+        localStorage.setItem('user_data', JSON.stringify(response.data.user));
+        localStorage.setItem(userKey, JSON.stringify(response.data.user));
+        return response.data.user;
+      } else {
+        throw new Error(response.error || response.message || '프로필 업데이트 실패');
+      }
+    } catch (error) {
+      console.error('프로필 업데이트 실패:', error);
+      throw error;
     }
   };
 

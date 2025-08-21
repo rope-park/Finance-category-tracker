@@ -13,17 +13,36 @@
     "build:frontend": "npm run build --prefix apps/frontend",
     "build:backend": "npm run build --prefix apps/backend",
     "test": "npm test --prefix apps/frontend && npm test --prefix apps/backend",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
     "lint": "npm run lint --prefix apps/frontend && npm run lint --prefix apps/backend",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "start:server": "scripts/start-server.bat",
+    "start:server:linux": "scripts/start-server.sh",
+    "kill:3001": "npx kill-port 3001",
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up -d",
+    "docker:prod": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "db:setup": "npm run db:migrate --prefix apps/backend && npm run db:seed --prefix apps/backend",
+    "type-check": "npm run type-check --prefix apps/frontend && npm run type-check --prefix apps/backend"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "@types/csurf": "^1.11.5",
+    "@types/express": "^5.0.3",
+    "@types/express-serve-static-core": "^5.0.7",
+    "@types/jest": "^30.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/supertest": "^6.0.3",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.2.0",
     "eslint": "^9.33.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "kill-port": "^2.0.1",
     "postcss": "^8.5.6",
+    "supertest": "^7.1.4",
     "tailwindcss": "^4.1.11",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
@@ -32,5 +51,13 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.0",
+    "curl": "^0.1.4",
+    "jest": "^30.0.5",
+    "mocha": "^11.7.1",
+    "react-chartjs-2": "^5.3.0",
+    "zustand": "^5.0.8"
   }
 }

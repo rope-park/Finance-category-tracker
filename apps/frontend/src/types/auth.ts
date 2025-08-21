@@ -1,13 +1,18 @@
+import type { AuthResponse as SharedAuthResponse } from '@finance-tracker/shared';
+
+// 프론트엔드에서 사용하는 User 타입 (공유 타입과 호환)
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
-  avatar?: string;
-  phone?: string;
-  ageGroup?: '10대' | '20대' | '30대' | '40대' | '50대' | '60대 이상';
+  profile_picture?: string;
+  phone_number?: string;
+  age_group?: string;
   bio?: string;
-  profileCompleted?: boolean; // 프로필 설정 완료 여부
-  createdAt: string;
+  profile_completed: boolean;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
   preferences?: UserPreferences;
 }
 
@@ -22,6 +27,7 @@ export interface UserPreferences {
   };
 }
 
+// 폼 데이터 타입들 (UI 전용)
 export interface LoginFormData {
   email: string;
   password: string;
@@ -36,10 +42,9 @@ export interface RegisterFormData {
   agreeToTerms: boolean;
 }
 
-export interface AuthResponse {
-  user: User;
-  token: string;
-  refreshToken: string;
+// 프론트엔드 AuthResponse (공유 타입 확장)
+export interface AuthResponse extends SharedAuthResponse {
+  refreshToken?: string; // 선택적 필드
 }
 
 export interface AuthError {

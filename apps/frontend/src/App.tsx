@@ -15,7 +15,7 @@ import {
   CategoriesPage, 
   SettingsPage 
 } from './components/pages';
-import { Tooltip } from './components/ui';
+import { Tooltip, ErrorBoundary, PageErrorBoundary, ModalErrorBoundary } from './components/ui';
 import { colors, shadows, borderRadius } from './styles/theme';
 
 // 앱 콘텐츠 컴포넌트 (Context 내부에서 사용)
@@ -36,7 +36,7 @@ const AppContent: React.FC = () => {
     if (isAuthenticated && user && !hasCheckedProfile) {
       setHasCheckedProfile(true);
       
-      if (!user.profileCompleted) {
+  if (!user.profile_completed) {
         // 프로필 미완성 사용자는 리다이렉션 모달 표시
         const timer = setTimeout(() => {
           setShowProfileRedirect(true);
@@ -48,7 +48,7 @@ const AppContent: React.FC = () => {
 
     // 기존 로직들...
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isAuthenticated && user && !user.profileCompleted) {
+  if (isAuthenticated && user && !user.profile_completed) {
         e.preventDefault();
         e.returnValue = '프로필 설정이 완료되지 않았습니다. 정말로 페이지를 떠나시겠습니까?';
         return e.returnValue;
@@ -56,13 +56,13 @@ const AppContent: React.FC = () => {
     };
 
     const handlePopState = () => {
-      if (isAuthenticated && user && !user.profileCompleted) {
+  if (isAuthenticated && user && !user.profile_completed) {
         setShowProfileRequired(true);
       }
     };
 
     // 프로필 미완성 사용자에게 경고 표시 (신규 가입자용)
-    if (isAuthenticated && user && !user.profileCompleted && hasCheckedProfile) {
+  if (isAuthenticated && user && !user.profile_completed && hasCheckedProfile) {
       const timer = setTimeout(() => {
         setShowProfileRequired(true);
       }, 1000); // 1초 후 모달 표시
@@ -92,7 +92,7 @@ const AppContent: React.FC = () => {
 
   // 탭 변경 시 프로필 미완성 체크
   const handleTabChange = (tabId: string) => {
-    if (isAuthenticated && user && !user.profileCompleted) {
+  if (isAuthenticated && user && !user.profile_completed) {
       setShowProfileRequired(true);
       return;
     }
@@ -245,32 +245,62 @@ const AppContent: React.FC = () => {
           opacity: 1,
           transform: 'translateY(0)'
         }}>
-          {activeTab === 'dashboard' && <DashboardPage />}
-          {activeTab === 'transactions' && <TransactionsPage />}
-          {activeTab === 'budget' && <BudgetPage />}
-          {activeTab === 'analytics' && <AnalyticsPage />}
-          {activeTab === 'categories' && <CategoriesPage />}
-          {activeTab === 'settings' && <SettingsPage />}
+          {activeTab === 'dashboard' && (
+            <PageErrorBoundary>
+              <DashboardPage />
+            </PageErrorBoundary>
+          )}
+          {activeTab === 'transactions' && (
+            <PageErrorBoundary>
+              <TransactionsPage />
+            </PageErrorBoundary>
+          )}
+          {activeTab === 'budget' && (
+            <PageErrorBoundary>
+              <BudgetPage />
+            </PageErrorBoundary>
+          )}
+          {activeTab === 'analytics' && (
+            <PageErrorBoundary>
+              <AnalyticsPage />
+            </PageErrorBoundary>
+          )}
+          {activeTab === 'categories' && (
+            <PageErrorBoundary>
+              <CategoriesPage />
+            </PageErrorBoundary>
+          )}
+          {activeTab === 'settings' && (
+            <PageErrorBoundary>
+              <SettingsPage />
+            </PageErrorBoundary>
+          )}
         </div>
       </main>
 
       {/* 프로필 필수 모달 */}
-      <ProfileRequiredModal
-        isOpen={showProfileRequired}
-        onContinueToProfile={handleContinueToProfile}
-      />
+      <ModalErrorBoundary>
+        <ProfileRequiredModal
+          isOpen={showProfileRequired}
+          onContinueToProfile={handleContinueToProfile}
+        />
+      </ModalErrorBoundary>
 
       {/* 프로필 리다이렉션 모달 */}
-      <ProfileRedirectModal
-        isOpen={showProfileRedirect}
-        onProceed={handleRedirectToProfile}
-      />
+      <ModalErrorBoundary>
+        <ProfileRedirectModal
+          isOpen={showProfileRedirect}
+          onProceed={handleRedirectToProfile}
+        />
+      </ModalErrorBoundary>
 
       {/* 프로필 설정 모달 */}
-      <ProfileSettingsModal
-        isOpen={showProfileSettings}
-        onClose={handleProfileComplete}
-      />
+      <ModalErrorBoundary>
+        <ProfileSettingsModal
+          isOpen={showProfileSettings}
+          onClose={handleProfileComplete}
+        />
+      </ModalErrorBoundary>
 
       {/* CSS 스타일 */}
       <style>{`
@@ -326,11 +356,27 @@ const AppContent: React.FC = () => {
 // 메인 앱 컴포넌트
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
-    </AuthProvider>
+    <ErrorBoundary 
+      onError={(error, errorInfo) => {
+        console.error('🚨 Global App Error:', error);
+        console.error('📍 Error Context:', errorInfo);
+        
+        // TODO: 실제 프로덕션에서는 에러 리포팅 서비스에 전송
+        // - Sentry.captureException(error, { extra: errorInfo });
+        // - 또는 Google Analytics, LogRocket 등으로 전송
+        
+        // 사용자에게 알림 (선택적)
+        if (window.confirm('예상치 못한 오류가 발생했습니다. 페이지를 새로고침하시겠습니까?')) {
+          window.location.reload();
+        }
+      }}
+    >
+      <AuthProvider>
+        <AppProvider>
+          <AppContent />
+        </AppProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

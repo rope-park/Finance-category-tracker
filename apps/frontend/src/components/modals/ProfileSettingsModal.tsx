@@ -10,11 +10,13 @@ import type { User } from '../../types/auth';
 interface ProfileSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onComplete?: () => void; // 선택적 prop 추가
 }
 
 export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   isOpen,
-  onClose
+  onClose,
+  onComplete
 }) => {
   const { state: { user }, updateUser } = useAuth();
   const { darkMode } = useApp();
@@ -22,13 +24,13 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: user?.phone || '',
-    ageGroup: user?.ageGroup || '20대' as const,
+    phone: user?.phone_number || '',
+    ageGroup: user?.age_group || '20대' as const,
     bio: user?.bio || ''
   });
   
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string>(user?.avatar || '');
+  const [avatarPreview, setAvatarPreview] = useState<string>(user?.profile_picture || '');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
@@ -66,19 +68,31 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       }
 
       const updatedUserData: Partial<User> = {
-        ...formData,
-        avatar: avatarUrl,
-        profileCompleted: true // 프로필 설정 완료 표시
+        name: formData.name,
+        // email: formData.email, // 이메일은 보통 변경하지 않음
+        phone_number: formData.phone,
+        age_group: formData.ageGroup,
+        profile_picture: avatarUrl,
+        bio: formData.bio,
+        profile_completed: true,
+        updated_at: new Date().toISOString()
       };
 
-      updateUser(updatedUserData);
+      // AuthContext의 updateUser 함수 호출 (실제 API 호출)
+      await updateUser(updatedUserData);
       
       // 성공 메시지
       alert('프로필이 성공적으로 업데이트되었습니다!');
-      onClose();
+      
+      // onComplete이 있으면 호출, 없으면 onClose 호출
+      if (onComplete) {
+        onComplete();
+      } else {
+        onClose();
+      }
     } catch (error) {
       console.error('프로필 업데이트 오류:', error);
-      alert('프로필 업데이트 중 오류가 발생했습니다.');
+      alert('프로필 업데이트 중 오류가 발생했습니다: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
     } finally {
       setIsLoading(false);
     }

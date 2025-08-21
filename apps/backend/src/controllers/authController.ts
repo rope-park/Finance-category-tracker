@@ -2,10 +2,42 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/database';
-import { CreateUserRequest, LoginRequest, AuthResponse, ApiResponse } from '../types';
+import { 
+  RegisterRequest, 
+  LoginRequest, 
+  AuthResponse, 
+  ApiResponse, 
+  User 
+} from '@finance-tracker/shared';
 import { AuthRequest } from '../middleware/auth';
+import { JWTService, DeviceInfo } from '../services/jwtService';
 
-// JWT 서명 함수 (타입 안전)
+interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+interface EnhancedAuthResponse extends AuthResponse {
+  refreshToken: string;
+  accessTokenExpiresAt: string;
+  refreshTokenExpiresAt: string;
+}
+
+// 디바이스 정보 추출 헬퍼
+const extractDeviceInfo = (req: Request): { deviceInfo: DeviceInfo; ipAddress: string } => {
+  const userAgent = req.headers['user-agent'];
+  const ipAddress = (req.headers['x-forwarded-for'] as string) || 
+                   (req.headers['x-real-ip'] as string) || 
+                   req.connection.remoteAddress || 
+                   req.socket.remoteAddress || 
+                   '127.0.0.1';
+
+  return {
+    deviceInfo: JWTService.parseUserAgent(userAgent),
+    ipAddress: Array.isArray(ipAddress) ? ipAddress[0] : ipAddress
+  };
+};
+
+// JWT 서명 함수 (타입 안전) - 호환성 유지용
 const signJWT = (payload: object, secret: string, expiresIn: string): string => {
   return (jwt as any).sign(payload, secret, { expiresIn });
 };
@@ -13,7 +45,8 @@ const signJWT = (payload: object, secret: string, expiresIn: string): string => 
 // 회원가입
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, name }: CreateUserRequest = req.body;
+    const { email, password, name }: RegisterRequest = req.body;
+    const { deviceInfo, ipAddress } = extractDeviceInfo(req);
 
     // 이메일 중복 체크
     const existingUser = await pool.query(
@@ -48,19 +81,14 @@ export const register = async (req: Request, res: Response) => {
       [user.id]
     );
 
-    // JWT 토큰 생성
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET is not defined');
-    }
-    
-    const token = signJWT(
-      { userId: user.id, email: user.email },
-      jwtSecret,
-      process.env.JWT_EXPIRES_IN || '7d'
+    // JWT 토큰 페어 생성
+    const tokenPair = await JWTService.generateTokenPair(
+      user.id, 
+      deviceInfo, 
+      ipAddress
     );
 
-    const response: ApiResponse<AuthResponse> = {
+    const response: ApiResponse<EnhancedAuthResponse> = {
       success: true,
       data: {
         user: {
@@ -73,7 +101,10 @@ export const register = async (req: Request, res: Response) => {
           last_login: null,
           is_active: true
         },
-        token
+        token: tokenPair.accessToken,
+        refreshToken: tokenPair.refreshToken,
+        accessTokenExpiresAt: tokenPair.accessTokenExpiresAt.toISOString(),
+        refreshTokenExpiresAt: tokenPair.refreshTokenExpiresAt.toISOString()
       },
       message: '회원가입이 완료되었습니다.'
     };
@@ -92,6 +123,7 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password, rememberMe }: LoginRequest = req.body;
+    const { deviceInfo, ipAddress } = extractDeviceInfo(req);
 
     if (!email || !password) {
       return res.status(400).json({
@@ -133,28 +165,28 @@ export const login = async (req: Request, res: Response) => {
       [user.id]
     );
 
-    // 로그인 함수 내에서도 JWT 수정
-    const expiresIn = rememberMe ? '30d' : '7d';
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET is not defined');
-    }
-
-    const payload = { userId: user.id, email: user.email };
-    const token = signJWT(payload, jwtSecret, expiresIn);
+    // JWT 토큰 페어 생성 (rememberMe 옵션 고려)
+    const tokenPair = await JWTService.generateTokenPair(
+      user.id, 
+      { ...deviceInfo, rememberMe }, 
+      ipAddress
+    );
 
     // password_hash 제거
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...userWithoutPassword } = user;
 
-    const response: ApiResponse<AuthResponse> = {
+    const response: ApiResponse<EnhancedAuthResponse> = {
       success: true,
       data: {
         user: {
           ...userWithoutPassword,
           last_login: new Date()
         },
-        token
+        token: tokenPair.accessToken,
+        refreshToken: tokenPair.refreshToken,
+        accessTokenExpiresAt: tokenPair.accessTokenExpiresAt.toISOString(),
+        refreshTokenExpiresAt: tokenPair.refreshTokenExpiresAt.toISOString()
       },
       message: '로그인이 완료되었습니다.'
     };
@@ -165,6 +197,122 @@ export const login = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: '서버 내부 오류가 발생했습니다.'
+    });
+  }
+};
+
+// 토큰 갱신
+export const refreshToken = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken }: RefreshTokenRequest = req.body;
+    const { deviceInfo, ipAddress } = extractDeviceInfo(req);
+
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        error: 'Refresh token이 필요합니다.',
+        code: 'REFRESH_TOKEN_REQUIRED'
+      });
+    }
+
+    // 새로운 토큰 페어 생성
+    const tokenPair = await JWTService.refreshTokens(
+      refreshToken,
+      deviceInfo,
+      ipAddress
+    );
+
+    const response: ApiResponse = {
+      success: true,
+      data: {
+        accessToken: tokenPair.accessToken,
+        refreshToken: tokenPair.refreshToken,
+        accessTokenExpiresAt: tokenPair.accessTokenExpiresAt.toISOString(),
+        refreshTokenExpiresAt: tokenPair.refreshTokenExpiresAt.toISOString()
+      },
+      message: '토큰이 갱신되었습니다.'
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('토큰 갱신 오류:', error);
+    res.status(401).json({
+      success: false,
+      error: error instanceof Error ? error.message : '토큰 갱신에 실패했습니다.',
+      code: 'REFRESH_FAILED'
+    });
+  }
+};
+
+// 로그아웃 (특정 세션)
+export const logout = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken }: { refreshToken?: string } = req.body;
+
+    if (refreshToken) {
+      await JWTService.revokeRefreshToken(refreshToken);
+    }
+
+    res.json({
+      success: true,
+      message: '로그아웃되었습니다.'
+    });
+  } catch (error) {
+    console.error('로그아웃 오류:', error);
+    res.status(500).json({
+      success: false,
+      error: '로그아웃 처리 중 오류가 발생했습니다.'
+    });
+  }
+};
+
+// 전체 로그아웃 (모든 세션)
+export const logoutAll = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        error: '사용자 인증이 필요합니다.'
+      });
+    }
+
+    await JWTService.revokeAllUserTokens(req.user.id);
+
+    res.json({
+      success: true,
+      message: '모든 세션에서 로그아웃되었습니다.'
+    });
+  } catch (error) {
+    console.error('전체 로그아웃 오류:', error);
+    res.status(500).json({
+      success: false,
+      error: '로그아웃 처리 중 오류가 발생했습니다.'
+    });
+  }
+};
+
+// 활성 세션 조회
+export const getActiveSessions = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        error: '사용자 인증이 필요합니다.'
+      });
+    }
+
+    const sessions = await JWTService.getUserActiveSessions(req.user.id);
+
+    res.json({
+      success: true,
+      data: { sessions },
+      message: '활성 세션을 조회했습니다.'
+    });
+  } catch (error) {
+    console.error('세션 조회 오류:', error);
+    res.status(500).json({
+      success: false,
+      error: '세션 조회 중 오류가 발생했습니다.'
     });
   }
 };

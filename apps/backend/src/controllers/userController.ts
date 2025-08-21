@@ -1,13 +1,19 @@
 import { Response } from 'express';
 import pool from '../config/database';
-import { UpdateProfileRequest, ApiResponse } from '../types';
+import { 
+  ProfileUpdateRequest,
+  SettingsUpdateRequest,
+  ApiResponse,
+  User,
+  UserSettings
+} from '@finance-tracker/shared';
 import { AuthRequest } from '../middleware/auth';
 
 // 프로필 업데이트
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { name, profile_picture, phone_number, age_group, bio }: UpdateProfileRequest = req.body;
+    const { name, profile_picture, phone_number, age_group, bio }: ProfileUpdateRequest = req.body;
 
     if (!userId) {
       return res.status(401).json({
