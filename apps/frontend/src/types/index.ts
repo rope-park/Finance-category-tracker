@@ -531,6 +531,7 @@ export interface Notification {
   message: string;
   type: 'success' | 'error' | 'warning' | 'info';
   timestamp: number;
+  is_read?: boolean;
 }
 
 // 반복 거래 관련 타입들 (중복 제거됨)

@@ -1,3 +1,17 @@
+import type { Notification } from '../types';
+// 타입 import 추가
+import type { RecurringTemplate } from '../types';
+
+// ...기존 코드...
+
+// API 클라이언트 클래스 내부에 반복 거래 템플릿 관련 함수 정의
+// (아래 FinanceTrackerAPI 클래스 내부에 추가)
+
+
+  // (옵션) 자동 실행 내역 조회 (추후 백엔드 구현 시)
+  // async getRecurringExecutionLogs(): Promise<ApiResponse<{ logs: any[] }>> {
+  //   return this.request('/recurring-templates/logs');
+  // }
 // API 기본 URL
 const API_BASE_URL = 'http://localhost:3001/api';
 
@@ -204,6 +218,50 @@ interface Category {
 
 // API 클라이언트 클래스
 class FinanceTrackerAPI {
+
+  // ===================
+  // 나이대/직업군별 카테고리 추천 API
+  // ===================
+  async getRecommendedCategories(ageGroup: string, jobGroup?: string): Promise<ApiResponse<{ recommended_categories: string[] }>> {
+    const params = new URLSearchParams({ age_group: ageGroup, job_group: jobGroup || 'etc' });
+    return this.request(`/categories/recommend?${params.toString()}`);
+  }
+
+  // ===================
+  // 알림/경고 관련 API
+  // ===================
+  async fetchNotifications(): Promise<ApiResponse<{ notifications: Notification[] }>> {
+    return this.request('/notifications');
+  }
+  async markNotificationRead(id: string): Promise<ApiResponse<object>> {
+    return this.request(`/notifications/${id}/read`, { method: 'PATCH' });
+  }
+  async deleteNotification(id: string): Promise<ApiResponse<object>> {
+    return this.request(`/notifications/${id}`, { method: 'DELETE' });
+  }
+  // ===================
+  // 반복 거래 템플릿 관련 API
+  // ===================
+  async getRecurringTemplates(): Promise<ApiResponse<{ templates: RecurringTemplate[] }>> {
+    return this.request('/recurring-templates');
+  }
+  async createRecurringTemplate(templateData: Partial<RecurringTemplate>): Promise<ApiResponse<{ template: RecurringTemplate }>> {
+    return this.request('/recurring-templates', {
+      method: 'POST',
+      body: JSON.stringify(templateData),
+    });
+  }
+  async updateRecurringTemplate(id: string, templateData: Partial<RecurringTemplate>): Promise<ApiResponse<{ template: RecurringTemplate }>> {
+    return this.request(`/recurring-templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(templateData),
+    });
+  }
+  async deleteRecurringTemplate(id: string): Promise<ApiResponse<EmptyResponse>> {
+    return this.request(`/recurring-templates/${id}`, {
+      method: 'DELETE',
+    });
+  }
   private baseURL: string;
 
   constructor(baseURL: string) {
@@ -642,6 +700,13 @@ export const analyticsAPI = {
   getYearlyAnalysis: api.getYearlyAnalysis.bind(api),
   getComparison: api.getComparisonAnalysis.bind(api),
 };
+
+// 반복 거래 템플릿 관련 메서드 export (AppContext 연동용)
+
+export const getRecurringTemplates = api.getRecurringTemplates.bind(api);
+export const createRecurringTemplate = api.createRecurringTemplate.bind(api);
+export const updateRecurringTemplate = api.updateRecurringTemplate.bind(api);
+export const deleteRecurringTemplate = api.deleteRecurringTemplate.bind(api);
 
 // 메인 API 클라이언트 export
 export default api;
