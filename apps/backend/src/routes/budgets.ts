@@ -95,13 +95,14 @@ router.post('/',
   validateBudget,
   asyncHandler(async (req, res) => {
     const userId = req.user!.id;
-    const { category_key, amount, period_start, period_end } = req.body;
+
+    const { category_key, amount, period_type, period_start, period_end } = req.body;
 
     const budget = await BudgetService.createBudget({
       user_id: userId,
       category_key,
       amount,
-      period: 'monthly', // Default period type
+      period_type: period_type || 'monthly', // Default period type
       start_date: new Date(period_start),
       end_date: new Date(period_end)
     });
@@ -121,14 +122,15 @@ router.put('/:id',
   asyncHandler(async (req, res) => {
     const userId = req.user!.id;
     const budgetId = Number(req.params.id);
-    const { amount, period, start_date, end_date, is_active } = req.body;
 
-    const updateData: any = {};
-    if (amount !== undefined) updateData.amount = amount;
-    if (period !== undefined) updateData.period = period;
-    if (start_date !== undefined) updateData.start_date = new Date(start_date);
-    if (end_date !== undefined) updateData.end_date = new Date(end_date);
-    if (is_active !== undefined) updateData.is_active = is_active;
+  const { amount, period_type, start_date, end_date, is_active } = req.body;
+
+  const updateData: any = {};
+  if (amount !== undefined) updateData.amount = amount;
+  if (period_type !== undefined) updateData.period_type = period_type;
+  if (start_date !== undefined) updateData.start_date = new Date(start_date);
+  if (end_date !== undefined) updateData.end_date = new Date(end_date);
+  if (is_active !== undefined) updateData.is_active = is_active;
 
     const budget = await BudgetService.updateBudget(budgetId, userId, updateData);
     res.json(budget);

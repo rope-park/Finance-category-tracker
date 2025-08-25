@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -18,16 +19,42 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   onClose,
   onComplete
 }) => {
-  const { state: { user }, updateUser } = useAuth();
+  const auth = useAuth() as { state?: { user?: User }, updateUser?: (data: Partial<User>) => Promise<void> };
+  const user = auth?.state?.user;
+  const updateUser = auth?.updateUser;
   const { darkMode } = useApp();
   
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone_number || '',
-    ageGroup: user?.age_group || '20대' as const,
+    ageGroup: user?.age_group || '20s',
+    jobGroup: user?.job_group || 'etc',
     bio: user?.bio || ''
   });
+  // 추천 카테고리 상태
+  const [recommendedCategories, setRecommendedCategories] = useState<string[]>([]);
+  const [loadingRecommend, setLoadingRecommend] = useState(false);
+
+  // 나이대/직업군 변경 시 추천 카테고리 fetch
+  useEffect(() => {
+    const fetchRecommend = async () => {
+      setLoadingRecommend(true);
+      try {
+        const res = await api.getRecommendedCategories(formData.ageGroup, formData.jobGroup);
+        if (res.success && res.data) {
+          setRecommendedCategories(res.data.recommended_categories);
+        } else {
+          setRecommendedCategories([]);
+        }
+      } catch {
+        setRecommendedCategories([]);
+      } finally {
+        setLoadingRecommend(false);
+      }
+    };
+    if (formData.ageGroup && formData.jobGroup) fetchRecommend();
+  }, [formData.ageGroup, formData.jobGroup]);
   
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>(user?.profile_picture || '');
@@ -77,10 +104,13 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         profile_completed: true,
         updated_at: new Date().toISOString()
       };
-
-      // AuthContext의 updateUser 함수 호출 (실제 API 호출)
-      await updateUser(updatedUserData);
-      
+      if (updateUser) {
+        await updateUser(updatedUserData);
+        // 성공 메시지
+        alert('프로필이 성공적으로 업데이트되었습니다!');
+      } else {
+        throw new Error('updateUser 함수가 존재하지 않습니다.');
+      }
       // 성공 메시지
       alert('프로필이 성공적으로 업데이트되었습니다!');
       
@@ -156,7 +186,6 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
             placeholder="닉네임을 입력하세요"
             required
           />
-          
           <Input
             label="이메일"
             type="email"
@@ -166,7 +195,6 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
             required
           />
         </div>
-
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <Input
             label="전화번호"
@@ -174,7 +202,6 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
             onChange={(value) => handleInputChange('phone', value)}
             placeholder="010-1234-5678"
           />
-          
           <div>
             <label style={{
               display: 'block',
@@ -199,13 +226,68 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
                 outline: 'none'
               }}
             >
-              <option value="10대">10대</option>
-              <option value="20대">20대</option>
-              <option value="30대">30대</option>
-              <option value="40대">40대</option>
-              <option value="50대">50대</option>
-              <option value="60대 이상">60대 이상</option>
+              <option value="10s">10대</option>
+              <option value="20s">20대</option>
+              <option value="30s">30대</option>
+              <option value="40s">40대</option>
+              <option value="50s">50대</option>
+              <option value="60s+">60대 이상</option>
             </select>
+            <label style={{
+              display: 'block',
+              margin: '8px 0 4px',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: darkMode ? colors.gray[300] : colors.gray[700]
+            }}>
+              직업군
+            </label>
+            <select
+              value={formData.jobGroup || 'etc'}
+              onChange={(e) => handleInputChange('jobGroup', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: `2px solid ${darkMode ? colors.gray[600] : colors.gray[300]}`,
+                borderRadius: borderRadius.lg,
+                background: darkMode ? colors.gray[700] : '#ffffff',
+                color: darkMode ? colors.gray[100] : colors.gray[900],
+                fontSize: '16px',
+                outline: 'none'
+              }}
+            >
+              <option value="student">학생</option>
+              <option value="office">직장인</option>
+              <option value="self_employed">자영업</option>
+              <option value="retired">은퇴/퇴직</option>
+              <option value="etc">기타</option>
+            </select>
+            {/* 추천 카테고리 UI */}
+            <div style={{ marginTop: '8px' }}>
+              <b>추천 카테고리</b>:{' '}
+              {loadingRecommend ? '로딩 중...' : recommendedCategories.length > 0 ? (
+                recommendedCategories.map((cat) => (
+                  <span key={cat} style={{
+                    display: 'inline-block',
+                    background: colors.primary[100],
+                    color: colors.primary[700],
+                    borderRadius: borderRadius.sm,
+                    padding: '2px 8px',
+                    marginRight: '6px',
+                    fontSize: '13px',
+                  }}>{cat}</span>
+                ))
+              ) : '없음'}
+              {recommendedCategories.length > 0 && (
+                <button
+                  type="button"
+                  style={{ marginLeft: 8, fontSize: 13, color: colors.success[600], background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                  onClick={() => alert('추천 카테고리를 예산/카테고리 설정에 바로 적용하는 기능 구현 필요')}
+                >
+                  추천 카테고리 바로 적용
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+export { default as AutomationCenterPage } from './AutomationCenterPage';
 export { DashboardPage } from './DashboardPage';
 export { TransactionsPage } from './TransactionsPage';
 export { BudgetPage } from './BudgetPage';

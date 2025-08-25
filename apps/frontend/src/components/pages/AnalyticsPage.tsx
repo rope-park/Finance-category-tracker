@@ -5,7 +5,7 @@ import {
   Section, 
   Card, 
   Grid, 
-  StatCard,
+  StatsCard,
   ProgressBar
 } from '../ui';
 import { colors } from '../../styles/theme';
@@ -100,22 +100,22 @@ export const AnalyticsPage: React.FC = () => {
 
       {/* 주요 지표 */}
       <Grid columns={4} style={{ marginBottom: '32px' }}>
-        <StatCard
+        <StatsCard
           title="총 수입"
           value={formatCurrency(analytics.totalIncome)}
           icon="💰"
         />
-        <StatCard
+        <StatsCard
           title="총 지출"
           value={formatCurrency(analytics.totalExpenses)}
           icon="💸"
         />
-        <StatCard
+        <StatsCard
           title="순 자산"
           value={formatCurrency(analytics.netAmount)}
           icon="💵"
         />
-        <StatCard
+        <StatsCard
           title="저축률"
           value={`${analytics.savingsRate.toFixed(1)}%`}
           icon="🎯"

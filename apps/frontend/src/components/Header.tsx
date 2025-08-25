@@ -79,7 +79,7 @@ export const Header: React.FC = () => {
             }}>
               가계부
             </h1>
-            <p className="logo-subtitle text-xs readable-text" style={{
+            <p className="text-xs logo-subtitle readable-text" style={{
               margin: 0,
               color: darkMode ? colors.gray[400] : colors.gray[600]
             }}>

@@ -1,10 +1,11 @@
 import React, { createContext, useReducer, useEffect } from 'react';
-import type { Transaction, CategoryBudget, Notification, TransactionCategory } from '../types';
+import type { Transaction, CategoryBudget, Notification, TransactionCategory, RecurringTemplate } from '../types';
 import { getBudgetStatus } from '../utils';
 
 interface AppState {
   transactions: Transaction[];
   budgets: CategoryBudget[];
+  recurringTemplates: RecurringTemplate[];
   notifications: Notification[];
   loading: boolean;
   error: string | null;
@@ -22,11 +23,18 @@ type AppAction =
   | { type: 'SET_BUDGETS'; payload: CategoryBudget[] }
   | { type: 'UPDATE_BUDGET'; payload: CategoryBudget }
   | { type: 'DELETE_BUDGET'; payload: TransactionCategory }
+  | { type: 'SET_NOTIFICATIONS'; payload: Notification[] }
   | { type: 'ADD_NOTIFICATION'; payload: Notification }
   | { type: 'MARK_NOTIFICATION_READ'; payload: string }
+  | { type: 'DELETE_NOTIFICATION'; payload: string }
   | { type: 'TOGGLE_DARK_MODE' }
   | { type: 'TOGGLE_NOTIFICATIONS' }
-  | { type: 'LOAD_FROM_STORAGE'; payload: Partial<AppState> };
+  | { type: 'LOAD_FROM_STORAGE'; payload: Partial<AppState> }
+  // 반복 거래 템플릿 관련
+  | { type: 'SET_RECURRING_TEMPLATES'; payload: RecurringTemplate[] }
+  | { type: 'ADD_RECURRING_TEMPLATE'; payload: RecurringTemplate }
+  | { type: 'UPDATE_RECURRING_TEMPLATE'; payload: RecurringTemplate }
+  | { type: 'DELETE_RECURRING_TEMPLATE'; payload: string };
 
 // localStorage에서 설정을 읽어오는 함수
 const loadSettingsFromStorage = (): Partial<AppState> => {
@@ -59,6 +67,7 @@ const saveSettingsToStorage = (state: AppState) => {
 const initialState: AppState = {
   transactions: [],
   budgets: [],
+  recurringTemplates: [],
   notifications: [],
   loading: false,
   error: null,
@@ -68,6 +77,21 @@ const initialState: AppState = {
 
 const appReducer = (state: AppState, action: AppAction): AppState => {
   switch (action.type) {
+    // 반복 거래 템플릿 관련
+    case 'SET_RECURRING_TEMPLATES':
+      return { ...state, recurringTemplates: action.payload };
+    case 'ADD_RECURRING_TEMPLATE':
+      return { ...state, recurringTemplates: [...state.recurringTemplates, action.payload] };
+    case 'UPDATE_RECURRING_TEMPLATE':
+      return {
+        ...state,
+        recurringTemplates: state.recurringTemplates.map(t => t.id === action.payload.id ? action.payload : t)
+      };
+    case 'DELETE_RECURRING_TEMPLATE':
+      return {
+        ...state,
+        recurringTemplates: state.recurringTemplates.filter(t => t.id !== action.payload)
+      };
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
     case 'SET_ERROR':
@@ -128,14 +152,21 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
       saveSettingsToStorage(newState);
       return newState;
     }
+    case 'SET_NOTIFICATIONS':
+      return { ...state, notifications: action.payload };
     case 'ADD_NOTIFICATION':
       return { ...state, notifications: [...state.notifications, action.payload] };
     case 'MARK_NOTIFICATION_READ':
       return {
         ...state,
         notifications: state.notifications.map(notification =>
-          notification.id === action.payload ? { ...notification, read: true } : notification
+          notification.id === action.payload ? { ...notification, is_read: true } : notification
         ),
+      };
+    case 'DELETE_NOTIFICATION':
+      return {
+        ...state,
+        notifications: state.notifications.filter(notification => notification.id !== action.payload),
       };
     case 'TOGGLE_DARK_MODE': {
       const newState = { ...state, darkMode: !state.darkMode };
@@ -165,9 +196,15 @@ interface AppContextType {
   checkBudgetAlert: (category: TransactionCategory, amount: number) => void;
   toggleDarkMode: () => void;
   toggleNotifications: () => void;
+  // 반복 거래 템플릿 관련
+  fetchRecurringTemplates: () => Promise<void>;
+  addRecurringTemplate: (templateData: Partial<RecurringTemplate>) => Promise<void>;
+  updateRecurringTemplate: (id: string, templateData: Partial<RecurringTemplate>) => Promise<void>;
+  deleteRecurringTemplate: (id: string) => Promise<void>;
   // 편의 속성들 추가
   transactions: Transaction[];
   budgets: CategoryBudget[];
+  recurringTemplates: RecurringTemplate[];
   notifications: Notification[];
   loading: boolean;
   error: string | null;
@@ -179,8 +216,67 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export { AppContext };
 
+
+import * as api from '../services/api';
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  // 반복 거래 템플릿 API 연동
+  const fetchRecurringTemplates = async () => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const res = await api.getRecurringTemplates();
+      if (res.success && res.data) {
+        dispatch({ type: 'SET_RECURRING_TEMPLATES', payload: res.data.templates });
+      }
+    } catch {
+      dispatch({ type: 'SET_ERROR', payload: '반복 거래 템플릿 목록 불러오기 실패' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const addRecurringTemplate = async (templateData: Partial<RecurringTemplate>) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const res = await api.createRecurringTemplate(templateData);
+      if (res.success && res.data) {
+        dispatch({ type: 'ADD_RECURRING_TEMPLATE', payload: res.data.template });
+      }
+    } catch {
+      dispatch({ type: 'SET_ERROR', payload: '반복 거래 템플릿 추가 실패' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const updateRecurringTemplate = async (id: string, templateData: Partial<RecurringTemplate>) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const res = await api.updateRecurringTemplate(id, templateData);
+      if (res.success && res.data) {
+        dispatch({ type: 'UPDATE_RECURRING_TEMPLATE', payload: res.data.template });
+      }
+    } catch {
+      dispatch({ type: 'SET_ERROR', payload: '반복 거래 템플릿 수정 실패' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const deleteRecurringTemplate = async (id: string) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const res = await api.deleteRecurringTemplate(id);
+      if (res.success) {
+        dispatch({ type: 'DELETE_RECURRING_TEMPLATE', payload: id });
+      }
+    } catch {
+      dispatch({ type: 'SET_ERROR', payload: '반복 거래 템플릿 삭제 실패' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
 
   // 초기 로드 시 localStorage에서 설정 불러오기
   useEffect(() => {
@@ -305,9 +401,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         checkBudgetAlert,
         toggleDarkMode,
         toggleNotifications,
+        // 반복 거래 템플릿 관련
+        fetchRecurringTemplates,
+        addRecurringTemplate,
+        updateRecurringTemplate,
+        deleteRecurringTemplate,
         // 편의 속성들 추가
         transactions: state.transactions,
         budgets: state.budgets,
+        recurringTemplates: state.recurringTemplates,
         notifications: state.notifications,
         loading: state.loading,
         error: state.error,

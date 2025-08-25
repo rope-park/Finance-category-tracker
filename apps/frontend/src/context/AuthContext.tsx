@@ -97,7 +97,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       authAPI.getCurrentUser()
         .then((response) => {
           if (response.success && response.data?.user) {
-            dispatch({ type: 'AUTH_SUCCESS', payload: { user: response.data.user, token } });
+            // 서버 응답 user 객체를 User 타입에 맞게 변환
+            const user: User = {
+              ...response.data.user,
+              profile_picture: response.data.user.profile_picture ?? undefined,
+              phone_number: response.data.user.phone_number ?? undefined,
+              age_group: response.data.user.age_group ?? undefined,
+            };
+            dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
           } else {
             throw new Error(response.error || response.message || '자동 로그인 실패');
           }
@@ -129,7 +136,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // if (formData.rememberMe && response.data.refreshToken) {
   //   localStorage.setItem('refresh_token', response.data.refreshToken);
   // }
-        dispatch({ type: 'AUTH_SUCCESS', payload: { user: response.data.user, token: response.data.token } });
+        const user: User = {
+          ...response.data.user,
+          profile_picture: response.data.user.profile_picture ?? undefined,
+          phone_number: response.data.user.phone_number ?? undefined,
+          age_group: response.data.user.age_group ?? undefined,
+        };
+        dispatch({ type: 'AUTH_SUCCESS', payload: { user, token: response.data.token } });
       } else {
         throw new Error(response.error || response.message || '로그인에 실패했습니다.');
       }
@@ -159,7 +172,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('user_data', JSON.stringify(response.data.user));
         const userKey = `user_data_${response.data.user.id}`;
         localStorage.setItem(userKey, JSON.stringify(response.data.user));
-        dispatch({ type: 'AUTH_SUCCESS', payload: { user: response.data.user, token: response.data.token } });
+        const user: User = {
+          ...response.data.user,
+          profile_picture: response.data.user.profile_picture ?? undefined,
+          phone_number: response.data.user.phone_number ?? undefined,
+          age_group: response.data.user.age_group ?? undefined,
+        };
+        dispatch({ type: 'AUTH_SUCCESS', payload: { user, token: response.data.token } });
       } else {
         throw new Error(response.error || response.message || '회원가입에 실패했습니다.');
       }
@@ -215,11 +234,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         bio: userData.bio
       });
       if (response.success && response.data?.user) {
-        dispatch({ type: 'UPDATE_USER', payload: response.data.user });
-        const userKey = `user_data_${response.data.user.id}`;
-        localStorage.setItem('user_data', JSON.stringify(response.data.user));
-        localStorage.setItem(userKey, JSON.stringify(response.data.user));
-        return response.data.user;
+        const user: User = {
+          ...response.data.user,
+          profile_picture: response.data.user.profile_picture ?? undefined,
+          phone_number: response.data.user.phone_number ?? undefined,
+          age_group: response.data.user.age_group ?? undefined,
+        };
+        dispatch({ type: 'UPDATE_USER', payload: user });
+        const userKey = `user_data_${user.id}`;
+        localStorage.setItem('user_data', JSON.stringify(user));
+        localStorage.setItem(userKey, JSON.stringify(user));
+        return user;
       } else {
         throw new Error(response.error || response.message || '프로필 업데이트 실패');
       }

@@ -3,9 +3,33 @@ import { authenticateToken } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimiter';
 import { validateTransaction } from '../middleware/security';
 import { asyncHandler } from '../middleware/errorHandler';
+
+import { CategoryAutoService } from '../services/categoryAutoService';
 import { TransactionService } from '../services/transactionService';
 
 const router = express.Router();
+
+// 자동 카테고리 분류 기반 거래 생성
+router.post('/auto-category',
+  apiLimiter,
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    const userId = req.user!.id;
+    const { transaction_type, amount, description, merchant, transaction_date } = req.body;
+    // category_key 없이 description/merchant만 받아 자동 분류
+    const transaction = await CategoryAutoService.createWithAutoCategory({
+      user_id: userId,
+      transaction_type,
+      amount,
+      description,
+      transaction_date: new Date(transaction_date)
+    });
+    res.status(201).json({
+      success: true,
+      data: transaction
+    });
+  })
+);
 
 // 모든 거래 내역 조회
 router.get('/', 
@@ -24,10 +48,10 @@ router.get('/',
     } = req.query;
 
     const filters = {
-      type: type as 'income' | 'expense' | undefined,
-      category: category as string | undefined,
-      startDate: startDate ? new Date(startDate as string) : undefined,
-      endDate: endDate ? new Date(endDate as string) : undefined,
+      transaction_type: type as 'income' | 'expense' | undefined,
+      category_key: category as string | undefined,
+      start_date: startDate ? new Date(startDate as string) : undefined,
+      end_date: endDate ? new Date(endDate as string) : undefined,
       search: search as string | undefined,
       page: Number(page),
       limit: Number(limit)
@@ -37,7 +61,7 @@ router.get('/',
     res.json({
       success: true,
       data: result.transactions,
-      pagination: result.pagination
+      total: result.total
     });
   })
 );
@@ -66,12 +90,12 @@ router.get('/categories/top',
   authenticateToken,
   asyncHandler(async (req, res) => {
     const userId = req.user!.id;
-    const { limit = 10, type } = req.query;
+    const { limit = 10 } = req.query;
 
     const topCategories = await TransactionService.getTopCategories(
       userId,
-      Number(limit),
-      type as 'income' | 'expense' | undefined
+      undefined,
+      undefined
     );
 
     res.json(topCategories);
@@ -106,7 +130,6 @@ router.post('/',
       transaction_type,
       amount,
       description,
-      merchant,
       transaction_date: new Date(transaction_date)
     });
 

@@ -13,7 +13,8 @@ import {
   BudgetPage, 
   AnalyticsPage, 
   CategoriesPage, 
-  SettingsPage 
+  SettingsPage, 
+  AutomationCenterPage 
 } from './components/pages';
 import { Tooltip, ErrorBoundary, PageErrorBoundary, ModalErrorBoundary } from './components/ui';
 import { colors, shadows, borderRadius } from './styles/theme';
@@ -22,7 +23,9 @@ import { colors, shadows, borderRadius } from './styles/theme';
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const { darkMode } = useApp();
-  const { state: { user, isAuthenticated } } = useAuth();
+  const { state } = useAuth();
+  const user = state.user;
+  const isAuthenticated = state.isAuthenticated;
   
   // 프로필 완성 여부 상태
   const [showProfileRequired, setShowProfileRequired] = useState(false);
@@ -123,6 +126,7 @@ const AppContent: React.FC = () => {
     { id: 'budget', label: '예산', icon: '🎯', color: colors.warning[500] },
     { id: 'analytics', label: '분석', icon: '📈', color: colors.primary[600] },
     { id: 'categories', label: '카테고리', icon: '🏷️', color: colors.success[600] },
+  { id: 'automation', label: '자동화', icon: '🤖', color: '#4F8EF7' },
     { id: 'settings', label: '설정', icon: '⚙️', color: colors.gray[500] }
   ];
 
@@ -268,6 +272,11 @@ const AppContent: React.FC = () => {
           {activeTab === 'categories' && (
             <PageErrorBoundary>
               <CategoriesPage />
+            </PageErrorBoundary>
+          )}
+          {activeTab === 'automation' && (
+            <PageErrorBoundary>
+              <AutomationCenterPage />
             </PageErrorBoundary>
           )}
           {activeTab === 'settings' && (

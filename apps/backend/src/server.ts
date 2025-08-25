@@ -20,13 +20,19 @@ import {
 
 // 라우트 import
 import authRoutes from './routes/auth';
-import userRoutes from './routes/users';
+import userRoutes from './models/User';
 import transactionRoutes from './routes/transactions';
 import budgetRoutes from './routes/budgets';
+
 import categoryRoutes from './routes/categories';
+import categoryRecommendRoutes from './routes/categoryRecommend';
+
+
 
 import analyticsRoutes from './routes/analytics';
 import predictionRoutes from './routes/prediction';
+import recurringTemplateRoutes from './routes/recurringTemplates';
+import notificationRoutes from './routes/notifications';
 
 dotenv.config();
 
@@ -147,7 +153,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/budgets', budgetRoutes);
+
 app.use('/api/categories', categoryRoutes);
+app.use('/api/categories', categoryRecommendRoutes);
+
+app.use('/api/recurring-templates', recurringTemplateRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
 // 404 핸들러

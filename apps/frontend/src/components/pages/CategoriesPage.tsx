@@ -8,7 +8,7 @@ import {
   Card, 
   Grid, 
   Button, 
-  StatCard,
+  StatsCard,
   Tooltip
 } from '../ui';
 import { colors } from '../../styles/theme';
@@ -142,21 +142,21 @@ export const CategoriesPage: React.FC = () => {
       {/* 전체 요약 */}
       <Grid columns={3} style={{ marginBottom: '32px' }}>
         <Tooltip text="선택한 기간 동안의 총 수입입니다" position="top">
-          <StatCard
+          <StatsCard
             title="총 수입"
             value={formatCurrency(totalIncome)}
             icon="📈"
           />
         </Tooltip>
         <Tooltip text="선택한 기간 동안의 총 지출입니다" position="top">
-          <StatCard
+          <StatsCard
             title="총 지출"
             value={formatCurrency(totalExpense)}
             icon="📉"
           />
         </Tooltip>
         <Tooltip text="수입에서 지출을 뺀 순 수지입니다" position="top">
-          <StatCard
+          <StatsCard
             title="순 수지"
             value={formatCurrency(totalIncome - totalExpense)}
             icon="💰"

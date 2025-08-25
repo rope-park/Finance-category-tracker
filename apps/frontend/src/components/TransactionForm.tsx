@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import type { Transaction } from '@finance-tracker/shared'
 
 interface TransactionFormProps {
@@ -17,6 +17,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     transaction_type: initialData.transaction_type || 'expense' as const,
     transaction_date: initialData.transaction_date || new Date().toISOString().split('T')[0]
   })
+  const [recommendedCategory, setRecommendedCategory] = useState<string | null>(null);
+  const [recommendConfidence, setRecommendConfidence] = useState<number | null>(null);
+  const recommendTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -84,13 +87,41 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     }
   }
 
-  const handleChange = (field: string, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    
-    // 에러 초기화
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
-    }
+    // description 입력 시 실시간 카테고리 추천
+  const handleChange = (key: string, value: string | number) => {
+      setFormData((prev) => ({ ...prev, [key]: value }))
+      if (key === 'description') {
+        if (recommendTimeout.current) clearTimeout(recommendTimeout.current);
+        // debounce 400ms
+        recommendTimeout.current = setTimeout(async () => {
+          if (typeof value === 'string' && value.trim().length > 1) {
+            try {
+              // 백엔드 자동 분류 API 호출
+              const res = await fetch('http://localhost:3001/api/transactions/auto-category-predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}` },
+                body: JSON.stringify({ description: value })
+              });
+              const data = await res.json();
+              if (data.success && data.data && data.data.category) {
+                setRecommendedCategory(data.data.category);
+                setRecommendConfidence(data.data.confidence);
+                // 자동 선택 UX: select 값도 추천값으로 변경
+                setFormData((prev) => ({ ...prev, category_key: data.data.category }));
+              } else {
+                setRecommendedCategory(null);
+                setRecommendConfidence(null);
+              }
+            } catch {
+              setRecommendedCategory(null);
+              setRecommendConfidence(null);
+            }
+          } else {
+            setRecommendedCategory(null);
+            setRecommendConfidence(null);
+          }
+        }, 400);
+      }
   }
 
   return (
@@ -104,7 +135,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           id="amount"
           value={formData.amount}
           onChange={(e) => handleChange('amount', Number(e.target.value))}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
         {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
       </div>
@@ -118,8 +149,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           id="description"
           value={formData.description}
           onChange={(e) => handleChange('description', e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
+          {recommendedCategory && (
+            <div className="mt-1 text-xs text-blue-600">
+              추천 카테고리: <b>{recommendedCategory}</b>
+              {recommendConfidence !== null && ` (신뢰도: ${Math.round(recommendConfidence * 100)}%)`}
+            </div>
+          )}
         {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
       </div>
 
@@ -131,7 +168,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           id="category_key"
           value={formData.category_key}
           onChange={(e) => handleChange('category_key', e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         >
           <option value="food">식비</option>
           <option value="transport">교통비</option>
@@ -149,7 +186,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           id="transaction_type"
           value={formData.transaction_type}
           onChange={(e) => handleChange('transaction_type', e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         >
           <option value="expense">지출</option>
           <option value="income">수입</option>
@@ -165,18 +202,18 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           id="transaction_date"
           value={formData.transaction_date}
           onChange={(e) => handleChange('transaction_date', e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
       </div>
 
       {submitError && (
-        <div className="text-red-600 text-sm">{submitError}</div>
+        <div className="text-sm text-red-600">{submitError}</div>
       )}
 
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+        className="flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
       >
         {isSubmitting ? '저장 중...' : '저장'}
       </button>
