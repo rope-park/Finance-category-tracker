@@ -49,13 +49,14 @@ describe('Integration Tests - Transaction Flow', () => {
       } else {
         // DB 연결 실패시 스킵
         console.warn('Skipping test due to DB connection failure');
-        pending('Database connection failed');
+        test.skip('Database connection failed', () => {});
+        return;
       }
     });
 
     it('should login with correct credentials', async () => {
       if (!authToken) {
-        pending('No auth token available');
+        test.skip('No auth token available', () => {});
         return;
       }
 
@@ -81,7 +82,7 @@ describe('Integration Tests - Transaction Flow', () => {
   describe('Transaction Management', () => {
     it('should create a new transaction', async () => {
       if (!authToken) {
-        pending('No auth token available');
+        test.skip('No auth token available', () => {});
         return;
       }
 
@@ -104,13 +105,13 @@ describe('Integration Tests - Transaction Flow', () => {
         expect(response.body.data.amount).toBe(transactionData.amount.toString() + '.00');
       } else {
         console.warn('Transaction creation skipped due to DB issues');
-        pending('Database connection failed');
+        test.skip('Database connection failed', () => {});
       }
     });
 
     it('should get user transactions', async () => {
       if (!authToken) {
-        pending('No auth token available');
+        test.skip('No auth token available', () => {});
         return;
       }
 
@@ -124,7 +125,7 @@ describe('Integration Tests - Transaction Flow', () => {
         expect(Array.isArray(response.body.data)).toBe(true);
       } else {
         console.warn('Transaction fetch skipped due to DB issues');
-        pending('Database connection failed');
+        test.skip('Database connection failed', () => {});
       }
     });
   });
@@ -132,7 +133,7 @@ describe('Integration Tests - Transaction Flow', () => {
   describe('Budget Management', () => {
     it('should create a budget', async () => {
       if (!authToken) {
-        pending('No auth token available');
+        test.skip('No auth token available', () => {});
         return;
       }
 
@@ -161,7 +162,7 @@ describe('Integration Tests - Transaction Flow', () => {
   describe('Analytics', () => {
     it('should get dashboard data', async () => {
       if (!authToken) {
-        pending('No auth token available');
+        test.skip('No auth token available', () => {});
         return;
       }
 

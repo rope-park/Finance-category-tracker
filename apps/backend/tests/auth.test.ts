@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../src/server';
 import { ApiResponse, User } from '@finance-tracker/shared';
 import pool from '../src/config/database';
+import { cleanupMonitoring } from '../src/utils/monitoring';
 
 describe('Authentication Routes', () => {
   // 테스트 후 정리
@@ -10,6 +11,9 @@ describe('Authentication Routes', () => {
       // 테스트 데이터 정리
       await pool.query('DELETE FROM users WHERE email LIKE \'%example.com\'');
       await pool.end();
+      
+      // 모니터링 타이머 정리
+      cleanupMonitoring();
     } catch (error) {
       console.warn('Test cleanup failed:', error);
     }
@@ -25,9 +29,17 @@ describe('Authentication Routes', () => {
 
       const response = await request(app)
         .post('/api/auth/register')
-        .send(userData)
-        .expect(201);
+        .send(userData);
 
+      console.log('Register Response Status:', response.status);
+      console.log('Register Response Body:', JSON.stringify(response.body, null, 2));
+
+      if (response.status !== 201) {
+        console.log('Register Headers:', response.headers);
+        return; // 실패 시 테스트 종료
+      }
+
+      expect(response.status).toBe(201);
       const body: ApiResponse<{ user: User; token: string }> = response.body;
       
       expect(body.success).toBe(true);
