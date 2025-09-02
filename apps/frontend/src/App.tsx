@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { useApp } from './hooks/useApp';
@@ -19,13 +19,25 @@ import {
 import { Tooltip, ErrorBoundary, PageErrorBoundary, ModalErrorBoundary } from './components/ui';
 import { colors, shadows, borderRadius } from './styles/theme';
 
+// 탭 구성 타입
+interface TabConfig {
+  id: string;
+  label: string;
+  icon: string;
+  color: string;
+}
+
 // 앱 콘텐츠 컴포넌트 (Context 내부에서 사용)
-const AppContent: React.FC = () => {
+const AppContent: React.FC = React.memo(() => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const { darkMode } = useApp();
   const { state } = useAuth();
-  const user = state.user;
-  const isAuthenticated = state.isAuthenticated;
+  
+  // 사용자 정보 메모이제이션
+  const { user, isAuthenticated } = useMemo(() => ({
+    user: state.user,
+    isAuthenticated: state.isAuthenticated
+  }), [state.user, state.isAuthenticated]);
   
   // 프로필 완성 여부 상태
   const [showProfileRequired, setShowProfileRequired] = useState(false);
@@ -94,48 +106,52 @@ const AppContent: React.FC = () => {
   }, [isAuthenticated]);
 
   // 탭 변경 시 프로필 미완성 체크
-  const handleTabChange = (tabId: string) => {
-  if (isAuthenticated && user && !user.profile_completed) {
+  const handleTabChange = useCallback((tabId: string) => {
+    if (isAuthenticated && user && !user.profile_completed) {
       setShowProfileRequired(true);
       return;
     }
     setActiveTab(tabId);
-  };
+  }, [isAuthenticated, user]);
 
-  const handleContinueToProfile = () => {
+  const handleContinueToProfile = useCallback(() => {
     setShowProfileRequired(false);
     setShowProfileSettings(true);
-  };
+  }, []);
 
-  const handleRedirectToProfile = () => {
+  const handleRedirectToProfile = useCallback(() => {
     setShowProfileRedirect(false);
     setShowProfileSettings(true);
-  };
+  }, []);
 
-  const handleProfileComplete = () => {
+  const handleProfileComplete = useCallback(() => {
     setShowProfileSettings(false);
     setShowProfileRequired(false);
     setShowProfileRedirect(false);
     // 프로필 완료 후 대시보드로 이동
     setActiveTab('dashboard');
-  };
+  }, []);
 
-  const tabs = [
+  // 탭 구성 메모이제이션
+  const tabs: TabConfig[] = useMemo(() => [
     { id: 'dashboard', label: '대시보드', icon: '📊', color: colors.primary[500] },
     { id: 'transactions', label: '거래내역', icon: '💳', color: colors.success[500] },
     { id: 'budget', label: '예산', icon: '🎯', color: colors.warning[500] },
     { id: 'analytics', label: '분석', icon: '📈', color: colors.primary[600] },
     { id: 'categories', label: '카테고리', icon: '🏷️', color: colors.success[600] },
-  { id: 'automation', label: '자동화', icon: '🤖', color: '#4F8EF7' },
+    { id: 'automation', label: '자동화', icon: '🤖', color: '#4F8EF7' },
     { id: 'settings', label: '설정', icon: '⚙️', color: colors.gray[500] }
-  ];
+  ], []);
+
+  // 컨테이너 스타일 메모이제이션
+  const containerStyle = useMemo(() => ({
+    minHeight: '100vh',
+    backgroundColor: darkMode ? colors.dark[900] : colors.gray[50],
+    fontFamily: "'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+  }), [darkMode]);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: darkMode ? colors.dark[900] : colors.gray[50],
-      fontFamily: "'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-    }}>
+    <div style={containerStyle}>
       {/* 헤더 */}
       <Header />
       
@@ -360,7 +376,7 @@ const AppContent: React.FC = () => {
       `}</style>
     </div>
   );
-};
+});
 
 // 메인 앱 컴포넌트
 const App: React.FC = () => {
