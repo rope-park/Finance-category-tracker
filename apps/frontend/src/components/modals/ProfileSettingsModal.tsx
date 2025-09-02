@@ -43,7 +43,9 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       try {
         const res = await api.getRecommendedCategories(formData.ageGroup, formData.jobGroup);
         if (res.success && res.data) {
-          setRecommendedCategories(res.data.recommended_categories);
+          // API 응답이 직접 배열이거나 recommended_categories 속성을 가질 수 있음
+          const categories = Array.isArray(res.data) ? res.data : res.data.recommended_categories;
+          setRecommendedCategories(categories || []);
         } else {
           setRecommendedCategories([]);
         }
@@ -265,7 +267,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
             {/* 추천 카테고리 UI */}
             <div style={{ marginTop: '8px' }}>
               <b>추천 카테고리</b>:{' '}
-              {loadingRecommend ? '로딩 중...' : recommendedCategories.length > 0 ? (
+              {loadingRecommend ? '로딩 중...' : recommendedCategories && recommendedCategories.length > 0 ? (
                 recommendedCategories.map((cat) => (
                   <span key={cat} style={{
                     display: 'inline-block',

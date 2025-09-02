@@ -12,10 +12,13 @@ const AutomationCenterPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editTemplate, setEditTemplate] = useState<RecurringTemplate | null>(null);
 
-  // 최초 진입 시 템플릿 목록 불러오기
+  // 최초 마운트 1회만 fetch (rate limit 방지)
   useEffect(() => {
-    if (context) context.fetchRecurringTemplates();
-  }, [context]);
+    if (!context) return;
+    if (context.recurringTemplates.length > 0) return;
+    context.fetchRecurringTemplates();
+    // eslint-disable-next-line
+  }, []);
 
   if (!context) return null;
   const { recurringTemplates, loading, addRecurringTemplate, updateRecurringTemplate, deleteRecurringTemplate } = context;

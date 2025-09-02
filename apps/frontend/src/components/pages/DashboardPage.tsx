@@ -117,7 +117,7 @@ export const DashboardPage: React.FC = () => {
       <GoalTracker />
 
       {/* 주요 지표 */}
-      <Grid columns={4} style={{ marginBottom: '32px' }}>
+  <Grid columns={4} style={{ marginBottom: '32px' }} breakpoints={{ mobile: 1, tablet: 2, desktop: 4 }}>
         <StatsCard
           title="총 잔액"
           value={formatCurrency(totalBalance)}
