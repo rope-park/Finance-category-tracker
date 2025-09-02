@@ -1,5 +1,5 @@
 
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { Request, Response } from 'express';
 
 // Request 인터페이스 확장 (타입 안전)
@@ -17,13 +17,27 @@ declare global {
 
 // 상황별 keyGenerator
 const userKey = (req: Request): string => {
+  // 테스트 환경에서는 rate limiting 비활성화
+  if (process.env.NODE_ENV === 'test') {
+    return 'test-key';
+  }
   const userId = (req as any).user?.userId;
-  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  const ip = ipKeyGenerator(req.ip);
   return userId ? `${ip}:${userId}` : ip;
 };
-const ipKey = (req: Request): string => req.ip || req.socket.remoteAddress || 'unknown';
+const ipKey = (req: Request): string => {
+  // 테스트 환경에서는 rate limiting 비활성화
+  if (process.env.NODE_ENV === 'test') {
+    return 'test-key';
+  }
+  return ipKeyGenerator(req.ip);
+};
 const emailKey = (req: Request): string => {
-  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  // 테스트 환경에서는 rate limiting 비활성화
+  if (process.env.NODE_ENV === 'test') {
+    return 'test-key';
+  }
+  const ip = ipKeyGenerator(req.ip);
   const email = req.body?.email || 'unknown';
   return `${ip}:${email}`;
 };

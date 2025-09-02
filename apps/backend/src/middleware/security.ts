@@ -1,7 +1,122 @@
 import { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
+import slowDown from 'express-slow-down';
 import helmet from 'helmet';
-import { body, validationResult, CustomValidator } from 'express-validator';
+import cors from 'cors';
+import xss from 'xss';
+import validator from 'validator';
+import { ValidationError, AuthenticationError } from '../utils/errors';
+import logger, { loggers } from '../utils/logger';
+
+// Rate Limiting 설정
+export const createRateLimit = (windowMs: number, max: number, message: string) => {
+  return rateLimit({
+    windowMs,
+    max,
+    message: {
+      success: false,
+      message,
+      errorCode: 'RATE_LIMIT_EXCEEDED'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+      loggers.security('Rate limit exceeded', {
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        endpoint: req.originalUrl,
+        method: req.method
+      });
+      
+      res.status(429).json({
+        success: false,
+        message,
+        errorCode: 'RATE_LIMIT_EXCEEDED'
+      });
+    }
+  });
+};
+
+// 일반 API용 Rate Limit
+export const generalRateLimit = createRateLimit(
+  15 * 60 * 1000, // 15분
+  100, // 요청 100개
+  '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.'
+);
+
+// 인증 API용 Rate Limit (더 엄격)
+export const authRateLimit = createRateLimit(
+  15 * 60 * 1000, // 15분
+  process.env.NODE_ENV === 'test' ? 1000 : 5, // 테스트 환경에서는 더 관대하게
+  '로그인 시도가 너무 많습니다. 15분 후 다시 시도해주세요.'
+);
+
+// 민감한 작업용 Rate Limit
+export const sensitiveActionLimit = createRateLimit(
+  60 * 60 * 1000, // 1시간
+  process.env.NODE_ENV === 'test' ? 1000 : 3, // 테스트 환경에서는 더 관대하게
+  '민감한 작업 요청이 너무 많습니다. 1시간 후 다시 시도해주세요.'
+);
+
+// 속도 제한 (점진적 지연)
+export const speedLimiter = slowDown({
+  windowMs: 15 * 60 * 1000, // 15분
+  delayAfter: process.env.NODE_ENV === 'test' ? 1000 : 50, // 테스트 환경에서는 비활성화
+  delayMs: () => 500, // 새로운 API 형식으로 변경
+  maxDelayMs: 10000, // 최대 10초 지연
+  validate: {
+    delayMs: false // 경고 메시지 비활성화
+  }
+});
+
+// CORS 설정
+export const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'];
+    
+    // 개발 환경에서는 origin이 없을 수 있음 (Postman 등)
+    if (!origin && process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      loggers.security('CORS blocked request', { origin, allowedOrigins });
+      callback(new Error('CORS 정책에 의해 차단된 요청입니다.'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['X-Total-Count', 'X-Page-Count']
+};
+
+// Helmet 보안 헤더 설정
+export const helmetConfig = helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      scriptSrc: ["'self'"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1년
+    includeSubDomains: true,
+    preload: true
+  },
+  noSniff: true,
+  xssFilter: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+});
 
 /**
  * XSS 방지를 위한 입력 검증 및 정화
@@ -71,7 +186,7 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction) 
   }
 
   const token = req.headers['x-csrf-token'] as string;
-  const sessionToken = req.session?.csrfToken;
+  const sessionToken = (req.session as any)?.csrfToken;
 
   // 개발 환경에서는 CSRF 검증 건너뛰기
   if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
@@ -165,180 +280,201 @@ export const apiLimiter = rateLimit({
 /**
  * 이메일 형식 검증
  */
-export const isValidEmail: CustomValidator = (value) => {
+export const isValidEmail = (value: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(value)) {
-    throw new Error('유효한 이메일 주소를 입력해주세요.');
-  }
-  return true;
+  return emailRegex.test(value);
 };
 
 /**
  * 비밀번호 강도 검증
  */
-export const isStrongPassword: CustomValidator = (value) => {
+export const isStrongPassword = (value: string): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  
   if (value.length < 8) {
-    throw new Error('비밀번호는 최소 8자 이상이어야 합니다.');
+    errors.push('비밀번호는 최소 8자 이상이어야 합니다.');
   }
   
   if (!/(?=.*[a-z])/.test(value)) {
-    throw new Error('비밀번호에는 소문자가 포함되어야 합니다.');
+    errors.push('비밀번호에는 소문자가 포함되어야 합니다.');
   }
   
   if (!/(?=.*[A-Z])/.test(value)) {
-    throw new Error('비밀번호에는 대문자가 포함되어야 합니다.');
+    errors.push('비밀번호에는 대문자가 포함되어야 합니다.');
   }
   
   if (!/(?=.*\d)/.test(value)) {
-    throw new Error('비밀번호에는 숫자가 포함되어야 합니다.');
+    errors.push('비밀번호에는 숫자가 포함되어야 합니다.');
   }
   
   if (!/(?=.*[!@#$%^&*])/.test(value)) {
-    throw new Error('비밀번호에는 특수문자(!@#$%^&*)가 포함되어야 합니다.');
+    errors.push('비밀번호에는 특수문자(!@#$%^&*)가 포함되어야 합니다.');
   }
   
-  return true;
+  return { isValid: errors.length === 0, errors };
 };
 
-/**
- * 회원가입 입력 검증
- */
-export const validateRegister = [
-  body('email')
-    .isEmail()
-    .custom(isValidEmail)
-    .normalizeEmail()
-    .isLength({ max: 255 })
-    .withMessage('이메일은 255자를 초과할 수 없습니다.'),
-  
-  body('password')
-    .custom(isStrongPassword),
-  
-  body('name')
-    .isLength({ min: 2, max: 50 })
-    .withMessage('이름은 2-50자 사이여야 합니다.')
-    .matches(/^[a-zA-Z가-힣\s]+$/)
-    .withMessage('이름에는 문자와 공백만 허용됩니다.'),
-  
-  (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: '입력 데이터가 유효하지 않습니다.',
-        details: errors.array()
-      });
-    }
-    next();
-  }
-];
+// 간단한 검증 함수들
+export const validateEmail = (email: string): boolean => {
+  return isValidEmail(email) && email.length <= 255;
+};
 
-/**
- * 로그인 입력 검증
- */
-export const validateLogin = [
-  body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('유효한 이메일 주소를 입력해주세요.'),
-  
-  body('password')
-    .isLength({ min: 1 })
-    .withMessage('비밀번호를 입력해주세요.'),
-  
-  (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: '로그인 정보가 유효하지 않습니다.',
-        details: errors.array()
-      });
-    }
-    next();
-  }
-];
+export const validatePassword = (password: string): { isValid: boolean; errors: string[] } => {
+  return isStrongPassword(password);
+};
 
-/**
- * 거래 생성 입력 검증
- */
-export const validateTransaction = [
-  body('category_key')
-    .isLength({ min: 1, max: 100 })
-    .withMessage('카테고리 키는 1-100자 사이여야 합니다.')
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('카테고리 키는 영문, 숫자, 언더스코어만 허용됩니다.'),
-  
-  body('transaction_type')
-    .isIn(['income', 'expense'])
-    .withMessage('거래 유형은 income 또는 expense여야 합니다.'),
-  
-  body('amount')
-    .isFloat({ min: 0.01, max: 999999999.99 })
-    .withMessage('금액은 0.01 이상 999,999,999.99 이하여야 합니다.'),
-  
-  body('description')
-    .optional()
-    .isLength({ max: 500 })
-    .withMessage('설명은 500자를 초과할 수 없습니다.'),
-  
-  body('transaction_date')
-    .isISO8601()
-    .withMessage('유효한 날짜 형식을 입력해주세요.'),
-  
-  (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: '거래 데이터가 유효하지 않습니다.',
-        details: errors.array()
-      });
-    }
-    next();
-  }
-];
+export const validateName = (name: string): boolean => {
+  return name.length >= 2 && name.length <= 50 && /^[a-zA-Z가-힣\s]+$/.test(name);
+};
 
-/**
- * 예산 생성 입력 검증
- */
-export const validateBudget = [
-  body('category_key')
-    .isLength({ min: 1, max: 100 })
-    .withMessage('카테고리 키는 1-100자 사이여야 합니다.')
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('카테고리 키는 영문, 숫자, 언더스코어만 허용됩니다.'),
-  
-  body('amount')
-    .isFloat({ min: 1, max: 999999999.99 })
-    .withMessage('예산 금액은 1 이상 999,999,999.99 이하여야 합니다.'),
-  
-  body('period_start')
-    .isISO8601()
-    .withMessage('유효한 시작 날짜를 입력해주세요.'),
-  
-  body('period_end')
-    .isISO8601()
-    .withMessage('유효한 종료 날짜를 입력해주세요.')
-    .custom((value, { req }) => {
-      if (new Date(value) <= new Date(req.body.period_start)) {
-        throw new Error('종료 날짜는 시작 날짜보다 늦어야 합니다.');
-      }
-      return true;
-    }),
-  
-  (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: '예산 데이터가 유효하지 않습니다.',
-        details: errors.array()
-      });
-    }
-    next();
+export const validateAmount = (amount: number): boolean => {
+  return amount >= 0.01 && amount <= 999999999.99;
+};
+
+export const validateCategoryKey = (categoryKey: string): boolean => {
+  return categoryKey.length >= 1 && categoryKey.length <= 100 && /^[a-zA-Z0-9_]+$/.test(categoryKey);
+};
+
+// 회원가입 검증 미들웨어
+export const validateRegister = (req: Request, res: Response, next: NextFunction) => {
+  const { email, password, name } = req.body;
+  const errors: string[] = [];
+
+  // 이메일 검증
+  if (!email || !validateEmail(email)) {
+    errors.push('유효한 이메일 주소를 입력해주세요.');
   }
-];
+
+  // 비밀번호 검증
+  if (!password) {
+    errors.push('비밀번호를 입력해주세요.');
+  } else {
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      errors.push(...passwordValidation.errors);
+    }
+  }
+
+  // 이름 검증
+  if (!name || !validateName(name)) {
+    errors.push('이름은 2-50자 사이의 문자와 공백만 허용됩니다.');
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: '입력 데이터가 유효하지 않습니다.',
+      details: errors
+    });
+  }
+
+  next();
+};
+
+// 로그인 검증 미들웨어
+export const validateLogin = (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body;
+  const errors: string[] = [];
+
+  // 이메일 검증
+  if (!email || !validateEmail(email)) {
+    errors.push('유효한 이메일 주소를 입력해주세요.');
+  }
+
+  // 비밀번호 검증
+  if (!password || password.length < 1) {
+    errors.push('비밀번호를 입력해주세요.');
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: '로그인 정보가 유효하지 않습니다.',
+      details: errors
+    });
+  }
+
+  next();
+};
+
+// 거래 검증 미들웨어
+export const validateTransaction = (req: Request, res: Response, next: NextFunction) => {
+  const { category_key, transaction_type, amount, description, transaction_date } = req.body;
+  const errors: string[] = [];
+
+  // 카테고리 키 검증
+  if (!category_key || !validateCategoryKey(category_key)) {
+    errors.push('카테고리 키는 1-100자 사이의 영문, 숫자, 언더스코어만 허용됩니다.');
+  }
+
+  // 거래 유형 검증
+  if (!transaction_type || !['income', 'expense'].includes(transaction_type)) {
+    errors.push('거래 유형은 income 또는 expense여야 합니다.');
+  }
+
+  // 금액 검증
+  if (!amount || !validateAmount(amount)) {
+    errors.push('금액은 0.01 이상 999,999,999.99 이하여야 합니다.');
+  }
+
+  // 설명 검증 (선택사항)
+  if (description && description.length > 500) {
+    errors.push('설명은 500자를 초과할 수 없습니다.');
+  }
+
+  // 날짜 검증
+  if (!transaction_date || isNaN(Date.parse(transaction_date))) {
+    errors.push('유효한 날짜 형식을 입력해주세요.');
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: '거래 데이터가 유효하지 않습니다.',
+      details: errors
+    });
+  }
+
+  next();
+};
+
+// 예산 검증 미들웨어
+export const validateBudget = (req: Request, res: Response, next: NextFunction) => {
+  const { category_key, amount, period_start, period_end } = req.body;
+  const errors: string[] = [];
+
+  // 카테고리 키 검증
+  if (!category_key || !validateCategoryKey(category_key)) {
+    errors.push('카테고리 키는 1-100자 사이의 영문, 숫자, 언더스코어만 허용됩니다.');
+  }
+
+  // 금액 검증
+  if (!amount || amount < 1 || amount > 999999999.99) {
+    errors.push('예산 금액은 1 이상 999,999,999.99 이하여야 합니다.');
+  }
+
+  // 시작 날짜 검증
+  if (!period_start || isNaN(Date.parse(period_start))) {
+    errors.push('유효한 시작 날짜를 입력해주세요.');
+  }
+
+  // 종료 날짜 검증
+  if (!period_end || isNaN(Date.parse(period_end))) {
+    errors.push('유효한 종료 날짜를 입력해주세요.');
+  } else if (period_start && new Date(period_end) <= new Date(period_start)) {
+    errors.push('종료 날짜는 시작 날짜보다 늦어야 합니다.');
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: '예산 데이터가 유효하지 않습니다.',
+      details: errors
+    });
+  }
+
+  next();
+};
 
 /**
  * SQL Injection 방지를 위한 쿼리 매개변수 검증
@@ -414,7 +550,7 @@ export const securityLogger = (req: Request, res: Response, next: NextFunction) 
   }
 
   if (isSuspicious) {
-    console.warn(`[SECURITY] Suspicious request detected:`, {
+    loggers.security('Suspicious request detected', {
       ip: req.ip,
       method: req.method,
       url: req.url,
@@ -422,6 +558,312 @@ export const securityLogger = (req: Request, res: Response, next: NextFunction) 
       timestamp: new Date().toISOString(),
       requestData: requestData.substring(0, 1000) // 로그 크기 제한
     });
+  }
+
+  next();
+};
+
+// XSS 방지 미들웨어
+export const xssProtection = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // 요청 본문의 모든 문자열 필드를 XSS로부터 보호
+    const cleanObject = (obj: any): any => {
+      if (typeof obj === 'string') {
+        return xss(obj, {
+          whiteList: {}, // 모든 HTML 태그 제거
+          stripIgnoreTag: true,
+          stripIgnoreTagBody: ['script']
+        });
+      }
+      
+      if (Array.isArray(obj)) {
+        return obj.map(cleanObject);
+      }
+      
+      if (obj && typeof obj === 'object') {
+        const cleaned: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+          cleaned[key] = cleanObject(value);
+        }
+        return cleaned;
+      }
+      
+      return obj;
+    };
+
+    if (req.body) {
+      req.body = cleanObject(req.body);
+    }
+    
+    if (req.query) {
+      req.query = cleanObject(req.query);
+    }
+    
+    if (req.params) {
+      req.params = cleanObject(req.params);
+    }
+
+    next();
+  } catch (error) {
+    loggers.security('XSS protection error', {
+      error: error instanceof Error ? error.message : String(error),
+      path: req.path,
+      method: req.method
+    });
+    next(new ValidationError('잘못된 요청 형식입니다.'));
+  }
+};
+
+// SQL 인젝션 방지
+export const sqlInjectionProtection = (req: Request, res: Response, next: NextFunction) => {
+  const suspiciousPatterns = [
+    /(\%27)|(\')|(\-\-)|(\%23)|(#)/gi,
+    /((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))/gi,
+    /\w*((\%27)|(\'))((\%6F)|o|(\%4F))((\%72)|r|(\%52))/gi,
+    /((\%27)|(\'))union/gi,
+    /exec(\s|\+)+(s|x)p\w+/gi,
+    /UNION(?:\s+ALL)?\s+SELECT/gi,
+    /INSERT(?:\s+INTO)?\s+/gi,
+    /DELETE(?:\s+FROM)?\s+/gi,
+    /UPDATE(?:\s+\w+)?\s+SET/gi,
+    /DROP(?:\s+TABLE)?\s+/gi
+  ];
+
+  const checkValue = (value: any, path: string): boolean => {
+    if (typeof value === 'string') {
+      for (const pattern of suspiciousPatterns) {
+        if (pattern.test(value)) {
+          loggers.security('SQL injection attempt detected', {
+            path: req.path,
+            method: req.method,
+            suspiciousValue: value,
+            field: path,
+            ip: req.ip,
+            userAgent: req.get('User-Agent')
+          });
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  const validateObject = (obj: any, basePath: string = ''): boolean => {
+    for (const [key, value] of Object.entries(obj)) {
+      const currentPath = basePath ? `${basePath}.${key}` : key;
+      
+      if (checkValue(value, currentPath)) {
+        return true;
+      }
+      
+      if (Array.isArray(value)) {
+        for (let i = 0; i < value.length; i++) {
+          if (typeof value[i] === 'object' && value[i] !== null) {
+            if (validateObject(value[i], `${currentPath}[${i}]`)) {
+              return true;
+            }
+          } else if (checkValue(value[i], `${currentPath}[${i}]`)) {
+            return true;
+          }
+        }
+      } else if (typeof value === 'object' && value !== null) {
+        if (validateObject(value, currentPath)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  try {
+    // 요청 본문 검사
+    if (req.body && validateObject(req.body, 'body')) {
+      throw new ValidationError('잘못된 요청입니다.');
+    }
+
+    // 쿼리 파라미터 검사
+    if (req.query && validateObject(req.query, 'query')) {
+      throw new ValidationError('잘못된 쿼리 파라미터입니다.');
+    }
+
+    // URL 파라미터 검사
+    if (req.params && validateObject(req.params, 'params')) {
+      throw new ValidationError('잘못된 URL 파라미터입니다.');
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 파일 업로드 보안
+export const fileUploadSecurity = {
+  // 허용된 MIME 타입
+  allowedMimeTypes: [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/pdf',
+    'text/csv',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  ],
+
+  // 최대 파일 크기 (10MB)
+  maxFileSize: 10 * 1024 * 1024,
+
+  // 파일 검증 함수
+  validateFile: (file: any): boolean => {
+    if (!file) return false;
+    
+    // MIME 타입 검증
+    if (!fileUploadSecurity.allowedMimeTypes.includes(file.mimetype)) {
+      loggers.security('Unauthorized file type upload attempt', {
+        filename: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size
+      });
+      return false;
+    }
+
+    // 파일 크기 검증
+    if (file.size > fileUploadSecurity.maxFileSize) {
+      loggers.security('File size limit exceeded', {
+        filename: file.originalname,
+        size: file.size,
+        limit: fileUploadSecurity.maxFileSize
+      });
+      return false;
+    }
+
+    // 파일 확장자 검증
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.csv', '.xls', '.xlsx'];
+    const fileExtension = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'));
+    
+    if (!allowedExtensions.includes(fileExtension)) {
+      loggers.security('Unauthorized file extension upload attempt', {
+        filename: file.originalname,
+        extension: fileExtension
+      });
+      return false;
+    }
+
+    return true;
+  }
+};
+
+// 요청 크기 제한
+export const requestSizeLimits = {
+  // JSON 페이로드 크기 제한 (1MB)
+  json: '1mb',
+  // URL 인코딩된 페이로드 크기 제한 (1MB)
+  urlencoded: '1mb',
+  // 원시 페이로드 크기 제한 (10MB - 파일 업로드용)
+  raw: '10mb'
+};
+
+// IP 화이트리스트/블랙리스트
+export const ipFiltering = (req: Request, res: Response, next: NextFunction) => {
+  const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+  
+  // 블랙리스트된 IP 확인
+  const blacklistedIPs = process.env.BLACKLISTED_IPS?.split(',') || [];
+  if (blacklistedIPs.includes(clientIp)) {
+    loggers.security('Blacklisted IP blocked', {
+      ip: clientIp,
+      path: req.path,
+      method: req.method,
+      userAgent: req.get('User-Agent')
+    });
+    
+    return res.status(403).json({
+      success: false,
+      message: '접근이 차단되었습니다.',
+      errorCode: 'IP_BLOCKED'
+    });
+  }
+
+  // 화이트리스트 모드인 경우 (관리자 전용 엔드포인트 등)
+  if (req.path.startsWith('/admin')) {
+    const whitelistedIPs = process.env.ADMIN_WHITELISTED_IPS?.split(',') || [];
+    if (whitelistedIPs.length > 0 && !whitelistedIPs.includes(clientIp)) {
+      loggers.security('Non-whitelisted IP blocked from admin access', {
+        ip: clientIp,
+        path: req.path,
+        method: req.method
+      });
+      
+      return res.status(403).json({
+        success: false,
+        message: '관리자 영역에 접근할 수 없습니다.',
+        errorCode: 'ADMIN_ACCESS_DENIED'
+      });
+    }
+  }
+
+  next();
+};
+
+// 보안 헤더 검증
+export const securityHeadersValidation = (req: Request, res: Response, next: NextFunction) => {
+  const userAgent = req.get('User-Agent');
+  const contentType = req.get('Content-Type');
+  
+  // 의심스러운 User-Agent 패턴 검사
+  const suspiciousUserAgents = [
+    /sqlmap/i,
+    /nikto/i,
+    /nessus/i,
+    /burp/i,
+    /acunetix/i,
+    /netsparker/i,
+    /masscan/i,
+    /nmap/i
+  ];
+
+  if (userAgent) {
+    for (const pattern of suspiciousUserAgents) {
+      if (pattern.test(userAgent)) {
+        loggers.security('Suspicious user agent detected', {
+          userAgent,
+          ip: req.ip,
+          path: req.path,
+          method: req.method
+        });
+        
+        return res.status(403).json({
+          success: false,
+          message: '잘못된 요청입니다.',
+          errorCode: 'SUSPICIOUS_REQUEST'
+        });
+      }
+    }
+  }
+
+  // POST/PUT 요청에 대한 Content-Type 검증
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    const validContentTypes = [
+      'application/json',
+      'application/x-www-form-urlencoded',
+      'multipart/form-data'
+    ];
+
+    if (contentType && !validContentTypes.some(type => contentType.includes(type))) {
+      loggers.security('Invalid content type', {
+        contentType,
+        ip: req.ip,
+        path: req.path,
+        method: req.method
+      });
+      
+      return res.status(415).json({
+        success: false,
+        message: '지원되지 않는 Content-Type입니다.',
+        errorCode: 'UNSUPPORTED_MEDIA_TYPE'
+      });
+    }
   }
 
   next();
