@@ -6,12 +6,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:analyze": "npm run build && npx vite-bundle-analyzer dist",
+    "build:staging": "tsc -b && vite build --mode staging",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "type-check": "tsc --noEmit"
+    "test:coverage": "vitest run --coverage",
+    "type-check": "tsc --noEmit",
+    "analyze": "npx vite-bundle-analyzer dist",
+    "clean": "rm -rf dist .vite node_modules/.vite",
+    "prebuild": "npm run clean",
+    "validate": "npm run type-check && npm run lint && npm run test:coverage"
   },
   "dependencies": {
     "@finance-tracker/shared": "file:../../packages/shared",

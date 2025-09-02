@@ -4,7 +4,9 @@ module.exports = {
   roots: ['<rootDir>/src', '<rootDir>/tests'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: 'tsconfig.test.json'
+    }],
   },
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -16,11 +18,6 @@ module.exports = {
     '^@finance-tracker/shared(.*)$': '<rootDir>/../../packages/shared/src$1'
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.test.json'
-    }
-  },
   testTimeout: 30000, // 30초 타임아웃
   setupFiles: ['<rootDir>/tests/env.setup.js'], // 환경변수 설정
   maxWorkers: 1, // 데이터베이스 충돌 방지

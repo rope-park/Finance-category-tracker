@@ -21,7 +21,7 @@
     "paths": {
       "@finance-tracker/shared": ["../../packages/shared/src"]
     },
-    "typeRoots": ["./node_modules/@types", "../../packages/shared/src"]
+  "typeRoots": ["./node_modules/@types", "./src/types", "../../packages/shared/src"]
   },
   "include": [
     "src/**/*",

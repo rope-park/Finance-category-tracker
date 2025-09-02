@@ -55,11 +55,14 @@
   },
   "dependencies": {
     "chart.js": "^4.5.0",
+    "csurf": "^1.11.0",
     "curl": "^0.1.4",
     "date-fns": "^4.1.0",
     "jest": "^30.0.5",
     "mocha": "^11.7.1",
     "react-chartjs-2": "^5.3.0",
+    "redis": "^5.8.2",
+    "rxjs": "^7.8.2",
     "zustand": "^5.0.8"
   }
 }
