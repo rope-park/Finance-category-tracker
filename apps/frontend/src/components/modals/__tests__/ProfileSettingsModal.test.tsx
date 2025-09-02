@@ -1,7 +1,11 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { vi, beforeEach } from 'vitest';
 import { ProfileSettingsModal } from '../ProfileSettingsModal';
 import { AuthContext } from '../../../context/AuthContextObject';
 import { AppContext } from '../../../context/AppContext';
+
+// Mock API calls
+global.fetch = vi.fn();
 
 const mockUser = {
   id: 1,
@@ -80,6 +84,18 @@ const mockApp = {
 };
 
 describe('ProfileSettingsModal', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    const mockFetch = fetch as unknown as ReturnType<typeof vi.fn>;
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: ['식비', '교통비', '문화생활']
+      })
+    });
+  });
+
   it('renders user info and updates profile', async () => {
     render(
       <AuthContext.Provider value={mockAuth}>
