@@ -19,3 +19,7 @@ export { HierarchicalCategorySelect } from './HierarchicalCategorySelect';
 export { ThreeLevelCategorySelect } from './ThreeLevelCategorySelect';
 export { StatsCard } from './StatsCard';
 export { ErrorBoundary, PageErrorBoundary, ModalErrorBoundary, withErrorBoundary } from './ErrorBoundary';
+
+// 새로 추가된 컴포넌트들
+export { Spinner } from './Spinner';
+export { LazyWrapper } from './LazyWrapper';

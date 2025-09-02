@@ -25,22 +25,27 @@ export const Select: React.FC<SelectProps> = ({
   required = false,
   darkMode = false
 }) => {
+  // 접근성: id, aria-describedby, aria-required, aria-invalid, role 등 적용
+  const selectId = label ? `select-${label.replace(/\s+/g, '-').toLowerCase()}` : undefined;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       {label && (
         <label
+          htmlFor={selectId}
           style={{
             fontSize: '14px',
             fontWeight: '600',
             color: darkMode ? colors.dark[200] : colors.gray[700],
             fontFamily: "'Noto Sans KR', sans-serif"
           }}
+          id={selectId ? selectId + '-label' : undefined}
         >
           {label}
-          {required && <span style={{ color: colors.error[600] }}>*</span>}
+          {required && <span style={{ color: colors.error[600] }} aria-hidden="true">*</span>}
         </label>
       )}
       <select
+        id={selectId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
@@ -62,6 +67,10 @@ export const Select: React.FC<SelectProps> = ({
         onBlur={(e) => {
           e.target.style.borderColor = darkMode ? colors.dark[600] : colors.gray[300];
         }}
+        aria-labelledby={selectId ? selectId + '-label' : undefined}
+        aria-required={required}
+        aria-invalid={false}
+        role="combobox"
       >
         {placeholder && (
           <option value="" disabled>

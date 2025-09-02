@@ -58,7 +58,6 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) {
         return this.props.fallback;
       }
-
       // 기본 에러 UI 렌더링
       return (
         <DefaultErrorFallback
@@ -69,7 +68,6 @@ export class ErrorBoundary extends Component<Props, State> {
         />
       );
     }
-
     return this.props.children;
   }
 }
@@ -90,61 +88,56 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      padding: '40px 20px',
-      backgroundColor: '#f8fafc',
-      fontFamily: "'Noto Sans KR', sans-serif"
-    }}>
-      <div style={{
-        maxWidth: '600px',
-        textAlign: 'center',
-        background: '#ffffff',
-        borderRadius: '16px',
-        padding: '40px',
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-        border: `1px solid ${colors.gray[200]}`
-      }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        padding: '40px 20px',
+        backgroundColor: '#f8fafc',
+        fontFamily: "'Noto Sans KR', sans-serif",
+      }}
+      role="alertdialog"
+      aria-labelledby="error-title"
+      aria-describedby="error-desc"
+      tabIndex={-1}
+    >
+      <div
+        style={{
+          maxWidth: '600px',
+          textAlign: 'center',
+          background: '#ffffff',
+          borderRadius: '16px',
+          padding: '40px',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+          border: `1px solid ${colors.gray[200]}`,
+        }}
+      >
         {/* 에러 아이콘 */}
-        <div style={{
-          fontSize: '64px',
-          marginBottom: '24px'
-        }}>
-          💥
-        </div>
-
+        <div style={{ fontSize: '64px', marginBottom: '24px' }} aria-hidden="true">💥</div>
         {/* 메인 제목 */}
-        <h1 style={{
-          fontSize: '24px',
-          fontWeight: '700',
-          color: colors.gray[900],
-          margin: '0 0 16px 0'
-        }}>
+        <h1
+          id="error-title"
+          style={{ fontSize: '24px', fontWeight: 700, color: colors.gray[900], margin: '0 0 16px 0' }}
+          tabIndex={0}
+        >
           앗! 문제가 발생했습니다
         </h1>
-
         {/* 설명 */}
-        <p style={{
-          fontSize: '16px',
-          color: colors.gray[600],
-          margin: '0 0 32px 0',
-          lineHeight: '1.6'
-        }}>
+        <p
+          id="error-desc"
+          style={{ fontSize: '16px', color: colors.gray[600], margin: '0 0 32px 0', lineHeight: '1.6' }}
+          tabIndex={0}
+        >
           예상치 못한 오류로 인해 페이지를 표시할 수 없습니다.<br />
           잠시 후 다시 시도해주세요.
         </p>
-
         {/* 버튼들 */}
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          justifyContent: 'center',
-          marginBottom: isDevelopment ? '32px' : '0'
-        }}>
+        <div
+          style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: isDevelopment ? '32px' : '0' }}
+        >
           <button
             onClick={onRetry}
             style={{
@@ -154,10 +147,10 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
               border: 'none',
               borderRadius: '8px',
               fontSize: '14px',
-              fontWeight: '600',
+              fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              fontFamily: "'Noto Sans KR', sans-serif"
+              fontFamily: "'Noto Sans KR', sans-serif",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = colors.primary[700];
@@ -165,10 +158,11 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = colors.primary[600];
             }}
+            aria-label="다시 시도"
+            tabIndex={0}
           >
             다시 시도
           </button>
-          
           <button
             onClick={onReload}
             style={{
@@ -178,10 +172,10 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
               border: `1px solid ${colors.gray[300]}`,
               borderRadius: '8px',
               fontSize: '14px',
-              fontWeight: '600',
+              fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              fontFamily: "'Noto Sans KR', sans-serif"
+              fontFamily: "'Noto Sans KR', sans-serif",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = colors.gray[200];
@@ -189,35 +183,34 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = colors.gray[100];
             }}
+            aria-label="페이지 새로고침"
+            tabIndex={0}
           >
             페이지 새로고침
           </button>
         </div>
-
         {/* 개발 환경에서만 상세 에러 정보 표시 */}
         {isDevelopment && error && (
-          <details style={{
-            textAlign: 'left',
-            marginTop: '32px',
-            padding: '16px',
-            backgroundColor: colors.gray[50],
-            borderRadius: '8px',
-            border: `1px solid ${colors.gray[200]}`
-          }}>
-            <summary style={{
-              cursor: 'pointer',
-              fontWeight: '600',
-              color: colors.gray[700],
-              marginBottom: '12px'
-            }}>
+          <details
+            style={{
+              textAlign: 'left',
+              marginTop: '32px',
+              padding: '16px',
+              backgroundColor: colors.gray[50],
+              borderRadius: '8px',
+              border: `1px solid ${colors.gray[200]}`,
+            }}
+          >
+            <summary
+              style={{ cursor: 'pointer', fontWeight: 600, color: colors.gray[700], marginBottom: '12px' }}
+              tabIndex={0}
+            >
               🔍 개발자 정보 (Development Only)
             </summary>
-            
-            <div style={{
-              fontSize: '12px',
-              fontFamily: 'monospace',
-              color: colors.error[600]
-            }}>
+            <div
+              style={{ fontSize: '12px', fontFamily: 'monospace', color: colors.error[600] }}
+              tabIndex={0}
+            >
               <div style={{ marginBottom: '12px' }}>
                 <strong>Error:</strong> {error.name}
               </div>
@@ -227,15 +220,18 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
               {error.stack && (
                 <div style={{ marginBottom: '12px' }}>
                   <strong>Stack Trace:</strong>
-                  <pre style={{
-                    backgroundColor: colors.gray[900],
-                    color: '#ffffff',
-                    padding: '12px',
-                    borderRadius: '4px',
-                    overflow: 'auto',
-                    fontSize: '11px',
-                    lineHeight: '1.4'
-                  }}>
+                  <pre
+                    style={{
+                      backgroundColor: colors.gray[900],
+                      color: '#ffffff',
+                      padding: '12px',
+                      borderRadius: '4px',
+                      overflow: 'auto',
+                      fontSize: '11px',
+                      lineHeight: '1.4',
+                    }}
+                    tabIndex={0}
+                  >
                     {error.stack}
                   </pre>
                 </div>
@@ -243,15 +239,18 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
               {errorInfo && (
                 <div>
                   <strong>Component Stack:</strong>
-                  <pre style={{
-                    backgroundColor: colors.gray[900],
-                    color: '#ffffff',
-                    padding: '12px',
-                    borderRadius: '4px',
-                    overflow: 'auto',
-                    fontSize: '11px',
-                    lineHeight: '1.4'
-                  }}>
+                  <pre
+                    style={{
+                      backgroundColor: colors.gray[900],
+                      color: '#ffffff',
+                      padding: '12px',
+                      borderRadius: '4px',
+                      overflow: 'auto',
+                      fontSize: '11px',
+                      lineHeight: '1.4',
+                    }}
+                    tabIndex={0}
+                  >
                     {errorInfo.componentStack}
                   </pre>
                 </div>
@@ -259,21 +258,18 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
             </div>
           </details>
         )}
-
         {/* 연락처 정보 */}
-        <div style={{
-          marginTop: '24px',
-          padding: '16px',
-          backgroundColor: colors.primary[50],
-          borderRadius: '8px',
-          border: `1px solid ${colors.primary[200]}`
-        }}>
-          <p style={{
-            fontSize: '14px',
-            color: colors.primary[700],
-            margin: 0,
-            lineHeight: '1.5'
-          }}>
+        <div
+          style={{
+            marginTop: '24px',
+            padding: '16px',
+            backgroundColor: colors.primary[50],
+            borderRadius: '8px',
+            border: `1px solid ${colors.primary[200]}`,
+          }}
+          tabIndex={0}
+        >
+          <p style={{ fontSize: '14px', color: colors.primary[700], margin: 0, lineHeight: '1.5' }}>
             💡 <strong>문제가 지속된다면?</strong><br />
             이 문제를 신고해 주시면 빠르게 해결하겠습니다.
           </p>

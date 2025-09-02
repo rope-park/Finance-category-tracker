@@ -15,6 +15,12 @@ interface ButtonProps {
   style?: CSSProperties;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-expanded'?: boolean;
+  'aria-pressed'?: boolean;
+  role?: string;
+  tabIndex?: number;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -31,6 +37,7 @@ export const Button: React.FC<ButtonProps> = ({
   style = {},
   className = '',
   type = 'button',
+  ...rest
 }) => {
   const sizeStyles = {
     sm: { padding: '8px 12px', fontSize: '13px', minHeight: '36px' },
@@ -118,6 +125,9 @@ export const Button: React.FC<ButtonProps> = ({
     outline: 'none',
     position: 'relative',
     overflow: 'hidden',
+    minHeight: '44px', // 모바일 터치 영역 확대
+    minWidth: '44px',
+    touchAction: 'manipulation',
     ...style
   };
 
@@ -187,11 +197,24 @@ export const Button: React.FC<ButtonProps> = ({
       onBlur={handleBlur}
       disabled={disabled || loading}
       style={baseStyle}
-      className={className}
+      className={`ui-btn ${className}`.trim()}
+      aria-busy={loading ? 'true' : undefined}
+      aria-disabled={disabled ? 'true' : undefined}
+      tabIndex={disabled ? -1 : 0}
+      {...rest}
     >
       {iconPosition === 'left' && renderIcon()}
       <span style={{ opacity: loading ? 0.7 : 1 }}>{children}</span>
       {iconPosition === 'right' && renderIcon()}
+      {loading && (
+        <span 
+          style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }} 
+          aria-live="polite"
+          role="status"
+        >
+          로딩 중
+        </span>
+      )}
     </button>
   );
 };

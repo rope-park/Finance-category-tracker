@@ -113,11 +113,22 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <div
-      className={className}
+      className={`ui-card ${className}`.trim()}
       style={cardStyle}
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      role={onClick || interactive ? 'button' : undefined}
+      tabIndex={onClick || interactive ? 0 : undefined}
+      aria-label={typeof children === 'string' ? children : undefined}
+      onFocus={e => {
+        if (onClick || interactive) {
+          (e.currentTarget as HTMLDivElement).style.outline = `2px solid ${colors.primary[400]}`;
+        }
+      }}
+      onBlur={e => {
+        (e.currentTarget as HTMLDivElement).style.outline = 'none';
+      }}
     >
       {children}
     </div>

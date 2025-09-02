@@ -84,24 +84,31 @@ export const Input: React.FC<InputProps> = ({
     }
   };
 
+  // 접근성: id, aria-describedby, aria-invalid, aria-required, role 등 적용
+  const inputId = label ? `input-${label.replace(/\s+/g, '-').toLowerCase()}` : undefined;
+  const errorId = error ? `${inputId}-error` : undefined;
   return (
     <div style={{ position: 'relative', width: '100%' }}>
       {label && (
-        <label style={{
-          display: 'block',
-          marginBottom: '6px',
-          fontSize: '14px',
-          fontWeight: '500',
-          color: darkMode ? colors.dark[200] : colors.gray[700],
-          fontFamily: "'Noto Sans KR', sans-serif"
-        }}>
+        <label
+          htmlFor={inputId}
+          style={{
+            display: 'block',
+            marginBottom: '6px',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: darkMode ? colors.dark[200] : colors.gray[700],
+            fontFamily: "'Noto Sans KR', sans-serif"
+          }}
+          id={inputId ? inputId + '-label' : undefined}
+        >
           {label}
-          {required && <span style={{ color: colors.error[500], marginLeft: '2px' }}>*</span>}
+          {required && <span style={{ color: colors.error[500], marginLeft: '2px' }} aria-hidden="true">*</span>}
         </label>
       )}
-      
       <div style={{ position: 'relative' }}>
         <input
+          id={inputId}
           type={type}
           placeholder={placeholder}
           value={value}
@@ -114,30 +121,40 @@ export const Input: React.FC<InputProps> = ({
           min={min}
           max={max}
           step={step}
+          aria-labelledby={inputId ? inputId + '-label' : undefined}
+          aria-describedby={error ? errorId : undefined}
+          aria-invalid={!!error}
+          aria-required={required}
+          role="textbox"
         />
-        
         {icon && (
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            [iconPosition]: '12px',
-            color: darkMode ? colors.dark[400] : colors.gray[500],
-            fontSize: '16px',
-            pointerEvents: 'none'
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              [iconPosition]: '12px',
+              color: darkMode ? colors.dark[400] : colors.gray[500],
+              fontSize: '16px',
+              pointerEvents: 'none',
+            }}
+            aria-hidden="true"
+          >
             {icon}
           </div>
         )}
       </div>
-      
       {error && (
-        <p style={{
-          marginTop: '4px',
-          fontSize: '12px',
-          color: colors.error[500],
-          fontFamily: "'Noto Sans KR', sans-serif"
-        }}>
+        <p
+          id={errorId}
+          style={{
+            marginTop: '4px',
+            fontSize: '12px',
+            color: colors.error[500],
+            fontFamily: "'Noto Sans KR', sans-serif"
+          }}
+          role="alert"
+        >
           {error}
         </p>
       )}

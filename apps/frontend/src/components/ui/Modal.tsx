@@ -44,7 +44,7 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+
 
   const sizeStyles = {
     small: { width: '400px', maxWidth: '90vw' },
@@ -72,17 +72,25 @@ export const Modal: React.FC<ModalProps> = ({
     animation: 'fadeIn 0.3s ease-out forwards'
   });
 
+  // 모달은 항상 뷰포트 중앙에 고정, 스크롤 시 따라다니지 않음, 하단 clamp
+  // position: fixed + top: 50% + left: 50% + transform: translate(-50%, -50%)
+  // 단, 모달이 너무 커서 하단/상단이 뷰포트 밖으로 나가면 clamp
   const getModalStyle = () => {
     const baseStyle = {
       ...sizeStyles[size],
       maxHeight: '90vh',
       borderRadius: borderRadius.xl,
       overflow: 'hidden',
-      transform: 'scale(0.95) translateY(20px)',
       animation: 'modalSlideIn 0.3s ease-out forwards',
       boxShadow: darkMode
         ? '0 25px 50px -12px rgba(0, 0, 0, 0.8)'
         : '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+      position: 'fixed' as const,
+      left: '50%',
+      top: '50%',
+      transform: 'translate(-50%, -50%)',
+      // clamp: 상단 최소 24px, 하단 최소 24px 여백
+      // maxHeight로 이미 제한되어 있으므로, 추가로 필요시 padding
     };
 
     switch (variant) {
@@ -172,13 +180,21 @@ export const Modal: React.FC<ModalProps> = ({
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <>
-      <div style={getBackdropStyle()} onClick={handleBackdropClick}>
-        <div style={getModalStyle()}>
+      <div
+        style={getBackdropStyle()}
+        onClick={handleBackdropClick}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        <div style={getModalStyle()} tabIndex={-1}>
           {/* Header */}
           <div style={headerStyle}>
-            <h2 style={titleStyle}>{title}</h2>
+            <h2 id="modal-title" style={titleStyle} tabIndex={0} aria-live="polite">{title}</h2>
             {showCloseButton && (
               <button
                 onClick={onClose}
@@ -186,26 +202,24 @@ export const Modal: React.FC<ModalProps> = ({
                 onMouseEnter={(e) => handleCloseHover(e, true)}
                 onMouseLeave={(e) => handleCloseHover(e, false)}
                 aria-label="모달 닫기"
+                tabIndex={0}
               >
                 ✕
               </button>
             )}
           </div>
-
           {/* Content */}
-          <div style={contentStyle}>
+          <div style={contentStyle} tabIndex={0} aria-live="polite">
             {children}
           </div>
         </div>
       </div>
-
       {/* CSS 애니메이션 */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        
         @keyframes modalSlideIn {
           from { 
             transform: scale(0.95) translateY(20px);

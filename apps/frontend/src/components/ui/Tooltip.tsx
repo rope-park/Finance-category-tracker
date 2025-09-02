@@ -190,6 +190,8 @@ export const Tooltip: React.FC<TooltipProps> = ({
     }
   };
 
+  // 접근성: id, aria-describedby, role, tabIndex 등 적용
+  const tooltipId = `tooltip-${Math.random().toString(36).substr(2, 9)}`;
   return (
     <div
       ref={containerRef}
@@ -199,11 +201,19 @@ export const Tooltip: React.FC<TooltipProps> = ({
       onMouseLeave={hideTooltip}
       onFocus={showTooltip}
       onBlur={hideTooltip}
+      tabIndex={0}
+      aria-describedby={tooltipId}
+      role="button"
     >
       {children}
-      
       {shouldShow && (
-        <div ref={tooltipRef} style={getTooltipStyle()}>
+        <div
+          ref={tooltipRef}
+          style={getTooltipStyle()}
+          id={tooltipId}
+          role="tooltip"
+          aria-live="polite"
+        >
           {text}
           <div style={getArrowStyle()} />
         </div>
