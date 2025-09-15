@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { colors, borderRadius } from '../../styles/theme';
 import { useApp } from '../../hooks/useApp';
 
@@ -23,7 +24,7 @@ export const Modal: React.FC<ModalProps> = ({
 }) => {
   const { darkMode } = useApp();
 
-  // ESC 키로 모달 닫기
+  // ESC 키로 모달 닫기 및 스크롤 관리
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -33,14 +34,16 @@ export const Modal: React.FC<ModalProps> = ({
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
-      // 백그라운드 스크롤 허용 - 이 라인을 제거/주석처리
-      // document.body.style.overflow = 'hidden';
+      // 스크롤 방지만 하고 위치는 건드리지 않음
+      document.body.style.overflow = 'hidden';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      // 모달이 닫힐 때 스크롤 상태 복원 불필요
-      // document.body.style.overflow = 'unset';
+      if (isOpen) {
+        // 모달이 닫힐 때 스크롤 복원
+        document.body.style.overflow = '';
+      }
     };
   }, [isOpen, onClose]);
 
@@ -66,31 +69,29 @@ export const Modal: React.FC<ModalProps> = ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000,
+    zIndex: 10000,
     padding: '20px',
     opacity: 0,
-    animation: 'fadeIn 0.3s ease-out forwards'
+    animation: 'fadeIn 0.3s ease-out forwards',
+    // 강제로 뷰포트에 고정
+    width: '100vw',
+    height: '100vh',
   });
 
-  // 모달은 항상 뷰포트 중앙에 고정, 스크롤 시 따라다니지 않음, 하단 clamp
-  // position: fixed + top: 50% + left: 50% + transform: translate(-50%, -50%)
-  // 단, 모달이 너무 커서 하단/상단이 뷰포트 밖으로 나가면 clamp
+  // 모달을 화면 중앙에 정확히 배치
   const getModalStyle = () => {
     const baseStyle = {
       ...sizeStyles[size],
       maxHeight: '90vh',
       borderRadius: borderRadius.xl,
       overflow: 'hidden',
-      animation: 'modalSlideIn 0.3s ease-out forwards',
+      // transform 대신 opacity와 scale만 사용
+      animation: 'modalFadeIn 0.3s ease-out forwards',
       boxShadow: darkMode
         ? '0 25px 50px -12px rgba(0, 0, 0, 0.8)'
         : '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-      position: 'fixed' as const,
-      left: '50%',
-      top: '50%',
-      transform: 'translate(-50%, -50%)',
-      // clamp: 상단 최소 24px, 하단 최소 24px 여백
-      // maxHeight로 이미 제한되어 있으므로, 추가로 필요시 padding
+      // 백드롭의 flex로 중앙 정렬하므로 position fixed 제거
+      position: 'relative' as const,
     };
 
     switch (variant) {
@@ -165,6 +166,7 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
+    // 백드롭 자체를 클릭했을 때만 모달 닫기 (모달 내부 클릭 시에는 닫지 않음)
     if (e.target === e.currentTarget) {
       onClose();
     }
@@ -182,19 +184,24 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <>
       <div
-        style={getBackdropStyle()}
+        style={{
+          ...getBackdropStyle(),
+          // CSS transform이 position:fixed를 깨뜨릴 수 있으므로 강제 재설정
+          transform: 'none',
+          willChange: 'auto',
+        }}
         onClick={handleBackdropClick}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <div style={getModalStyle()} tabIndex={-1}>
+        <div style={getModalStyle()}>
           {/* Header */}
           <div style={headerStyle}>
-            <h2 id="modal-title" style={titleStyle} tabIndex={0} aria-live="polite">{title}</h2>
+            <h2 id="modal-title" style={titleStyle}>{title}</h2>
             {showCloseButton && (
               <button
                 onClick={onClose}
@@ -202,14 +209,13 @@ export const Modal: React.FC<ModalProps> = ({
                 onMouseEnter={(e) => handleCloseHover(e, true)}
                 onMouseLeave={(e) => handleCloseHover(e, false)}
                 aria-label="모달 닫기"
-                tabIndex={0}
               >
                 ✕
               </button>
             )}
           </div>
           {/* Content */}
-          <div style={contentStyle} tabIndex={0} aria-live="polite">
+          <div style={contentStyle}>
             {children}
           </div>
         </div>
@@ -220,17 +226,18 @@ export const Modal: React.FC<ModalProps> = ({
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        @keyframes modalSlideIn {
+        @keyframes modalFadeIn {
           from { 
-            transform: scale(0.95) translateY(20px);
             opacity: 0;
+            filter: blur(2px);
           }
           to { 
-            transform: scale(1) translateY(0);
             opacity: 1;
+            filter: blur(0);
           }
         }
       `}</style>
-    </>
+    </>,
+    document.body
   );
 };

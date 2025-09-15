@@ -18,6 +18,7 @@ export { PercentageInput } from './PercentageInput';
 export { HierarchicalCategorySelect } from './HierarchicalCategorySelect';
 export { ThreeLevelCategorySelect } from './ThreeLevelCategorySelect';
 export { StatsCard } from './StatsCard';
+export { PageLoader, DashboardLoader, AnalyticsLoader, TransactionsLoader, SettingsLoader } from './PageLoader';
 export { ErrorBoundary, PageErrorBoundary, ModalErrorBoundary, withErrorBoundary } from './ErrorBoundary';
 
 // 새로 추가된 컴포넌트들

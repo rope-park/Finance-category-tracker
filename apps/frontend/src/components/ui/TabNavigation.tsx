@@ -51,7 +51,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
       {tabs.map((tab, i) => (
         <button
           key={tab.id}
-          ref={el => tabRefs.current[i] = el}
+          ref={el => { if (el) tabRefs.current[i] = el; }}
           onClick={() => onTabChange(tab.id)}
           style={{
             padding: '12px 20px',
