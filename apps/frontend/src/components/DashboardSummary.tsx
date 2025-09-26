@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { memo } from 'react';
+import { AmountDisplay } from './ui';
 
 interface SummaryData {
   totalIncome: number;
@@ -15,7 +16,7 @@ interface DashboardSummaryProps {
   error?: string;
 }
 
-const DashboardSummary: React.FC<DashboardSummaryProps> = ({ 
+const DashboardSummary: React.FC<DashboardSummaryProps> = memo(({ 
   data, 
   isLoading = false, 
   error 
@@ -52,48 +53,46 @@ const DashboardSummary: React.FC<DashboardSummaryProps> = ({
     );
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ko-KR', {
-      style: 'currency',
-      currency: 'KRW',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const isPositiveBalance = data.balance >= 0;
-  const isPositiveChange = data.monthlyChange >= 0;
-
   return (
     <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-3">
       {/* 총 수입 */}
       <div className="p-6 bg-white rounded-lg shadow-md">
         <h3 className="mb-2 text-sm font-medium text-gray-500">총 수입</h3>
-        <p className="text-2xl font-bold text-green-600">
-          {formatCurrency(data.totalIncome).replace('₩', '')}원
-        </p>
+        <AmountDisplay
+          amount={data.totalIncome}
+          type="income"
+          size="lg"
+          style={{ fontSize: '24px' }}
+        />
       </div>
 
       {/* 총 지출 */}
       <div className="p-6 bg-white rounded-lg shadow-md">
         <h3 className="mb-2 text-sm font-medium text-gray-500">총 지출</h3>
-        <p className="text-2xl font-bold text-red-600">
-          {formatCurrency(data.totalExpense).replace('₩', '')}원
-        </p>
+        <AmountDisplay
+          amount={data.totalExpense}
+          type="expense"
+          size="lg"
+          style={{ fontSize: '24px' }}
+        />
       </div>
 
       {/* 잔액 */}
       <div className="p-6 bg-white rounded-lg shadow-md">
         <h3 className="mb-2 text-sm font-medium text-gray-500">잔액</h3>
-        <p className={`text-2xl font-bold ${isPositiveBalance ? 'text-green-600' : 'text-red-600'}`}>
-          {formatCurrency(data.balance).replace('₩', '')}원
-        </p>
+        <AmountDisplay
+          amount={data.balance}
+          type={data.balance >= 0 ? "income" : "expense"}
+          size="lg"
+          style={{ fontSize: '24px' }}
+        />
       </div>
 
       {/* 전월 대비 변화 */}
       <div className="p-6 bg-white rounded-lg shadow-md">
         <h3 className="mb-2 text-sm font-medium text-gray-500">전월 대비</h3>
-        <p className={`text-2xl font-bold ${isPositiveChange ? 'text-green-600' : 'text-red-600'}`}>
-          {isPositiveChange ? '+' : ''}{data.monthlyChange.toFixed(1)}%
+        <p className={`text-2xl font-bold ${data.monthlyChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          {data.monthlyChange >= 0 ? '+' : ''}{data.monthlyChange.toFixed(1)}%
         </p>
       </div>
 
@@ -114,6 +113,8 @@ const DashboardSummary: React.FC<DashboardSummaryProps> = ({
       </div>
     </div>
   );
-};
+});
+
+DashboardSummary.displayName = 'DashboardSummary';
 
 export default DashboardSummary;
