@@ -1,15 +1,40 @@
+/**
+ * 모달 대화상자 컴포넌트
+ * 
+ * 주요 기능:
+ * - React Portal을 사용한 오버레이 모달
+ * - ESC 키로 모달 닫기
+ * - 배경 클릭으로 모달 닫기
+ * - 다양한 크기 옵션 (small, medium, large, extra-large)
+ * - 다양한 스타일 변형 (default, glass, elevated)
+ * - 스크롤 잘김 방지
+ * - 다크모드 대응
+ * - 접근성 지원
+ * 
+ * @author Finance Category Tracker Team
+ * @version 1.0.0
+ */
+
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { colors, borderRadius } from '../../styles/theme';
 import { useApp } from '../../hooks/useApp';
 
+/** Modal 컴포넌트 Props */
 interface ModalProps {
+  /** 모달 열림 상태 */
   isOpen: boolean;
+  /** 모달 닫기 콜백 함수 */
   onClose: () => void;
+  /** 모달 제목 */
   title: string;
+  /** 모달 내용 */
   children: React.ReactNode;
+  /** 모달 크기 */
   size?: 'small' | 'medium' | 'large' | 'extra-large';
+  /** 모달 스타일 변형 */
   variant?: 'default' | 'glass' | 'elevated';
+  /** 닫기 버튼 표시 여부 */
   showCloseButton?: boolean;
 }
 
@@ -22,10 +47,23 @@ export const Modal: React.FC<ModalProps> = ({
   variant = 'default',
   showCloseButton = true
 }) => {
+  // ==================================================
+  // 전역 상태 및 설정
+  // ==================================================
+  
+  /** 다크모드 상태 */
   const { darkMode } = useApp();
 
-  // ESC 키로 모달 닫기 및 스크롤 관리
+  // ==================================================
+  // 사이드 이팩트
+  // ==================================================
+  
+  /** ESC 키 이벤트 및 스크롤 관리 */
   useEffect(() => {
+    /**
+     * ESC 키 눌렀을 때 모달 닫기
+     * @param e - 키보드 이벤트
+     */
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         onClose();
@@ -33,12 +71,14 @@ export const Modal: React.FC<ModalProps> = ({
     };
 
     if (isOpen) {
+      // ESC 키 이벤트 리스너 등록
       document.addEventListener('keydown', handleEscape);
-      // 스크롤 방지만 하고 위치는 건드리지 않음
+      // 모달이 열렸을 때 배경 스크롤 방지
       document.body.style.overflow = 'hidden';
     }
 
     return () => {
+      // 컴포넌트 언마운트 시 정리
       document.removeEventListener('keydown', handleEscape);
       if (isOpen) {
         // 모달이 닫힐 때 스크롤 복원
