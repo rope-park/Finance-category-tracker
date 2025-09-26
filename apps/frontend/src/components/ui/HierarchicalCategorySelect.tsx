@@ -11,7 +11,7 @@ import {
   getCategoryIcon,
   getPrimaryCategoryLabel
 } from '../../types';
-import { colors, borderRadius } from '../../styles/theme';
+import { colors } from '../../styles/theme';
 
 type PrimaryCategory = ExpensePrimaryCategory | IncomePrimaryCategory;
 
@@ -146,25 +146,25 @@ export const HierarchicalCategorySelect: React.FC<HierarchicalCategorySelectProp
 
   const triggerButtonStyle = {
     width: '100%',
-    padding: '12px 16px',
+    padding: '10px 14px',
     textAlign: 'left' as const,
-    backgroundColor: darkMode ? colors.gray[800] : '#ffffff',
-    border: `2px solid ${darkMode ? colors.gray[600] : colors.gray[200]}`,
-    borderRadius: borderRadius.lg,
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    backgroundColor: darkMode ? colors.dark[700] : '#ffffff',
+    border: `2px solid ${isOpen 
+      ? colors.primary[500] 
+      : darkMode ? colors.dark[600] : colors.gray[200]}`,
+    borderRadius: '12px',
+    boxShadow: isOpen ? `0 0 0 4px ${colors.primary[100]}` : 'none',
     cursor: 'pointer',
     transition: 'all 0.2s ease-in-out',
     fontSize: '14px',
-    color: darkMode ? colors.gray[100] : colors.gray[800],
+    color: darkMode ? colors.dark[100] : colors.gray[900],
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: '48px',
+    minHeight: '40px',
     outline: 'none',
-    ...(isOpen && {
-      borderColor: colors.primary[500],
-      boxShadow: `0 0 0 3px ${colors.primary[100]}`,
-    }),
+    fontFamily: "'Noto Sans KR', sans-serif",
+    transform: isOpen ? 'translateY(-1px)' : 'translateY(0)',
   };
 
   const dropdownStyle = {
@@ -173,24 +173,28 @@ export const HierarchicalCategorySelect: React.FC<HierarchicalCategorySelectProp
     left: 0,
     right: 0,
     marginTop: '4px',
-    backgroundColor: darkMode ? colors.gray[800] : '#ffffff',
-    border: `1px solid ${darkMode ? colors.gray[600] : colors.gray[200]}`,
-    borderRadius: borderRadius.lg,
-    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+    backgroundColor: darkMode ? colors.dark[700] : '#ffffff',
+    border: `2px solid ${darkMode ? colors.dark[600] : colors.gray[200]}`,
+    borderRadius: '12px',
+    boxShadow: darkMode 
+      ? '0 10px 25px rgba(0, 0, 0, 0.4)' 
+      : '0 10px 25px rgba(0, 0, 0, 0.1)',
     zIndex: 50,
     overflow: 'hidden',
     maxHeight: '400px',
+    animation: 'fadeIn 0.2s ease-in-out',
   };
 
   const columnHeaderStyle = {
     padding: '12px 16px',
-    backgroundColor: darkMode ? colors.gray[700] : colors.gray[50],
-    borderBottom: `1px solid ${darkMode ? colors.gray[600] : colors.gray[200]}`,
+    backgroundColor: darkMode ? colors.dark[600] : colors.gray[50],
+    borderBottom: `1px solid ${darkMode ? colors.dark[600] : colors.gray[200]}`,
     fontSize: '12px',
-    fontWeight: '600',
-    color: darkMode ? colors.gray[300] : colors.gray[600],
+    fontWeight: '700',
+    color: darkMode ? colors.dark[200] : colors.gray[600],
     textTransform: 'uppercase' as const,
     letterSpacing: '0.05em',
+    fontFamily: "'Noto Sans KR', sans-serif",
   };
 
   const optionButtonStyle = {
@@ -205,50 +209,40 @@ export const HierarchicalCategorySelect: React.FC<HierarchicalCategorySelectProp
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    borderBottom: `1px solid ${darkMode ? colors.gray[700] : colors.gray[100]}`,
+    borderBottom: `1px solid ${darkMode ? colors.dark[600] : colors.gray[100]}`,
+    fontFamily: "'Noto Sans KR', sans-serif",
   };
 
   const getTypeButtonStyle = (type: 'expense' | 'income', isSelected: boolean) => ({
     ...optionButtonStyle,
-    color: darkMode ? colors.gray[200] : colors.gray[700],
+    color: darkMode ? colors.dark[200] : colors.gray[700],
     backgroundColor: isSelected 
       ? (type === 'expense' 
           ? (darkMode ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)') 
           : (darkMode ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)'))
       : 'transparent',
-    ':hover': {
-      backgroundColor: type === 'expense' 
-        ? (darkMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.05)') 
-        : (darkMode ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.05)'),
-    },
   });
 
   const getPrimaryButtonStyle = (isSelected: boolean) => ({
     ...optionButtonStyle,
-    color: darkMode ? colors.gray[200] : colors.gray[700],
+    color: darkMode ? colors.dark[200] : colors.gray[700],
     backgroundColor: isSelected 
       ? (darkMode ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)')
       : 'transparent',
-    ':hover': {
-      backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.05)',
-    },
   });
 
   const getSecondaryButtonStyle = (isSelected: boolean) => ({
     ...optionButtonStyle,
-    color: darkMode ? colors.gray[200] : colors.gray[700],
+    color: darkMode ? colors.dark[200] : colors.gray[700],
     backgroundColor: isSelected 
       ? (darkMode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)')
       : 'transparent',
-    ':hover': {
-      backgroundColor: darkMode ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.05)',
-    },
   });
 
   const emptyStateStyle = {
     padding: '16px',
     textAlign: 'center' as const,
-    color: darkMode ? colors.gray[400] : colors.gray[500],
+    color: darkMode ? colors.dark[400] : colors.gray[500],
     fontSize: '14px',
     fontStyle: 'italic' as const,
   };
@@ -270,12 +264,12 @@ export const HierarchicalCategorySelect: React.FC<HierarchicalCategorySelectProp
         style={triggerButtonStyle}
         onMouseEnter={(e) => {
           if (!isOpen) {
-            e.currentTarget.style.borderColor = darkMode ? colors.gray[500] : colors.gray[300];
+            e.currentTarget.style.borderColor = darkMode ? colors.dark[500] : colors.gray[300];
           }
         }}
         onMouseLeave={(e) => {
           if (!isOpen) {
-            e.currentTarget.style.borderColor = darkMode ? colors.gray[600] : colors.gray[200];
+            e.currentTarget.style.borderColor = darkMode ? colors.dark[600] : colors.gray[200];
           }
         }}
       >
@@ -309,7 +303,7 @@ export const HierarchicalCategorySelect: React.FC<HierarchicalCategorySelectProp
               minHeight: '300px',
             }}>
               {/* 거래 타입 컬럼 */}
-              <div style={{ borderRight: `1px solid ${darkMode ? colors.gray[600] : colors.gray[200]}` }}>
+              <div style={{ borderRight: `1px solid ${darkMode ? colors.dark[600] : colors.gray[200]}` }}>
                 <div style={columnHeaderStyle}>
                   💰 거래 타입
                 </div>
@@ -354,7 +348,7 @@ export const HierarchicalCategorySelect: React.FC<HierarchicalCategorySelectProp
               </div>
               
               {/* 1차 카테고리 컬럼 */}
-              <div style={{ borderRight: `1px solid ${darkMode ? colors.gray[600] : colors.gray[200]}` }}>
+              <div style={{ borderRight: `1px solid ${darkMode ? colors.dark[600] : colors.gray[200]}` }}>
                 <div style={columnHeaderStyle}>
                   📂 1차 카테고리
                 </div>
