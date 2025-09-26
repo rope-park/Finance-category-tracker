@@ -23,8 +23,8 @@ const getDatabaseConfig = (): DatabaseConfig => {
     min: parseInt(process.env.DB_POOL_MIN || '5'),  // 최소 연결 수
     idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000'), // 30초
     connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '5000'), // 5초
-    // SSL 설정 (프로덕션 환경)
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    // SSL 설정 (Docker 환경에서는 비활성화, 프로덕션 환경에서만 활성화)
+    ssl: process.env.NODE_ENV === 'production' && process.env.DB_SSL !== 'false' ? { rejectUnauthorized: false } : false,
     // 재시도 설정
     retryAttempts: parseInt(process.env.DB_RETRY_ATTEMPTS || '3'),
     retryDelay: parseInt(process.env.DB_RETRY_DELAY || '1000')
