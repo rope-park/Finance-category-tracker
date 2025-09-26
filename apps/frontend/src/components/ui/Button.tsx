@@ -1,25 +1,60 @@
+/**
+ * 재사용 가능한 버튼 컴포넌트
+ * 
+ * 주요 기능:
+ * - 다양한 버튼 스타일 (primary, secondary, ghost, success, warning, error, gradient)
+ * - 3가지 크기 옵션 (sm, md, lg)
+ * - 로딩 상태 지원
+ * - 아이콘 지원 (왼쪽/오른쪽 위치)
+ * - 다크모드 대응
+ * - 접근성 지원 (ARIA 속성)
+ * 
+ * @author Finance Category Tracker Team
+ * @version 1.0.0
+ */
+
 import React, { type CSSProperties } from 'react';
 import { colors, borderRadius } from '../../styles/theme';
 
+/** Button 컴포넌트 Props */
 interface ButtonProps {
+  /** 버튼 내용 (텍스트, 아이콘 등) */
   children: React.ReactNode;
+  /** 버튼 스타일 변형 */
   variant?: 'primary' | 'secondary' | 'ghost' | 'success' | 'warning' | 'error' | 'gradient';
+  /** 버튼 크기 */
   size?: 'sm' | 'md' | 'lg';
+  /** 비활성화 여부 */
   disabled?: boolean;
+  /** 로딩 상태 여부 */
   loading?: boolean;
+  /** 아이콘 문자열 */
   icon?: string;
+  /** 아이콘 위치 */
   iconPosition?: 'left' | 'right';
+  /** 전체 너비 사용 여부 */
   fullWidth?: boolean;
+  /** 다크모드 사용 여부 */
   darkMode?: boolean;
+  /** 클릭 이벤트 핸들러 */
   onClick?: () => void;
+  /** 커스텀 스타일 */
   style?: CSSProperties;
+  /** 커스텀 CSS 클래스 */
   className?: string;
+  /** 버튼 HTML 타입 */
   type?: 'button' | 'submit' | 'reset';
+  /** 접근성: 버튼 라벨 */
   'aria-label'?: string;
+  /** 접근성: 설명 요소 ID */
   'aria-describedby'?: string;
+  /** 접근성: 확장 상태 */
   'aria-expanded'?: boolean;
+  /** 접근성: 눌린 상태 */
   'aria-pressed'?: boolean;
+  /** 접근성: 역할 */
   role?: string;
+  /** 접근성: 탭 순서 */
   tabIndex?: number;
 }
 
