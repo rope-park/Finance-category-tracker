@@ -1,9 +1,12 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import session from 'express-session';
+import morgan from 'morgan';
 import { testConnection } from './config/database';
 import { globalErrorHandler, notFoundHandler } from './utils/errors';
-import logger from './utils/logger';
+import logger, { loggerHelpers } from './utils/logger';
+import { cacheService } from './services/cacheService';
+import { initSentry } from './utils/sentry';
 
 // 보안 미들웨어
 import { 
@@ -30,6 +33,19 @@ import {
   getSystemInfo
 } from './utils/monitoring';
 
+// 로깅 미들웨어
+import { 
+  apiLoggingMiddleware, 
+  performanceLoggingMiddleware 
+} from './middleware/logging';
+
+// 메트릭 시스템
+import { 
+  metricsMiddleware, 
+  metricsEndpoint,
+  metricsHelpers 
+} from './utils/metrics';
+
 // API 문서화
 import { conditionalSwagger } from './config/swagger';
 
@@ -46,6 +62,10 @@ import analyticsRoutes from './routes/analytics';
 import predictionRoutes from './routes/prediction';
 import recurringTemplateRoutes from './routes/recurringTemplates';
 import notificationRoutes from './routes/notifications';
+import educationRoutes from './routes/educationRoutes';
+import socialRoutes from './routes/social';
+import communityRoutes from './routes/community';
+import performanceRoutes from './routes/performance';
 
 import helmet from 'helmet';
 import cors from 'cors';
@@ -55,6 +75,9 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Sentry 초기화 (가장 먼저!)
+initSentry(app);
 
 // Trust proxy for accurate IP addresses
 app.set('trust proxy', 1);
@@ -85,8 +108,31 @@ app.use(express.urlencoded({
 }));
 app.use(express.raw({ limit: requestSizeLimits.raw }));
 
-// 성능 모니터링 (가장 먼저 적용)
+// HTTP 요청 로깅 (Morgan + Winston 통합)
+const morganStream = {
+  write: (message: string) => {
+    const trimmed = message.trim();
+    if (trimmed) {
+      logger.http(trimmed);
+    }
+  }
+};
+
+// Morgan 설정 (요청 응답 시간과 상태 코드 포함)
+app.use(morgan(
+  ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" :response-time ms',
+  { stream: morganStream }
+));
+
+// 성능 모니터링 (Sentry 다음으로 적용)
 app.use(performanceMonitoring);
+app.use(performanceLoggingMiddleware);
+
+// 메트릭 수집 미들웨어
+app.use(metricsMiddleware);
+
+// API 로깅 미들웨어
+app.use(apiLoggingMiddleware);
 
 // 보안 미들웨어
 app.use(ipFiltering);
@@ -106,6 +152,9 @@ app.get('/api/health/database', databaseHealthCheck);
 app.get('/api/metrics', getMetrics);
 app.get('/api/system', getSystemInfo);
 
+// Prometheus 메트릭 엔드포인트
+app.get('/metrics', metricsEndpoint);
+
 // 개발 환경에서만 메트릭 리셋 허용
 if (process.env.NODE_ENV !== 'production') {
   app.post('/api/metrics/reset', resetMetrics);
@@ -120,28 +169,24 @@ app.use('/api/users', userRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/goals', goalRoutes);
+// 추천 관련 라우터를 별도 경로로 분리
+app.use('/api/recommend', categoryRecommendRoutes);
+app.use('/api/recommend-cache', categoryRecommendCacheRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/category-recommend', categoryRecommendRoutes);
-app.use('/api/category-recommend-cache', categoryRecommendCacheRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/prediction', predictionRoutes);
 app.use('/api/recurring-templates', recurringTemplateRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/education', educationRoutes);
+app.use('/api/social', socialRoutes);
+app.use('/api/community', communityRoutes);
+app.use('/api/performance', performanceRoutes);
 
 // API 라우트에 rate limiting 적용
 app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/transactions', transactionRoutes);
-app.use('/api/budgets', budgetRoutes);
-
-app.use('/api/categories', categoryRoutes);
-app.use('/api/categories', categoryRecommendRoutes);
-app.use('/api/categories', categoryRecommendCacheRoutes);
-
-app.use('/api/recurring-templates', recurringTemplateRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/analytics', analyticsRoutes);
 
 // 404 핸들러
 app.use(notFoundHandler);
@@ -160,6 +205,14 @@ const startServer = async () => {
     // 데이터베이스 연결 테스트
     await testConnection();
     logger.info('✅ Database connection established');
+    
+    // Redis 캐시 연결 (선택적)
+    try {
+      await cacheService.connect();
+      logger.info('✅ Redis cache connected');
+    } catch (error) {
+      logger.warn('⚠️  Redis cache connection failed (continuing without cache):', error);
+    }
     
     // 테스트 환경에서는 서버를 시작하지 않음
     if (process.env.NODE_ENV === 'test') {
@@ -185,8 +238,16 @@ const startServer = async () => {
     });
 
     // 우아한 종료 처리
-    const gracefulShutdown = (signal: string) => {
+    const gracefulShutdown = async (signal: string) => {
       logger.info(`${signal} received. Starting graceful shutdown...`);
+      
+      // Redis 연결 해제
+      try {
+        await cacheService.disconnect();
+        logger.info('✅ Redis connection closed');
+      } catch (error) {
+        logger.warn('⚠️  Redis disconnection warning:', error);
+      }
       
       server.close((err) => {
         if (err) {
