@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { colors } from '../../styles/theme';
 
 interface DatePickerProps {
@@ -8,6 +8,8 @@ interface DatePickerProps {
   placeholder?: string;
   required?: boolean;
   darkMode?: boolean;
+  error?: string;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export const DatePicker: React.FC<DatePickerProps> = ({
@@ -16,48 +18,91 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   label,
   placeholder,
   required = false,
-  darkMode = false
+  darkMode = false,
+  error,
+  size = 'md'
 }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  
+  const sizeStyles = {
+    sm: { padding: '8px 12px', fontSize: '13px', minHeight: '36px' },
+    md: { padding: '10px 14px', fontSize: '14px', minHeight: '40px' },
+    lg: { padding: '12px 16px', fontSize: '16px', minHeight: '48px' }
+  };
+
+  const inputId = label ? `datepicker-${label.replace(/\s+/g, '-').toLowerCase()}` : undefined;
+  const errorId = error ? `${inputId}-error` : undefined;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div style={{ width: '100%' }}>
       {label && (
         <label
+          htmlFor={inputId}
           style={{
+            display: 'block',
+            marginBottom: '8px',
             fontSize: '14px',
             fontWeight: '600',
-            color: darkMode ? colors.dark[200] : colors.gray[700],
+            color: darkMode ? colors.dark[100] : colors.gray[900],
             fontFamily: "'Noto Sans KR', sans-serif"
           }}
+          id={inputId ? inputId + '-label' : undefined}
         >
           {label}
-          {required && <span style={{ color: colors.error[600] }}>*</span>}
+          {required && <span style={{ color: colors.error[500], marginLeft: '2px' }} aria-hidden="true">*</span>}
         </label>
       )}
       <input
+        id={inputId}
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         placeholder={placeholder}
         required={required}
         style={{
-          padding: '10px 12px',
-          backgroundColor: darkMode ? colors.dark[700] : 'white',
+          ...sizeStyles[size],
+          backgroundColor: darkMode ? colors.dark[700] : '#ffffff',
           color: darkMode ? colors.dark[100] : colors.gray[900],
-          border: `1px solid ${darkMode ? colors.dark[600] : colors.gray[300]}`,
-          borderRadius: '8px',
-          fontSize: '14px',
+          border: `2px solid ${error 
+            ? colors.error[500] 
+            : isFocused 
+              ? colors.primary[500] 
+              : darkMode ? colors.dark[600] : colors.gray[200]}`,
+          borderRadius: '12px',
+          fontSize: sizeStyles[size].fontSize,
           fontFamily: "'Noto Sans KR', sans-serif",
           outline: 'none',
-          transition: 'border-color 0.2s ease',
-          cursor: 'pointer'
+          transition: 'all 0.2s ease-in-out',
+          cursor: 'pointer',
+          width: '100%',
+          boxShadow: error 
+            ? `0 0 0 0px ${colors.error[100]}` 
+            : isFocused 
+              ? `0 0 0 4px ${colors.primary[100]}` 
+              : 'none',
+          transform: isFocused ? 'translateY(-1px)' : 'translateY(0)'
         }}
-        onFocus={(e) => {
-          e.target.style.borderColor = colors.primary[500];
-        }}
-        onBlur={(e) => {
-          e.target.style.borderColor = darkMode ? colors.dark[600] : colors.gray[300];
-        }}
+        aria-labelledby={inputId ? inputId + '-label' : undefined}
+        aria-describedby={error ? errorId : undefined}
+        aria-invalid={!!error}
+        aria-required={required}
       />
+      {error && (
+        <p
+          id={errorId}
+          style={{
+            marginTop: '4px',
+            fontSize: '12px',
+            color: colors.error[500],
+            fontFamily: "'Noto Sans KR', sans-serif"
+          }}
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 };
