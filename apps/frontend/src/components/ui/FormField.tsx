@@ -38,20 +38,20 @@ export const FormField: React.FC<FormFieldProps> = ({
             display: 'block',
             fontSize: '14px',
             fontWeight: 600,
-            color: darkMode ? colors.dark[200] : colors.gray[700],
-            marginBottom: '6px',
+            color: darkMode ? colors.dark[100] : colors.gray[900],
+            marginBottom: '8px',
             fontFamily: "'Noto Sans KR', sans-serif"
           }}
         >
           {label}
           {required && (
-            <span style={{ color: colors.error[500], marginLeft: '4px' }} aria-hidden="true">*</span>
+            <span style={{ color: colors.error[500], marginLeft: '2px' }} aria-hidden="true">*</span>
           )}
         </label>
       )}
       {/* children에 id, aria-describedby, aria-invalid 자동 주입 (cloneElement) */}
       {React.isValidElement(children) && typeof children.type !== 'string'
-        ? React.cloneElement(children as React.ReactElement<any>, {
+        ? React.cloneElement(children as React.ReactElement<React.HTMLAttributes<HTMLElement>>, {
             id: fieldId ? fieldId + '-input' : undefined,
             'aria-describedby': error ? errorId : undefined,
             'aria-invalid': !!error,
@@ -63,12 +63,16 @@ export const FormField: React.FC<FormFieldProps> = ({
           id={errorId}
           style={{
             fontSize: '12px',
-            color: colors.error[600],
+            color: colors.error[500],
             marginTop: '4px',
-            fontFamily: "'Noto Sans KR', sans-serif"
+            fontFamily: "'Noto Sans KR', sans-serif",
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
           }}
           role="alert"
         >
+          <span style={{ fontSize: '12px' }}>⚠️</span>
           {error}
         </div>
       )}
