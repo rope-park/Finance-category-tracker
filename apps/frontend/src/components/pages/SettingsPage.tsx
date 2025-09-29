@@ -6,10 +6,18 @@ import { Card, Button, Toggle, Section, TabNavigation } from '../ui';
 import { ProfileSettingsModal } from '../modals/ProfileSettingsModal';
 
 export const SettingsPage: React.FC = () => {
-  const { darkMode, toggleDarkMode, notificationsEnabled, toggleNotifications } = useApp();
+  const { darkMode, toggleDarkMode, notificationsEnabled, toggleNotifications, amountHidden, toggleAmountHidden } = useApp();
   const { state: { user } } = useAuth();
   const [activeSettingsTab, setActiveSettingsTab] = useState<string>('profile');
   const [showProfileModal, setShowProfileModal] = useState(false);
+
+  // 디버깅을 위한 로그
+  console.log('⚙️ SettingsPage 렌더링:', { 
+    darkMode, 
+    notificationsEnabled, 
+    amountHidden,
+    toggleAmountHidden: typeof toggleAmountHidden
+  });
 
   const settingsTabs = [
     { id: 'profile', label: '프로필', icon: '👤' },
@@ -235,6 +243,43 @@ export const SettingsPage: React.FC = () => {
                 <Toggle 
                   enabled={darkMode}
                   onChange={toggleDarkMode}
+                />
+              </div>
+            </Card>
+
+            {/* 금액 숨기기 설정 */}
+            <Card>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <h4 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: darkMode ? colors.dark[100] : colors.gray[900],
+                    margin: '0 0 4px 0',
+                    fontFamily: "'Noto Sans KR', sans-serif"
+                  }}>
+                    💰 금액 숨기기
+                  </h4>
+                  <p style={{
+                    fontSize: '14px',
+                    color: darkMode ? colors.dark[400] : colors.gray[600],
+                    margin: 0,
+                    fontFamily: "'Noto Sans KR', sans-serif"
+                  }}>
+                    모든 금액을 ●●● 표시로 숨깁니다 (클릭 시 잠시 표시)
+                  </p>
+                </div>
+                <Toggle 
+                  enabled={amountHidden}
+                  onChange={() => {
+                    console.log('🟡 Toggle 클릭됨! 현재 amountHidden:', amountHidden);
+                    console.log('🟡 toggleAmountHidden 함수:', toggleAmountHidden);
+                    toggleAmountHidden();
+                  }}
                 />
               </div>
             </Card>
