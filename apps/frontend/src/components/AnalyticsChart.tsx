@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, memo } from 'react';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import type { ChartData } from 'chart.js';
+import ChartErrorBoundary from './ChartErrorBoundary';
 
 // Chart.js 등록
 ChartJS.register(
@@ -36,252 +37,353 @@ interface Transaction {
   transaction_type: 'income' | 'expense';
 }
 
-
 interface AnalyticsChartProps {
   transactions: Transaction[];
   type: 'monthly-trend' | 'category-breakdown' | 'income-vs-expense' | 'forecast';
   period?: 'week' | 'month' | 'year';
 }
 
-const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ 
-  transactions, 
-  type, 
-  period = 'month' 
-}) => {
+// 월별 트렌드 데이터 생성 함수
+const generateMonthlyTrendData = (transactions: Transaction[]): ChartData<'line'> | null => {
+  if (!transactions || transactions.length === 0) {
+    return null;
+  }
+
+  const monthlyData: { [key: string]: { income: number; expense: number } } = {};
   
-
-  const [chartData, setChartData] = useState<ChartData<'line'> | ChartData<'bar'> | ChartData<'doughnut'> | null>(null);
-
-  useEffect(() => {
-    if (!transactions.length) return;
-
-    switch (type) {
-      case 'monthly-trend':
-        setChartData(generateMonthlyTrendData(transactions));
-        break;
-      case 'category-breakdown':
-        setChartData(generateCategoryBreakdownData(transactions));
-        break;
-      case 'income-vs-expense':
-        setChartData(generateIncomeVsExpenseData(transactions));
-        break;
-      case 'forecast':
-        setChartData(generateForecastData(transactions));
-        break;
+  transactions.forEach(transaction => {
+    if (!transaction || !transaction.transaction_date || typeof transaction.amount !== 'number') {
+      return; // 잘못된 데이터 건너뛰기
     }
-  }, [transactions, type, period]);
-  // 최근 6개월 평균을 기반으로 다음 달 예측(수입/지출)
-  const generateForecastData = (transactions: Transaction[]) => {
-    const last6Months: { month: string; income: number; expense: number }[] = [];
-    const now = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      last6Months.push({
-        month: date.toLocaleDateString('ko-KR', { month: 'short' }),
-        income: 0,
-        expense: 0
-      });
-    }
-    transactions.forEach(transaction => {
-      const transactionDate = new Date(transaction.transaction_date);
-      const monthIndex = last6Months.findIndex(month => {
-        const monthDate = new Date();
-        monthDate.setMonth(monthDate.getMonth() - (5 - last6Months.indexOf(month)));
-        return transactionDate.getMonth() === monthDate.getMonth() &&
-               transactionDate.getFullYear() === monthDate.getFullYear();
-      });
-      if (monthIndex !== -1) {
-        if (transaction.transaction_type === 'income') {
-          last6Months[monthIndex].income += transaction.amount;
-        } else {
-          last6Months[monthIndex].expense += Math.abs(transaction.amount);
-        }
+    
+    let date;
+    try {
+      date = new Date(transaction.transaction_date);
+      if (isNaN(date.getTime())) {
+        return; // 잘못된 날짜 건너뛰기
       }
-    });
-    // 예측값: 최근 6개월 평균
-    const avgIncome = Math.round(last6Months.reduce((sum, m) => sum + m.income, 0) / 6);
-    const avgExpense = Math.round(last6Months.reduce((sum, m) => sum + m.expense, 0) / 6);
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString('ko-KR', { month: 'short' });
-    const labels = [...last6Months.map(m => m.month), nextMonth];
-    return {
-      labels,
-      datasets: [
-        {
-          label: '수입',
-          data: [...last6Months.map(m => m.income), avgIncome],
-          borderColor: 'rgb(34, 197, 94)',
-          backgroundColor: 'rgba(34, 197, 94, 0.1)',
-          borderDash: [0, 0, 0, 0, 0, 0, 6], // 마지막(예측) 점선
-          tension: 0.1
-        },
-        {
-          label: '지출',
-          data: [...last6Months.map(m => m.expense), avgExpense],
-          borderColor: 'rgb(239, 68, 68)',
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          borderDash: [0, 0, 0, 0, 0, 0, 6],
-          tension: 0.1
-        }
-      ]
-    };
-  };
-
-  const generateMonthlyTrendData = (transactions: Transaction[]) => {
-    const last6Months: { month: string; income: number; expense: number }[] = [];
-    const now = new Date();
-    
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      last6Months.push({
-        month: date.toLocaleDateString('ko-KR', { month: 'short' }),
-        income: 0,
-        expense: 0
-      });
+    } catch {
+      return; // 날짜 파싱 오류 건너뛰기
     }
-
-    transactions.forEach(transaction => {
-      const transactionDate = new Date(transaction.transaction_date);
-      const monthIndex = last6Months.findIndex(month => {
-        const monthDate = new Date();
-        monthDate.setMonth(monthDate.getMonth() - (5 - last6Months.indexOf(month)));
-        return transactionDate.getMonth() === monthDate.getMonth() && 
-               transactionDate.getFullYear() === monthDate.getFullYear();
-      });
-
-      if (monthIndex !== -1) {
-        if (transaction.transaction_type === 'income') {
-          last6Months[monthIndex].income += transaction.amount;
-        } else {
-          last6Months[monthIndex].expense += Math.abs(transaction.amount);
-        }
-      }
-    });
-
-    return {
-      labels: last6Months.map(month => month.month),
-      datasets: [
-        {
-          label: '수입',
-          data: last6Months.map(month => month.income),
-          borderColor: 'rgb(34, 197, 94)',
-          backgroundColor: 'rgba(34, 197, 94, 0.1)',
-          tension: 0.1
-        },
-        {
-          label: '지출',
-          data: last6Months.map(month => month.expense),
-          borderColor: 'rgb(239, 68, 68)',
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          tension: 0.1
-        }
-      ]
-    };
-  };
-
-  const generateCategoryBreakdownData = (transactions: Transaction[]) => {
-    const categoryTotals: { [key: string]: number } = {};
-    const expenseTransactions = transactions.filter(t => t.transaction_type === 'expense');
-
-    expenseTransactions.forEach(transaction => {
-      const category = transaction.category_key || '기타';
-      categoryTotals[category] = (categoryTotals[category] || 0) + Math.abs(transaction.amount);
-    });
-
-    const labels = Object.keys(categoryTotals);
-    const data = Object.values(categoryTotals);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     
-    const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
-      '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'
-    ];
-
-    return {
-      labels,
-      datasets: [
-        {
-          data,
-          backgroundColor: colors.slice(0, labels.length),
-          borderColor: colors.slice(0, labels.length),
-          borderWidth: 2
-        }
-      ]
-    };
-  };
-
-  const generateIncomeVsExpenseData = (transactions: Transaction[]) => {
-    const totalIncome = transactions
-      .filter(t => t.transaction_type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = { income: 0, expense: 0 };
+    }
     
-    const totalExpense = transactions
-      .filter(t => t.transaction_type === 'expense')
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    if (transaction.transaction_type === 'income') {
+      monthlyData[monthKey].income += transaction.amount;
+    } else {
+      monthlyData[monthKey].expense += transaction.amount;
+    }
+  });
 
-    return {
-      labels: ['수입', '지출'],
-      datasets: [
-        {
-          data: [totalIncome, totalExpense],
-          backgroundColor: ['#22C55E', '#EF4444'],
-          borderColor: ['#16A34A', '#DC2626'],
-          borderWidth: 2
-        }
-      ]
-    };
-  };
+  const sortedMonths = Object.keys(monthlyData).sort();
+  
+  if (sortedMonths.length === 0) {
+    return null;
+  }
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          padding: 20,
-          usePointStyle: true
-        }
+  const labels = sortedMonths.map(month => {
+    const [year, monthNum] = month.split('-');
+    return `${year}년 ${monthNum}월`;
+  });
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: '수입',
+        data: sortedMonths.map(month => monthlyData[month].income),
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        tension: 0.1,
       },
-      tooltip: {
-        callbacks: {
-          label: function(
-            context: import('chart.js').TooltipItem<'line' | 'bar' | 'doughnut'>
-          ) {
-            if (type === 'category-breakdown' || type === 'income-vs-expense') {
-              return `${context.label}: ${context.parsed.toLocaleString()}원`;
-            }
-            return `${context.dataset.label || ''}: ${context.parsed.toLocaleString()}원`;
-          }
+      {
+        label: '지출',
+        data: sortedMonths.map(month => monthlyData[month].expense),
+        borderColor: 'rgb(239, 68, 68)',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        tension: 0.1,
+      }
+    ],
+  };
+};
+
+const generateCategoryBreakdownData = (transactions: Transaction[]): ChartData<'doughnut'> | null => {
+  if (!transactions || transactions.length === 0) {
+    return null;
+  }
+
+  const categoryData: { [key: string]: number } = {};
+  
+  transactions
+    .filter(t => t && t.transaction_type === 'expense' && t.amount && t.category_key)
+    .forEach(transaction => {
+      categoryData[transaction.category_key] = (categoryData[transaction.category_key] || 0) + transaction.amount;
+    });
+
+  const categoryKeys = Object.keys(categoryData);
+  
+  if (categoryKeys.length === 0) {
+    return null;
+  }
+
+  const colors = [
+    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+    '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+  ];
+
+  return {
+    labels: categoryKeys,
+    datasets: [{
+      data: Object.values(categoryData),
+      backgroundColor: colors.slice(0, Object.keys(categoryData).length),
+      borderWidth: 2,
+      borderColor: '#fff',
+    }],
+  };
+};
+
+const generateIncomeVsExpenseData = (transactions: Transaction[]): ChartData<'bar'> | null => {
+  if (!transactions || transactions.length === 0) {
+    return null;
+  }
+
+  const last6Months: { month: string; income: number; expense: number }[] = [];
+  const now = new Date();
+  
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    last6Months.push({
+      month: date.toLocaleDateString('ko-KR', { month: 'short' }),
+      income: 0,
+      expense: 0
+    });
+  }
+
+  transactions.forEach(transaction => {
+    const transactionDate = new Date(transaction.transaction_date);
+    const monthIndex = last6Months.findIndex(m => {
+      const targetDate = new Date(now.getFullYear(), now.getMonth() - (5 - last6Months.indexOf(m)), 1);
+      return transactionDate.getMonth() === targetDate.getMonth() && 
+             transactionDate.getFullYear() === targetDate.getFullYear();
+    });
+
+    if (monthIndex !== -1) {
+      if (transaction.transaction_type === 'income') {
+        last6Months[monthIndex].income += transaction.amount;
+      } else {
+        last6Months[monthIndex].expense += transaction.amount;
+      }
+    }
+  });
+
+  return {
+    labels: last6Months.map(m => m.month),
+    datasets: [
+      {
+        label: '수입',
+        data: last6Months.map(m => m.income),
+        backgroundColor: 'rgba(34, 197, 94, 0.8)',
+        borderColor: 'rgba(34, 197, 94, 1)',
+        borderWidth: 1,
+      },
+      {
+        label: '지출',
+        data: last6Months.map(m => m.expense),
+        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+        borderColor: 'rgba(239, 68, 68, 1)',
+        borderWidth: 1,
+      }
+    ],
+  };
+};
+
+const generateForecastData = (transactions: Transaction[]): ChartData<'line'> | null => {
+  if (!transactions || transactions.length === 0) {
+    return null;
+  }
+
+  const last6Months: { month: string; income: number; expense: number }[] = [];
+  const now = new Date();
+  
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    last6Months.push({
+      month: date.toLocaleDateString('ko-KR', { month: 'short' }),
+      income: 0,
+      expense: 0
+    });
+  }
+
+  transactions.forEach(transaction => {
+    const transactionDate = new Date(transaction.transaction_date);
+    const monthIndex = last6Months.findIndex(m => {
+      const targetDate = new Date(now.getFullYear(), now.getMonth() - (5 - last6Months.indexOf(m)), 1);
+      return transactionDate.getMonth() === targetDate.getMonth() && 
+             transactionDate.getFullYear() === targetDate.getFullYear();
+    });
+
+    if (monthIndex !== -1) {
+      if (transaction.transaction_type === 'income') {
+        last6Months[monthIndex].income += transaction.amount;
+      } else {
+        last6Months[monthIndex].expense += transaction.amount;
+      }
+    }
+  });
+
+  // 평균 계산
+  const avgIncome = last6Months.reduce((sum, m) => sum + m.income, 0) / 6;
+  const avgExpense = last6Months.reduce((sum, m) => sum + m.expense, 0) / 6;
+
+  // 다음 달 예측 추가
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const labels = [
+    ...last6Months.map(m => m.month),
+    nextMonth.toLocaleDateString('ko-KR', { month: 'short' }) + ' (예측)'
+  ];
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: '실제 수입',
+        data: [...last6Months.map(m => m.income), null],
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        tension: 0.1,
+      },
+      {
+        label: '실제 지출',
+        data: [...last6Months.map(m => m.expense), null],
+        borderColor: 'rgb(239, 68, 68)',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        tension: 0.1,
+      },
+      {
+        label: '예상 수입',
+        data: [...Array(6).fill(null), avgIncome],
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.3)',
+        borderDash: [5, 5],
+        tension: 0.1,
+      },
+      {
+        label: '예상 지출',
+        data: [...Array(6).fill(null), avgExpense],
+        borderColor: 'rgb(239, 68, 68)',
+        backgroundColor: 'rgba(239, 68, 68, 0.3)',
+        borderDash: [5, 5],
+        tension: 0.1,
+      }
+    ],
+  };
+};
+
+// 차트 옵션 상수로 이동하여 메모리 최적화
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const chartOptions: any = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'top' as const,
+    },
+    tooltip: {
+      mode: 'index' as const,
+      intersect: false,
+      callbacks: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        label: function(context: any) {
+          return `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString()}원`;
         }
       }
     },
-    scales: type === 'monthly-trend' ? {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: function(value: string | number) {
-            return Number(value).toLocaleString() + '원';
-          }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        callback: function(value: any) {
+          return Number(value).toLocaleString() + '원';
         }
       }
-    } : {}
-  };
+    }
+  },
+  interaction: {
+    intersect: false,
+  },
+};
+
+const AnalyticsChart: React.FC<AnalyticsChartProps> = memo(({ 
+  transactions, 
+  type
+}) => {
+  // 데이터 처리 최적화 - useMemo로 계산 결과 캐시
+  const chartData = useMemo(() => {
+    if (!transactions.length) return null;
+
+    switch (type) {
+      case 'monthly-trend':
+        return generateMonthlyTrendData(transactions);
+      case 'category-breakdown':
+        return generateCategoryBreakdownData(transactions);
+      case 'income-vs-expense':
+        return generateIncomeVsExpenseData(transactions);
+      case 'forecast':
+        return generateForecastData(transactions);
+      default:
+        return null;
+    }
+  }, [transactions, type]);
 
   if (!chartData) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-64 rounded-lg bg-gray-50">
         <div className="text-gray-500">차트를 생성하는 중...</div>
       </div>
     );
   }
 
   return (
-    <div className="h-64">
-      {type === 'monthly-trend' && <Line data={chartData as ChartData<'line'>} options={chartOptions} />}
-      {type === 'category-breakdown' && <Doughnut data={chartData as ChartData<'doughnut'>} options={chartOptions} />}
-      {type === 'income-vs-expense' && <Bar data={chartData as ChartData<'bar'>} options={chartOptions} />}
-      {type === 'forecast' && <Line data={chartData as ChartData<'line'>} options={chartOptions} />}
-    </div>
+    <ChartErrorBoundary>
+      <div className="h-64">
+        {type === 'monthly-trend' && chartData && (
+          <Line 
+            data={chartData as ChartData<'line'>} 
+            options={chartOptions} 
+            key={`monthly-trend-${transactions.length}`}
+          />
+        )}
+        {type === 'category-breakdown' && chartData && (
+          <Doughnut 
+            data={chartData as ChartData<'doughnut'>} 
+            options={chartOptions}
+            key={`category-breakdown-${transactions.length}`}
+          />
+        )}
+        {type === 'income-vs-expense' && chartData && (
+          <Bar 
+            data={chartData as ChartData<'bar'>} 
+            options={chartOptions}
+            key={`income-vs-expense-${transactions.length}`}
+          />
+        )}
+        {type === 'forecast' && chartData && (
+          <Line 
+            data={chartData as ChartData<'line'>} 
+            options={chartOptions}
+            key={`forecast-${transactions.length}`}
+          />
+        )}
+      </div>
+    </ChartErrorBoundary>
   );
-};
+});
+
+AnalyticsChart.displayName = 'AnalyticsChart';
 
 export default AnalyticsChart;
