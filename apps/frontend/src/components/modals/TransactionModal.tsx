@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import { Modal, Input, DatePicker, Select, HierarchicalCategorySelect } from '../ui';
+import React, { useState, useContext, useEffect } from 'react';
+import { Modal, Input, DatePicker, Select, HierarchicalCategorySelect, CurrencyInput } from '../ui';
 import { Button } from '../ui/Button';
 import { AppContext } from '../../context/AppContext';
 import type { Transaction, TransactionCategory } from '../../types';
@@ -44,14 +44,54 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // transaction prop이 변경될 때마다 폼 데이터 업데이트
+  useEffect(() => {
+    console.log('🔍 TransactionModal - transaction prop 변경됨:', transaction);
+    if (transaction) {
+      console.log('📝 거래 데이터 구조:', {
+        amount: transaction.amount,
+        description: transaction.description,
+        category: transaction.category,
+        type: transaction.type,
+        date: transaction.date,
+        merchant: transaction.merchant
+      });
+      setFormData({
+        amount: transaction.amount.toString(),
+        description: transaction.description,
+        category: transaction.category as TransactionCategory,
+        type: transaction.type,
+        date: transaction.date,
+        merchant: transaction.merchant || ''
+      });
+    } else {
+      console.log('✨ 새 거래 추가 모드 - 폼 초기화');
+      // 새 거래 추가 시 초기값으로 리셋
+      setFormData({
+        amount: '',
+        description: '',
+        category: ExpenseSecondaryCategory.FOOD_RESTAURANT,
+        type: 'expense',
+        date: new Date().toISOString().split('T')[0],
+        merchant: ''
+      });
+    }
+    // 에러도 초기화
+    setErrors({});
+  }, [transaction]);
+
   // 거래 유형 옵션들
   const typeOptions = [
-    { value: 'expense', label: '지출' },
-    { value: 'income', label: '수입' }
+    { value: 'expense', label: '💸 지출' },
+    { value: 'income', label: '💰 수입' }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔥 TransactionModal handleSubmit 시작');
+    console.log('📝 현재 폼 데이터:', formData);
+    console.log('✏️ 수정 모드인가?', isEditing);
+    console.log('📄 거래 객체:', transaction);
     
     // 유효성 검사
     const newErrors: Record<string, string> = {};
@@ -69,26 +109,39 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     }
 
     if (Object.keys(newErrors).length > 0) {
+      console.log('❌ 유효성 검사 실패:', newErrors);
       setErrors(newErrors);
       return;
     }
 
-    const transactionData: Omit<Transaction, 'id'> = {
-      amount: parseFloat(formData.amount),
-      description: formData.description.trim(),
-      category: formData.category as TransactionCategory,
-      type: formData.type,
-      date: formData.date,
-      merchant: formData.merchant.trim() || undefined
-    };
+    try {
+      const transactionData: Omit<Transaction, 'id'> = {
+        amount: parseFloat(formData.amount),
+        description: formData.description.trim(),
+        category: formData.category as TransactionCategory,
+        type: formData.type,
+        date: formData.date,
+        merchant: formData.merchant.trim() || undefined
+      };
 
-    if (isEditing && transaction) {
-      updateTransaction({ ...transactionData, id: transaction.id });
-    } else {
-      addTransaction(transactionData);
+      console.log('🚀 API 호출 준비:', transactionData);
+
+      if (isEditing && transaction) {
+        console.log('📝 거래 수정 API 호출 시작');
+        await updateTransaction({ ...transactionData, id: transaction.id });
+        console.log('✅ 거래 수정 완료');
+      } else {
+        console.log('➕ 거래 추가 API 호출 시작');
+        await addTransaction(transactionData);
+        console.log('✅ 거래 추가 완료');
+      }
+
+      console.log('🎉 모달 닫기');
+      onClose();
+    } catch (error) {
+      console.error('❌ 거래 처리 실패:', error);
+      setErrors({ general: '거래 처리 중 오류가 발생했습니다.' });
     }
-
-    onClose();
   };
 
   const handleClose = () => {
@@ -188,38 +241,60 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', alignItems: 'start' }}>
-              <Select
-                label="거래 유형"
-                value={formData.type}
-                onChange={(value: string) => setFormData(prev => ({ ...prev, type: value as 'income' | 'expense' }))}
-                options={typeOptions}
-                required
-                darkMode={darkMode}
-              />
+              <div style={{
+                background: darkMode ? colors.dark[700] : colors.gray[50],
+                borderRadius: '12px',
+                padding: '16px',
+                border: `1px solid ${darkMode ? colors.dark[600] : colors.gray[200]}`
+              }}>
+                <Select
+                  label="거래 유형"
+                  value={formData.type}
+                  onChange={(value: string) => setFormData(prev => ({ ...prev, type: value as 'income' | 'expense' }))}
+                  options={typeOptions}
+                  required
+                  darkMode={darkMode}
+                  size="lg"
+                />
+              </div>
 
-              <Input
-                label="금액"
-                type="number"
-                value={formData.amount}
-                onChange={(value) => setFormData(prev => ({ ...prev, amount: value }))}
-                placeholder="금액을 입력하세요"
-                required
-                error={errors.amount}
-                darkMode={darkMode}
-                min={0}
-                step={100}
-              />
+              <div style={{
+                background: darkMode ? colors.dark[700] : colors.gray[50],
+                borderRadius: '12px',
+                padding: '16px',
+                border: `1px solid ${darkMode ? colors.dark[600] : colors.gray[200]}`
+              }}>
+                <CurrencyInput
+                  label="금액"
+                  value={parseFloat(formData.amount) || 0}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, amount: value.toString() }))}
+                  placeholder="금액을 입력하세요"
+                  required
+                  error={errors.amount}
+                  darkMode={darkMode}
+                  min={0}
+                  showCurrencySelector={false}
+                  currency="KRW"
+                />
+              </div>
             </div>
 
-            <div style={{ marginTop: '16px' }}>
+            <div style={{ 
+              marginTop: '16px',
+              background: darkMode ? colors.dark[700] : colors.gray[50],
+              borderRadius: '12px',
+              padding: '16px',
+              border: `1px solid ${darkMode ? colors.dark[600] : colors.gray[200]}`
+            }}>
               <Input
                 label="거래 설명"
                 value={formData.description}
                 onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
-                placeholder="거래 내용을 입력하세요"
+                placeholder="거래 내용을 입력하세요 (예: 점심 식사, 커피, 월급 등)"
                 required
                 error={errors.description}
                 darkMode={darkMode}
+                size="lg"
               />
             </div>
           </div>
@@ -250,12 +325,19 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 카테고리 선택
               </h4>
             </div>
-            <HierarchicalCategorySelect
-              value={formData.category}
-              onChange={(category) => setFormData(prev => ({ ...prev, category }))}
-              placeholder="카테고리를 선택하세요"
-              darkMode={darkMode}
-            />
+            <div style={{
+              background: darkMode ? colors.primary[900] : colors.primary[50],
+              borderRadius: '12px',
+              padding: '20px',
+              border: `2px solid ${darkMode ? colors.primary[700] : colors.primary[200]}`
+            }}>
+              <HierarchicalCategorySelect
+                value={formData.category}
+                onChange={(category) => setFormData(prev => ({ ...prev, category }))}
+                placeholder="카테고리를 선택하세요"
+                darkMode={darkMode}
+              />
+            </div>
           </div>
 
           {/* 부가 정보 섹션 */}
@@ -286,21 +368,39 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <DatePicker
-                label="날짜"
-                value={formData.date}
-                onChange={(value) => setFormData(prev => ({ ...prev, date: value }))}
-                required
-                darkMode={darkMode}
-              />
+              <div style={{
+                background: darkMode ? colors.dark[700] : colors.gray[50],
+                borderRadius: '12px',
+                padding: '16px',
+                border: `1px solid ${darkMode ? colors.dark[600] : colors.gray[200]}`
+              }}>
+                <DatePicker
+                  label="날짜"
+                  value={formData.date}
+                  onChange={(value) => setFormData(prev => ({ ...prev, date: value }))}
+                  required
+                  darkMode={darkMode}
+                  size="lg"
+                />
+              </div>
 
-              <Input
-                label="상점/장소 (선택)"
-                value={formData.merchant}
-                onChange={(value) => setFormData(prev => ({ ...prev, merchant: value }))}
-                placeholder="상점명이나 장소를 입력하세요"
-                darkMode={darkMode}
-              />
+              <div style={{
+                background: darkMode ? colors.dark[700] : colors.gray[50],
+                borderRadius: '12px',
+                padding: '16px',
+                border: `1px solid ${darkMode ? colors.dark[600] : colors.gray[200]}`
+              }}>
+                <Input
+                  label="상점/장소 (선택)"
+                  value={formData.merchant}
+                  onChange={(value) => setFormData(prev => ({ ...prev, merchant: value }))}
+                  placeholder="상점명이나 장소를 입력하세요"
+                  darkMode={darkMode}
+                  size="lg"
+                  icon="🏢"
+                  iconPosition="left"
+                />
+              </div>
             </div>
           </div>
 
@@ -348,25 +448,35 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '12px',
-            paddingTop: '20px',
-            borderTop: `1px solid ${darkMode ? colors.gray[700] : colors.gray[200]}`,
-            marginTop: '20px'
+            paddingTop: '24px',
+            borderTop: `2px solid ${darkMode ? colors.gray[700] : colors.gray[200]}`,
+            marginTop: '24px'
           }}>
             <Button
               type="button"
               variant="secondary"
               onClick={handleClose}
-              size="md"
+              size="lg"
+              style={{ 
+                minWidth: '120px',
+                fontWeight: '600'
+              }}
             >
-              취소
+              ❌ 취소
             </Button>
             <Button
               type="submit"
-              variant="primary"
-              icon={formData.type === 'income' ? '💰' : '💸'}
-              size="md"
+              variant={formData.type === 'income' ? 'success' : 'primary'}
+              size="lg"
+              style={{ 
+                minWidth: '140px',
+                fontWeight: '600',
+                background: formData.type === 'income' 
+                  ? `linear-gradient(135deg, ${colors.success[500]}, ${colors.success[600]})`
+                  : `linear-gradient(135deg, ${colors.primary[500]}, ${colors.primary[600]})`
+              }}
             >
-              {isEditing ? '수정하기' : '추가하기'}
+              {formData.type === 'income' ? '💰' : '💸'} {isEditing ? '수정하기' : '추가하기'}
             </Button>
           </div>
         </form>
