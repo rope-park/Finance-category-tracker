@@ -7,7 +7,11 @@ import { useAuth } from '../hooks/useAuth';
 import { useApp } from '../hooks/useApp';
 import { colors } from '../styles/theme';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onLogoClick?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
   const { state: { user, isAuthenticated }, logout } = useAuth();
   const { darkMode, toggleDarkMode } = useApp();
   
@@ -55,11 +59,26 @@ export const Header: React.FC = () => {
         zIndex: 100
       }}>
         {/* 로고 */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
+        <div 
+          onClick={onLogoClick}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            cursor: onLogoClick ? 'pointer' : 'default',
+            transition: 'transform 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            if (onLogoClick) {
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (onLogoClick) {
+              e.currentTarget.style.transform = 'scale(1)';
+            }
+          }}
+        >
           <div style={{
             width: '40px',
             height: '40px',
