@@ -1,298 +1,152 @@
-import React, { Component, type ReactNode } from 'react';
-import { colors } from '../../styles/theme';
+import { Component } from 'react';
+import type { ReactNode } from 'react';
+import { colors, shadows } from '../../styles/theme';
 
-interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
-}
-
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
   errorInfo?: React.ErrorInfo;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+}
+
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    // 다음 렌더링에서 폴백 UI가 보이도록 상태를 업데이트
-    return { hasError: true, error };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return {
+      hasError: true,
+      error,
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // 에러 정보를 상태에 저장
+    console.error('🚨 ErrorBoundary caught an error:', error, errorInfo);
+    
     this.setState({
       error,
-      errorInfo
+      errorInfo,
     });
 
-    // 부모 컴포넌트에 에러 콜백 호출
+    // 에러 리포팅
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
 
-    // 에러 로깅 (실제 환경에서는 Sentry, LogRocket 등으로 전송)
-    console.error('💥 Error Boundary caught an error:', error);
-    console.error('📍 Error Info:', errorInfo);
-
-    // TODO: 실제 프로덕션에서는 에러 리포팅 서비스에 전송
-    // Sentry.captureException(error, { extra: errorInfo });
+    // 개발 환경에서 추가 로깅
+    if (process.env.NODE_ENV === 'development') {
+      console.group('� Error Details');
+      console.error('Error:', error);
+      console.error('Error Info:', errorInfo);
+      console.error('Component Stack:', errorInfo.componentStack);
+      console.groupEnd();
+    }
   }
 
   handleRetry = () => {
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 
-  handleReload = () => {
-    window.location.reload();
-  };
-
   render() {
     if (this.state.hasError) {
-      // 커스텀 폴백 UI가 제공된 경우 사용
+      // 사용자 정의 fallback이 있으면 사용
       if (this.props.fallback) {
         return this.props.fallback;
       }
-      // 기본 에러 UI 렌더링
+
+      // 기본 에러 UI
       return (
-        <DefaultErrorFallback
-          error={this.state.error}
-          errorInfo={this.state.errorInfo}
-          onRetry={this.handleRetry}
-          onReload={this.handleReload}
-        />
+        <div style={{
+          minHeight: '400px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '32px',
+          background: colors.gray[50],
+          borderRadius: '12px',
+          border: `1px solid ${colors.gray[200]}`,
+          margin: '16px 0'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            maxWidth: '500px',
+            background: 'white',
+            padding: '48px 32px',
+            borderRadius: '16px',
+            boxShadow: shadows.lg,
+            border: `1px solid ${colors.gray[100]}`
+          }}>
+            <div style={{ fontSize: '64px', marginBottom: '24px' }}>💥</div>
+            <h2 style={{
+              fontSize: '24px',
+              fontWeight: '700',
+              color: colors.gray[900],
+              margin: '0 0 16px 0'
+            }}>
+              앗! 뭔가 잘못되었어요
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: colors.gray[600],
+              margin: '0 0 32px 0',
+              lineHeight: '1.6'
+            }}>
+              예상치 못한 오류가 발생했습니다.<br />
+              페이지를 새로고침하거나 잠시 후 다시 시도해주세요.
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center',
+              flexWrap: 'wrap'
+            }}>
+              <button
+                onClick={this.handleRetry}
+                style={{
+                  background: `linear-gradient(135deg, ${colors.primary[500]}, ${colors.primary[700]})`,
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  minWidth: '120px'
+                }}
+              >
+                🔄 다시 시도
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  background: 'transparent',
+                  color: colors.gray[700],
+                  border: `2px solid ${colors.gray[300]}`,
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  minWidth: '120px'
+                }}
+              >
+                🔃 새로고침
+              </button>
+            </div>
+          </div>
+        </div>
       );
     }
+
     return this.props.children;
   }
-}
-
-interface ErrorFallbackProps {
-  error?: Error;
-  errorInfo?: React.ErrorInfo;
-  onRetry: () => void;
-  onReload: () => void;
-}
-
-const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
-  error,
-  errorInfo,
-  onRetry,
-  onReload
-}) => {
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        padding: '40px 20px',
-        backgroundColor: '#f8fafc',
-        fontFamily: "'Noto Sans KR', sans-serif",
-      }}
-      role="alertdialog"
-      aria-labelledby="error-title"
-      aria-describedby="error-desc"
-      tabIndex={-1}
-    >
-      <div
-        style={{
-          maxWidth: '600px',
-          textAlign: 'center',
-          background: '#ffffff',
-          borderRadius: '16px',
-          padding: '40px',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-          border: `1px solid ${colors.gray[200]}`,
-        }}
-      >
-        {/* 에러 아이콘 */}
-        <div style={{ fontSize: '64px', marginBottom: '24px' }} aria-hidden="true">💥</div>
-        {/* 메인 제목 */}
-        <h1
-          id="error-title"
-          style={{ fontSize: '24px', fontWeight: 700, color: colors.gray[900], margin: '0 0 16px 0' }}
-          tabIndex={0}
-        >
-          앗! 문제가 발생했습니다
-        </h1>
-        {/* 설명 */}
-        <p
-          id="error-desc"
-          style={{ fontSize: '16px', color: colors.gray[600], margin: '0 0 32px 0', lineHeight: '1.6' }}
-          tabIndex={0}
-        >
-          예상치 못한 오류로 인해 페이지를 표시할 수 없습니다.<br />
-          잠시 후 다시 시도해주세요.
-        </p>
-        {/* 버튼들 */}
-        <div
-          style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: isDevelopment ? '32px' : '0' }}
-        >
-          <button
-            onClick={onRetry}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: colors.primary[600],
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              fontFamily: "'Noto Sans KR', sans-serif",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = colors.primary[700];
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = colors.primary[600];
-            }}
-            aria-label="다시 시도"
-            tabIndex={0}
-          >
-            다시 시도
-          </button>
-          <button
-            onClick={onReload}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: colors.gray[100],
-              color: colors.gray[700],
-              border: `1px solid ${colors.gray[300]}`,
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              fontFamily: "'Noto Sans KR', sans-serif",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = colors.gray[200];
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = colors.gray[100];
-            }}
-            aria-label="페이지 새로고침"
-            tabIndex={0}
-          >
-            페이지 새로고침
-          </button>
-        </div>
-        {/* 개발 환경에서만 상세 에러 정보 표시 */}
-        {isDevelopment && error && (
-          <details
-            style={{
-              textAlign: 'left',
-              marginTop: '32px',
-              padding: '16px',
-              backgroundColor: colors.gray[50],
-              borderRadius: '8px',
-              border: `1px solid ${colors.gray[200]}`,
-            }}
-          >
-            <summary
-              style={{ cursor: 'pointer', fontWeight: 600, color: colors.gray[700], marginBottom: '12px' }}
-              tabIndex={0}
-            >
-              🔍 개발자 정보 (Development Only)
-            </summary>
-            <div
-              style={{ fontSize: '12px', fontFamily: 'monospace', color: colors.error[600] }}
-              tabIndex={0}
-            >
-              <div style={{ marginBottom: '12px' }}>
-                <strong>Error:</strong> {error.name}
-              </div>
-              <div style={{ marginBottom: '12px' }}>
-                <strong>Message:</strong> {error.message}
-              </div>
-              {error.stack && (
-                <div style={{ marginBottom: '12px' }}>
-                  <strong>Stack Trace:</strong>
-                  <pre
-                    style={{
-                      backgroundColor: colors.gray[900],
-                      color: '#ffffff',
-                      padding: '12px',
-                      borderRadius: '4px',
-                      overflow: 'auto',
-                      fontSize: '11px',
-                      lineHeight: '1.4',
-                    }}
-                    tabIndex={0}
-                  >
-                    {error.stack}
-                  </pre>
-                </div>
-              )}
-              {errorInfo && (
-                <div>
-                  <strong>Component Stack:</strong>
-                  <pre
-                    style={{
-                      backgroundColor: colors.gray[900],
-                      color: '#ffffff',
-                      padding: '12px',
-                      borderRadius: '4px',
-                      overflow: 'auto',
-                      fontSize: '11px',
-                      lineHeight: '1.4',
-                    }}
-                    tabIndex={0}
-                  >
-                    {errorInfo.componentStack}
-                  </pre>
-                </div>
-              )}
-            </div>
-          </details>
-        )}
-        {/* 연락처 정보 */}
-        <div
-          style={{
-            marginTop: '24px',
-            padding: '16px',
-            backgroundColor: colors.primary[50],
-            borderRadius: '8px',
-            border: `1px solid ${colors.primary[200]}`,
-          }}
-          tabIndex={0}
-        >
-          <p style={{ fontSize: '14px', color: colors.primary[700], margin: 0, lineHeight: '1.5' }}>
-            💡 <strong>문제가 지속된다면?</strong><br />
-            이 문제를 신고해 주시면 빠르게 해결하겠습니다.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Higher-Order Component로도 사용 가능
-export function withErrorBoundary<P extends Record<string, unknown>>(
-  Component: React.ComponentType<P>,
-  fallback?: ReactNode,
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void
-) {
-  const WrappedComponent = (props: P) => (
-    <ErrorBoundary fallback={fallback} onError={onError}>
-      <Component {...props} />
-    </ErrorBoundary>
-  );
-
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  return WrappedComponent;
 }
 
 // 특정 컴포넌트용 에러 바운더리들
