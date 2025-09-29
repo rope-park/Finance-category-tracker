@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { useApp } from './hooks/useApp';
@@ -7,17 +7,32 @@ import { Header } from './components/Header';
 import { ProfileRequiredModal } from './components/modals/ProfileRequiredModal';
 import { ProfileSettingsModal } from './components/modals/ProfileSettingsModal';
 import { ProfileRedirectModal } from './components/modals/ProfileRedirectModal';
-import { 
-  DashboardPage, 
-  TransactionsPage, 
-  BudgetPage, 
-  AnalyticsPage, 
-  CategoriesPage, 
-  SettingsPage, 
-  AutomationCenterPage 
-} from './components/pages';
-import { Tooltip, ErrorBoundary, PageErrorBoundary, ModalErrorBoundary } from './components/ui';
+import { Tooltip, DashboardLoader, AnalyticsLoader, TransactionsLoader, SettingsLoader, PageLoader } from './components/ui';
+import { ErrorBoundaryWrapper } from './components/common/ErrorBoundary';
 import { colors, shadows, borderRadius } from './styles/theme';
+
+// 페이지 컴포넌트들을 Lazy Loading으로 변경
+const DashboardPage = lazy(() => import('./components/pages').then(module => ({ default: module.DashboardPage })));
+const TransactionsPage = lazy(() => import('./components/pages').then(module => ({ default: module.TransactionsPage })));
+const BudgetPage = lazy(() => import('./components/pages').then(module => ({ default: module.BudgetPage })));
+const AnalyticsPage = lazy(() => import('./components/pages').then(module => ({ default: module.AnalyticsPage })));
+const CategoriesPage = lazy(() => import('./components/pages').then(module => ({ default: module.CategoriesPage })));
+const SettingsPage = lazy(() => import('./components/pages').then(module => ({ default: module.SettingsPage })));
+const AutomationCenterPage = lazy(() => import('./components/pages').then(module => ({ default: module.AutomationCenterPage })));
+
+// 교육 페이지들 - 에러 처리 강화
+const EducationDashboard = lazy(() => 
+  import('./components/pages/EducationDashboard')
+    .then(module => ({ default: module.default || module }))
+    .catch(() => ({ default: () => <div>교육 페이지를 불러올 수 없습니다.</div> }))
+);
+
+// 소셜 기능 페이지 - 에러 처리 강화
+const SocialDashboard = lazy(() => 
+  import('./components/social/SocialDashboard')
+    .then(module => ({ default: module.default || module }))
+    .catch(() => ({ default: () => <div>소셜 페이지를 불러올 수 없습니다.</div> }))
+);
 
 // 탭 구성 타입
 interface TabConfig {
@@ -139,6 +154,8 @@ const AppContent: React.FC = React.memo(() => {
     { id: 'budget', label: '예산', icon: '🎯', color: colors.warning[500] },
     { id: 'analytics', label: '분석', icon: '📈', color: colors.primary[600] },
     { id: 'categories', label: '카테고리', icon: '🏷️', color: colors.success[600] },
+    { id: 'social', label: '소셜', icon: '👨‍👩‍👧‍👦', color: '#10B981' },
+    { id: 'education', label: '교육', icon: '🎓', color: '#8B5CF6' },
     { id: 'automation', label: '자동화', icon: '🤖', color: '#4F8EF7' },
     { id: 'settings', label: '설정', icon: '⚙️', color: colors.gray[500] }
   ], []);
@@ -153,7 +170,7 @@ const AppContent: React.FC = React.memo(() => {
   return (
     <div style={containerStyle}>
       {/* 헤더 */}
-      <Header />
+      <Header onLogoClick={() => setActiveTab('dashboard')} />
       
       {/* 네비게이션 바 */}
       <nav style={{
@@ -266,66 +283,94 @@ const AppContent: React.FC = React.memo(() => {
           transform: 'translateY(0)'
         }}>
           {activeTab === 'dashboard' && (
-            <PageErrorBoundary>
-              <DashboardPage />
-            </PageErrorBoundary>
+            <>
+              <Suspense fallback={<DashboardLoader />}>
+                <DashboardPage onTabChange={handleTabChange} />
+              </Suspense>
+            </>
           )}
           {activeTab === 'transactions' && (
-            <PageErrorBoundary>
-              <TransactionsPage />
-            </PageErrorBoundary>
+            <>
+              <Suspense fallback={<TransactionsLoader />}>
+                <TransactionsPage />
+              </Suspense>
+            </>
           )}
           {activeTab === 'budget' && (
-            <PageErrorBoundary>
-              <BudgetPage />
-            </PageErrorBoundary>
+            <>
+              <Suspense fallback={<PageLoader message="예산을 불러오는 중..." />}>
+                <BudgetPage />
+              </Suspense>
+            </>
           )}
           {activeTab === 'analytics' && (
-            <PageErrorBoundary>
-              <AnalyticsPage />
-            </PageErrorBoundary>
+            <>
+              <Suspense fallback={<AnalyticsLoader />}>
+                <AnalyticsPage />
+              </Suspense>
+            </>
           )}
           {activeTab === 'categories' && (
-            <PageErrorBoundary>
-              <CategoriesPage />
-            </PageErrorBoundary>
+            <>
+              <Suspense fallback={<PageLoader message="카테고리를 불러오는 중..." />}>
+                <CategoriesPage />
+              </Suspense>
+            </>
+          )}
+          {activeTab === 'education' && (
+            <ErrorBoundaryWrapper resetKeys={[activeTab, 'education']}>
+              <Suspense fallback={<PageLoader message="교육 페이지를 불러오는 중..." />}>
+                <EducationDashboard />
+              </Suspense>
+            </ErrorBoundaryWrapper>
+          )}
+          {activeTab === 'social' && (
+            <ErrorBoundaryWrapper resetKeys={[activeTab, 'social']}>
+              <Suspense fallback={<PageLoader message="소셜 기능을 불러오는 중..." />}>
+                <SocialDashboard />
+              </Suspense>
+            </ErrorBoundaryWrapper>
           )}
           {activeTab === 'automation' && (
-            <PageErrorBoundary>
-              <AutomationCenterPage />
-            </PageErrorBoundary>
+            <>
+              <Suspense fallback={<PageLoader message="자동화 센터를 불러오는 중..." />}>
+                <AutomationCenterPage />
+              </Suspense>
+            </>
           )}
           {activeTab === 'settings' && (
-            <PageErrorBoundary>
-              <SettingsPage />
-            </PageErrorBoundary>
+            <>
+              <Suspense fallback={<SettingsLoader />}>
+                <SettingsPage />
+              </Suspense>
+            </>
           )}
         </div>
       </main>
 
       {/* 프로필 필수 모달 */}
-      <ModalErrorBoundary>
+      <>
         <ProfileRequiredModal
           isOpen={showProfileRequired}
           onContinueToProfile={handleContinueToProfile}
         />
-      </ModalErrorBoundary>
+      </>
 
       {/* 프로필 리다이렉션 모달 */}
-      <ModalErrorBoundary>
+      <>
         <ProfileRedirectModal
           isOpen={showProfileRedirect}
           onProceed={handleRedirectToProfile}
         />
-      </ModalErrorBoundary>
+      </>
 
       {/* 프로필 설정 모달 */}
-      <ModalErrorBoundary>
+      <>
         <ProfileSettingsModal
           isOpen={showProfileSettings}
           onClose={handleProfileComplete}
         />
-      </ModalErrorBoundary>
+      </>
 
       {/* CSS 스타일 */}
       <style>{`
@@ -381,27 +426,13 @@ const AppContent: React.FC = React.memo(() => {
 // 메인 앱 컴포넌트
 const App: React.FC = () => {
   return (
-    <ErrorBoundary 
-      onError={(error, errorInfo) => {
-        console.error('🚨 Global App Error:', error);
-        console.error('📍 Error Context:', errorInfo);
-        
-        // TODO: 실제 프로덕션에서는 에러 리포팅 서비스에 전송
-        // - Sentry.captureException(error, { extra: errorInfo });
-        // - 또는 Google Analytics, LogRocket 등으로 전송
-        
-        // 사용자에게 알림 (선택적)
-        if (window.confirm('예상치 못한 오류가 발생했습니다. 페이지를 새로고침하시겠습니까?')) {
-          window.location.reload();
-        }
-      }}
-    >
+    <>
       <AuthProvider>
         <AppProvider>
           <AppContent />
         </AppProvider>
       </AuthProvider>
-    </ErrorBoundary>
+    </>
   );
 };
 
