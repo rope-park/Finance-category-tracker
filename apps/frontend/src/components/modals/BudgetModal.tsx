@@ -211,19 +211,26 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
                 카테고리 선택
               </h4>
             </div>
-            <FormField
-              label=""
-              required
-              darkMode={darkMode}
-            >
-              <HierarchicalCategorySelect
-                value={formData.category}
-                onChange={(category) => setFormData(prev => ({ ...prev, category }))}
-                placeholder="카테고리를 선택하세요"
-                className="w-full"
+            <div style={{
+              background: darkMode ? colors.primary[900] : colors.primary[50],
+              borderRadius: '12px',
+              padding: '20px',
+              border: `2px solid ${darkMode ? colors.primary[700] : colors.primary[200]}`
+            }}>
+              <FormField
+                label=""
+                required
                 darkMode={darkMode}
-              />
-            </FormField>
+              >
+                <HierarchicalCategorySelect
+                  value={formData.category}
+                  onChange={(category) => setFormData(prev => ({ ...prev, category }))}
+                  placeholder="카테고리를 선택하세요"
+                  className="w-full"
+                  darkMode={darkMode}
+                />
+              </FormField>
+            </div>
           </div>
 
           {/* 예산 설정 섹션 */}
@@ -254,29 +261,43 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <CurrencyInput
-                label="월 예산 한도"
-                value={formData.limit}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, limit: value }))}
-                onCurrencyChange={(currency) => setFormData(prev => ({ ...prev, currency }))}
-                placeholder="예산 한도를 입력하세요"
-                required
-                error={errors.limit}
-                darkMode={darkMode}
-                min={1000}
-                currency={formData.currency}
-                showCurrencySelector={true}
-              />
+              <div style={{
+                background: darkMode ? colors.dark[700] : colors.gray[50],
+                borderRadius: '12px',
+                padding: '16px',
+                border: `1px solid ${darkMode ? colors.dark[600] : colors.gray[200]}`
+              }}>
+                <CurrencyInput
+                  label="월 예산 한도"
+                  value={formData.limit}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, limit: value }))}
+                  onCurrencyChange={(currency) => setFormData(prev => ({ ...prev, currency }))}
+                  placeholder="예산 한도를 입력하세요"
+                  required
+                  error={errors.limit}
+                  darkMode={darkMode}
+                  min={1000}
+                  currency={formData.currency}
+                  showCurrencySelector={true}
+                />
+              </div>
 
-              <PercentageInput
-                label="경고 알림 기준 (%)"
-                value={formData.warningThreshold}
-                onChange={(value) => setFormData(prev => ({ ...prev, warningThreshold: value }))}
-                required
-                error={errors.warningThreshold}
-                darkMode={darkMode}
-                customOptions={[70, 80, 85, 90, 95]}
-              />
+              <div style={{
+                background: darkMode ? colors.dark[700] : colors.gray[50],
+                borderRadius: '12px',
+                padding: '16px',
+                border: `1px solid ${darkMode ? colors.dark[600] : colors.gray[200]}`
+              }}>
+                <PercentageInput
+                  label="경고 알림 기준 (%)"
+                  value={formData.warningThreshold}
+                  onChange={(value) => setFormData(prev => ({ ...prev, warningThreshold: value }))}
+                  required
+                  error={errors.warningThreshold}
+                  darkMode={darkMode}
+                  customOptions={[70, 80, 85, 90, 95]}
+                />
+              </div>
             </div>
 
             {/* 예산 미리보기 */}
@@ -323,9 +344,9 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            paddingTop: '20px',
-            borderTop: `1px solid ${darkMode ? colors.gray[700] : colors.gray[200]}`,
-            marginTop: '20px'
+            paddingTop: '24px',
+            borderTop: `2px solid ${darkMode ? colors.gray[700] : colors.gray[200]}`,
+            marginTop: '24px'
           }}>
             <div>
               {(isEditing || hasExistingBudget(formData.category)) && (
@@ -333,10 +354,13 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
                   variant="error"
                   onClick={handleDelete}
                   type="button"
-                  icon="🗑️"
-                  size="md"
+                  size="lg"
+                  style={{ 
+                    minWidth: '120px',
+                    fontWeight: '600'
+                  }}
                 >
-                  삭제
+                  🗑️ 삭제
                 </Button>
               )}
             </div>
@@ -345,17 +369,25 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
                 variant="secondary"
                 onClick={handleClose}
                 type="button"
-                size="md"
+                size="lg"
+                style={{ 
+                  minWidth: '120px',
+                  fontWeight: '600'
+                }}
               >
-                취소
+                ❌ 취소
               </Button>
               <Button
-                variant="primary"
+                variant="success"
                 type="submit"
-                icon="💾"
-                size="md"
+                size="lg"
+                style={{ 
+                  minWidth: '140px',
+                  fontWeight: '600',
+                  background: `linear-gradient(135deg, ${colors.success[500]}, ${colors.success[600]})`
+                }}
               >
-                {isEditing || hasExistingBudget(formData.category) ? '수정하기' : '추가하기'}
+                💾 {isEditing || hasExistingBudget(formData.category) ? '수정하기' : '추가하기'}
               </Button>
             </div>
           </div>
