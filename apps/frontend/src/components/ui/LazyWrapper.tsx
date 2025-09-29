@@ -1,6 +1,10 @@
 import React, { Suspense } from 'react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { Spinner } from './Spinner';
+import { Card } from './Card';
+import { Button } from './Button';
+import { useApp } from '../../hooks/useApp';
+import { colors } from '../../styles/theme';
 
 interface LazyWrapperProps {
   children: React.ReactNode;
@@ -29,24 +33,24 @@ export const LazyWrapper: React.FC<LazyWrapperProps> = ({
  * 기본 로딩 폴백 컴포넌트
  */
 const LoadingFallback: React.FC = () => {
+  const { darkMode } = useApp();
+  
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '400px',
-      flexDirection: 'column',
-      gap: '16px'
+    <Card style={{ 
+      textAlign: 'center', 
+      padding: '48px 24px',
+      margin: '32px auto',
+      maxWidth: '500px'
     }}>
       <Spinner size="large" />
-      <p style={{
-        color: '#6B7280',
-        fontSize: '14px',
-        margin: 0
+      <p className="text-sm readable-text" style={{
+        color: darkMode ? colors.dark[400] : colors.gray[600],
+        margin: '16px 0 0 0',
+        fontFamily: "'Noto Sans KR', sans-serif"
       }}>
         페이지를 불러오는 중...
       </p>
-    </div>
+    </Card>
   );
 };
 
@@ -54,47 +58,36 @@ const LoadingFallback: React.FC = () => {
  * 기본 에러 폴백 컴포넌트
  */
 const ErrorFallback: React.FC = () => {
+  const { darkMode } = useApp();
+  
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '400px',
-      flexDirection: 'column',
-      gap: '16px',
-      textAlign: 'center',
-      padding: '24px'
+    <Card style={{ 
+      textAlign: 'center', 
+      padding: '48px 24px',
+      margin: '32px auto',
+      maxWidth: '500px'
     }}>
-      <div style={{ fontSize: '48px' }}>⚠️</div>
-      <h3 style={{
-        color: '#DC2626',
-        fontSize: '18px',
-        margin: 0
+      <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+      <h3 className="heading-3 high-contrast" style={{
+        color: darkMode ? colors.error[400] : colors.error[600],
+        margin: '0 0 12px 0',
+        fontFamily: "'Noto Sans KR', sans-serif"
       }}>
         페이지를 불러올 수 없습니다
       </h3>
-      <p style={{
-        color: '#6B7280',
-        fontSize: '14px',
-        margin: 0,
-        maxWidth: '400px'
+      <p className="text-sm readable-text" style={{
+        color: darkMode ? colors.dark[400] : colors.gray[600],
+        margin: '0 0 24px 0',
+        fontFamily: "'Noto Sans KR', sans-serif"
       }}>
         일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
       </p>
-      <button
+      <Button
+        variant="primary"
         onClick={() => window.location.reload()}
-        style={{
-          padding: '8px 16px',
-          backgroundColor: '#3B82F6',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontSize: '14px'
-        }}
       >
         새로고침
-      </button>
-    </div>
+      </Button>
+    </Card>
   );
 };
