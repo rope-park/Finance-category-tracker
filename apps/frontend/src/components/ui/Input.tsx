@@ -1,5 +1,5 @@
 import React, { type CSSProperties } from 'react';
-import { colors, borderRadius } from '../../styles/theme';
+import { colors  } from '../../styles/theme';
 
 interface InputProps {
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'search';
@@ -48,17 +48,21 @@ export const Input: React.FC<InputProps> = ({
 
   const inputStyle: CSSProperties = {
     ...sizeStyles[size],
-    backgroundColor: darkMode ? colors.dark[800] : '#ffffff',
-    border: `1px solid ${error 
+    backgroundColor: darkMode ? colors.dark[700] : '#ffffff',
+    border: `2px solid ${error 
       ? colors.error[500] 
-      : darkMode ? colors.dark[600] : colors.gray[300]}`,
-    borderRadius: borderRadius.md,
+      : darkMode ? colors.dark[600] : colors.gray[200]}`,
+    borderRadius: '12px',
     color: darkMode ? colors.dark[100] : colors.gray[900],
     fontFamily: "'Noto Sans KR', sans-serif",
     width: '100%',
     outline: 'none',
     paddingLeft: icon && iconPosition === 'left' ? '40px' : sizeStyles[size].padding.split(' ')[1],
     paddingRight: icon && iconPosition === 'right' ? '40px' : sizeStyles[size].padding.split(' ')[1],
+    transition: 'all 0.2s ease-in-out',
+    boxShadow: error 
+      ? `0 0 0 0px ${colors.error[100]}` 
+      : 'none',
     ...style
   };
 
@@ -66,16 +70,18 @@ export const Input: React.FC<InputProps> = ({
     e.currentTarget.style.borderColor = error 
       ? colors.error[500] 
       : colors.primary[500];
-    e.currentTarget.style.boxShadow = `0 0 0 3px ${error 
+    e.currentTarget.style.boxShadow = `0 0 0 4px ${error 
       ? colors.error[100] 
       : colors.primary[100]}`;
+    e.currentTarget.style.transform = 'translateY(-1px)';
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     e.currentTarget.style.borderColor = error 
       ? colors.error[500] 
-      : darkMode ? colors.dark[600] : colors.gray[300];
+      : darkMode ? colors.dark[600] : colors.gray[200];
     e.currentTarget.style.boxShadow = 'none';
+    e.currentTarget.style.transform = 'translateY(0)';
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,10 +100,10 @@ export const Input: React.FC<InputProps> = ({
           htmlFor={inputId}
           style={{
             display: 'block',
-            marginBottom: '6px',
+            marginBottom: '8px',
             fontSize: '14px',
-            fontWeight: '500',
-            color: darkMode ? colors.dark[200] : colors.gray[700],
+            fontWeight: '600',
+            color: darkMode ? colors.dark[100] : colors.gray[900],
             fontFamily: "'Noto Sans KR', sans-serif"
           }}
           id={inputId ? inputId + '-label' : undefined}
