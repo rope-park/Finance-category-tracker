@@ -7,7 +7,8 @@ import {
   PageLayout, 
   Section, 
   Card, 
-  Grid, 
+  Grid,
+  AmountDisplay, 
   Button,
   ProgressBar,
   StatsCard
@@ -16,10 +17,58 @@ import { TransactionModal, BudgetModal } from '../modals';
 import { colors } from '../../styles/theme';
 import { getCategoryIcon, getCategoryName, formatCurrency } from '../../utils';
 
-export const DashboardPage: React.FC = () => {
-  const { transactions, budgets, darkMode } = useApp();
+interface DashboardPageProps {
+  onTabChange?: (tabId: string) => void;
+}
+
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onTabChange }) => {
+  const { transactions, budgets, darkMode, deleteTransaction } = useApp();
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<typeof transactions[0] | undefined>(undefined);
+
+  // 전역 에러 핸들러 추가
+  React.useEffect(() => {
+    const originalError = window.onerror;
+    window.onerror = (message, source, lineno, colno, error) => {
+      console.error('🚨 JavaScript 에러 발생:', { message, source, lineno, colno, error });
+      if (originalError) {
+        return originalError(message, source, lineno, colno, error);
+      }
+      return false;
+    };
+
+    return () => {
+      window.onerror = originalError;
+    };
+  }, []);
+
+  // 디버깅: 거래 데이터 확인
+  console.log('🏠 DashboardPage 렌더링됨');
+  console.log('📊 거래 데이터 개수:', transactions.length);
+  console.log('📊 거래 데이터 목록:', transactions);
+
+  // 거래 수정 핸들러
+  const handleEditTransaction = (transaction: typeof transactions[0]) => {
+    console.log('🎯 DashboardPage - 수정 버튼 클릭됨!');
+    console.log('🎯 DashboardPage - 수정할 거래 선택됨:', transaction);
+    setSelectedTransaction(transaction);
+    setShowTransactionModal(true);
+    console.log('🎯 DashboardPage - 모달 상태 변경 완료');
+  };
+
+  // 거래 삭제 핸들러
+  const handleDeleteTransaction = async (transactionId: string) => {
+    if (window.confirm('이 거래를 삭제하시겠습니까?')) {
+      await deleteTransaction(transactionId);
+    }
+  };
+
+  // 모달 닫기 핸들러
+  const handleCloseModal = () => {
+    setShowTransactionModal(false);
+    setSelectedTransaction(undefined);
+  };
 
   // 이번 달 데이터 계산
   const currentMonth = new Date().getMonth();
@@ -55,6 +104,9 @@ export const DashboardPage: React.FC = () => {
   const recentTransactions = [...transactions]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
+
+  console.log('📋 최근 거래 계산 완료:', recentTransactions.length, '개');
+  console.log('📋 최근 거래 목록:', recentTransactions);
 
   // 예산 사용률 계산
   const budgetUsage = budgets.map(budget => {
@@ -264,13 +316,18 @@ export const DashboardPage: React.FC = () => {
             }}>
               첫 번째 거래를 추가해보세요
             </p>
-            <Button variant="primary" onClick={() => setShowTransactionModal(true)}>
+            <Button variant="primary" onClick={() => {
+              setSelectedTransaction(undefined);
+              setShowTransactionModal(true);
+            }}>
               거래 추가하기
             </Button>
           </Card>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {recentTransactions.map(transaction => (
+            {recentTransactions.map((transaction, index) => {
+              console.log(`🔄 거래 ${index + 1} 렌더링:`, transaction.id, transaction.description);
+              return (
               <Card key={transaction.id} interactive={true}>
                 <div style={{ 
                   display: 'flex', 
@@ -299,24 +356,60 @@ export const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="text-sm high-contrast" style={{
-                      fontWeight: '600',
-                      color: transaction.type === 'income' ? colors.success[600] : colors.error[600],
-                      fontFamily: "'Noto Sans KR', sans-serif"
-                    }}>
-                      {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <AmountDisplay
+                        amount={transaction.amount}
+                        type={transaction.type}
+                        size="sm"
+                        style={{
+                          fontFamily: "'Noto Sans KR', sans-serif"
+                        }}
+                      />
+                    </div>
+                    
+                    {/* 수정/삭제 버튼 */}
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          console.log('🔵 수정 버튼 클릭됨!', transaction.id);
+                          handleEditTransaction(transaction);
+                        }}
+                      >
+                        수정
+                      </Button>
+                      <Button
+                        variant="error"
+                        size="sm"
+                        onClick={() => {
+                          console.log('🔴 삭제 버튼 클릭됨!', transaction.id);
+                          handleDeleteTransaction(transaction.id);
+                        }}
+                      >
+                        삭제
+                      </Button>
                     </div>
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
             
-            <Card style={{ textAlign: 'center', padding: '16px' }}>
-              <Button variant="secondary">
-                모든 거래 보기
-              </Button>
-            </Card>
+          <Card style={{ textAlign: 'center', padding: '16px' }}>
+            <Button 
+              variant="secondary"
+              onClick={() => {
+                console.log('🔗 모든 거래 보기 버튼 클릭됨!');
+                if (onTabChange) {
+                  onTabChange('transactions');
+                }
+              }}
+            >
+              모든 거래 보기
+            </Button>
+          </Card>
           </div>
         )}
       </Section>
@@ -340,7 +433,14 @@ export const DashboardPage: React.FC = () => {
             }}>
               새로운 수입 또는 지출을 기록하세요
             </p>
-            <Button variant="primary" style={{ width: '100%' }} onClick={() => setShowTransactionModal(true)}>
+            <Button 
+              variant="primary" 
+              style={{ width: '100%' }} 
+              onClick={() => {
+                setSelectedTransaction(undefined);
+                setShowTransactionModal(true);
+              }}
+            >
               거래 추가
             </Button>
           </Card>
@@ -361,7 +461,11 @@ export const DashboardPage: React.FC = () => {
             }}>
               카테고리별 예산 한도를 설정하세요
             </p>
-            <Button variant="primary" style={{ width: '100%' }} onClick={() => setShowBudgetModal(true)}>
+            <Button 
+              variant="primary" 
+              style={{ width: '100%' }} 
+              onClick={() => setShowBudgetModal(true)}
+            >
               예산 관리
             </Button>
           </Card>
@@ -382,17 +486,22 @@ export const DashboardPage: React.FC = () => {
             }}>
               거래 내역을 CSV로 내보내세요
             </p>
-            <Button variant="secondary" style={{ width: '100%' }} onClick={() => window.location.href='/transactions/export'}>
+            <Button 
+              variant="secondary" 
+              style={{ width: '100%' }} 
+              onClick={() => window.location.href='/transactions/export'}
+            >
               내보내기
             </Button>
           </Card>
         </Grid>
       </Section>
 
-      {/* 거래 추가 모달 */}
+      {/* 거래 추가/수정 모달 */}
       <TransactionModal
         isOpen={showTransactionModal}
-        onClose={() => setShowTransactionModal(false)}
+        onClose={handleCloseModal}
+        transaction={selectedTransaction}
       />
 
       {/* 예산 설정 모달 */}
