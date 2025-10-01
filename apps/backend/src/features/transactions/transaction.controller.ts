@@ -24,7 +24,10 @@ import {
   CategoryStats
 } from '@finance-tracker/shared';
 import { AuthRequest } from '../../shared/middleware/auth';
-import { transactionRepository } from '../../shared/repositories';
+import { TransactionRepository } from './transaction.repository';
+
+const transactionRepository = new TransactionRepository();
+
 
 /**
  * 새로운 거래 내역 생성
@@ -100,7 +103,8 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
     const response: ApiResponse = {
       success: true,
       data: { transaction },
-      message: '거래 내역이 생성되었습니다.'
+      message: '거래 내역이 생성되었습니다.',
+      timestamp: new Date().toISOString()
     };
 
     res.status(201).json(response);
@@ -180,6 +184,7 @@ export const getTransactions = async (req: AuthRequest, res: Response) => {
     }
 
     const response: ApiResponse = {
+      timestamp: new Date().toISOString(),
       success: true,
       data: {
         transactions: enhancedTransactions,
@@ -243,7 +248,8 @@ export const getTransaction = async (req: AuthRequest, res: Response) => {
     const response: ApiResponse = {
       success: true,
       data: { transaction: enhancedTransaction },
-      message: '거래 내역을 조회했습니다.'
+      message: '거래 내역을 조회했습니다.',
+      timestamp: new Date().toISOString()
     };
 
     res.json(response);
@@ -297,7 +303,8 @@ export const updateTransaction = async (req: AuthRequest, res: Response) => {
     const response: ApiResponse = {
       success: true,
       data: { transaction: updatedTransaction },
-      message: '거래 내역이 수정되었습니다.'
+      message: '거래 내역이 수정되었습니다.',
+      timestamp: new Date().toISOString()
     };
 
     res.json(response);
@@ -335,7 +342,8 @@ export const deleteTransaction = async (req: AuthRequest, res: Response) => {
 
     const response: ApiResponse = {
       success: true,
-      message: '거래 내역이 삭제되었습니다.'
+      message: '거래 내역이 삭제되었습니다.',
+      timestamp: new Date().toISOString()
     };
 
     res.json(response);
@@ -370,7 +378,8 @@ export const getTransactionStats = async (req: AuthRequest, res: Response) => {
     const response: ApiResponse = {
       success: true,
       data: { statistics },
-      message: '거래 통계를 조회했습니다.'
+      message: '거래 통계를 조회했습니다.',
+      timestamp: new Date().toISOString()
     };
 
     res.json(response);
@@ -405,7 +414,8 @@ export const getCategorySummary = async (req: AuthRequest, res: Response) => {
     const response: ApiResponse = {
       success: true,
       data: { summary },
-      message: '카테고리별 요약을 조회했습니다.'
+      message: '카테고리별 요약을 조회했습니다.',
+      timestamp: new Date().toISOString()
     };
 
     res.json(response);
@@ -438,7 +448,8 @@ export const getMonthlyTrend = async (req: AuthRequest, res: Response) => {
     const response: ApiResponse = {
       success: true,
       data: { trends },
-      message: '월별 트렌드를 조회했습니다.'
+      message: '월별 트렌드를 조회했습니다.',
+      timestamp: new Date().toISOString()
     };
 
     res.json(response);
@@ -517,7 +528,8 @@ export const getMonthlyStats = async (req: AuthRequest, res: Response) => {
         stats,
         period: { year: parseInt(year as string), month: parseInt(month as string) }
       },
-      message: '월별 통계를 조회했습니다.'
+      message: '월별 통계를 조회했습니다.',
+      timestamp: new Date().toISOString()
     };
 
     res.json(response);
