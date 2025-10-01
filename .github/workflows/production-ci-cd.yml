@@ -1,0 +1,382 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+# GitHub Actions 워크플로우 - VS Code 린팅 오류는 Secrets 미설정으로 인한 정상적인 경고입니다
+name: "Finance Tracker - Production CI/CD Pipeline"
+
+on:
+  push:
+    branches: [main, production]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: finance-tracker
+  # GitHub Actions 린팅 오류 방지를 위한 기본값들
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN || 'not-set' }}
+  STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY || 'not-set' }}
+  STAGING_USER: ${{ secrets.STAGING_USER || 'not-set' }}
+  STAGING_HOST: ${{ secrets.STAGING_HOST || 'not-set' }}
+  STAGING_URL: ${{ secrets.STAGING_URL || 'not-set' }}
+  PRODUCTION_SSH_KEY: ${{ secrets.PRODUCTION_SSH_KEY || 'not-set' }}
+  PRODUCTION_USER: ${{ secrets.PRODUCTION_USER || 'not-set' }}
+  PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST || 'not-set' }}
+  PRODUCTION_URL: ${{ secrets.PRODUCTION_URL || 'not-set' }}
+  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK || 'not-set' }}
+
+jobs:
+  # 코드 품질 및 보안 검사
+  code-quality:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout 코드
+      uses: actions/checkout@v4
+      
+    - name: Node.js ${{ matrix.node-version }} 설정
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: 의존성 설치
+      run: npm ci
+      
+    - name: TypeScript 컴파일 검사
+      run: npm run build --prefix apps/backend
+      
+    - name: 코드 린팅
+      run: |
+        npm run lint --prefix apps/backend
+        npm run lint --prefix apps/frontend
+        
+    - name: 단위 테스트
+      run: |
+        npm test --prefix apps/backend
+        npm test --prefix apps/frontend
+        
+    - name: 보안 취약점 스캔
+      run: npm audit --audit-level=critical
+      
+    - name: 코드 커버리지
+      run: npm run test:coverage --prefix apps/backend
+      
+    - name: SonarCloud 코드 분석
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+
+  # Docker 이미지 빌드 및 보안 스캔
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    steps:
+    - name: Checkout 코드
+      uses: actions/checkout@v4
+      
+    - name: Docker Buildx 설정
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Container Registry 로그인
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 메타데이터 추출
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          
+    - name: 백엔드 이미지 빌드 및 푸시
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./apps/backend/Dockerfile.production
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}-backend
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: 프론트엔드 이미지 빌드 및 푸시
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./apps/frontend/Dockerfile.production
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}-frontend
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Container 보안 스캔 (Trivy)
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ steps.meta.outputs.tags }}-backend
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: 보안 스캔 결과 업로드
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # 통합 테스트
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: test_user
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - name: Checkout 코드
+      uses: actions/checkout@v4
+      
+    - name: Node.js 설정
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: 의존성 설치
+      run: npm ci
+      
+    - name: 데이터베이스 마이그레이션
+      run: npm run migration:run --prefix apps/backend
+      env:
+        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+        
+    - name: 통합 테스트 실행
+      run: npm run test:integration --prefix apps/backend
+      env:
+        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+        REDIS_URL: redis://localhost:6379
+        
+    - name: E2E 테스트 실행
+      run: npm run test:e2e
+      env:
+        BACKEND_URL: http://localhost:3001
+        FRONTEND_URL: http://localhost:3000
+
+  # 성능 테스트
+  performance-tests:
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout 코드
+      uses: actions/checkout@v4
+      
+    - name: Docker Compose 테스트 환경 시작
+      run: |
+        docker-compose -f docker-compose.test.yml up -d
+        sleep 30  # 서비스 시작 대기
+        
+    - name: 부하 테스트 (K6)
+      uses: grafana/k6-action@v0.3.1
+      with:
+        filename: tests/performance/load-test.js
+        flags: --out json=results.json
+        
+    - name: 성능 테스트 결과 업로드
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-results
+        path: results.json
+
+  # 스테이징 환경 배포
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [integration-tests, performance-tests]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout 코드
+      uses: actions/checkout@v4
+      
+    - name: 스테이징 서버 SSH 연결 설정
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ env.STAGING_SSH_KEY }}
+        
+    - name: 스테이징 환경 배포
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ env.STAGING_USER }}@${{ env.STAGING_HOST }} << 'EOF'
+          cd /opt/finance-tracker
+          git pull origin main
+          docker-compose -f docker-compose.staging.yml down
+          docker-compose -f docker-compose.staging.yml pull
+          docker-compose -f docker-compose.staging.yml up -d
+          ./scripts/health-check.sh
+        EOF
+        
+    - name: 스테이징 환경 헬스체크
+      run: |
+        curl -f ${{ secrets.STAGING_URL }}/health || exit 1
+        curl -f ${{ secrets.STAGING_URL }}/api/health || exit 1
+        
+    - name: Slack 알림 (스테이징 배포 완료)
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  # 프로덕션 배포
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout 코드
+      uses: actions/checkout@v4
+      
+    - name: 프로덕션 서버 SSH 연결 설정
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        
+    - name: 프로덕션 백업 생성
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }} << 'EOF'
+          cd /opt/finance-tracker
+          ./scripts/backup-restore.sh backup
+        EOF
+        
+    - name: Blue-Green 배포
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }} << 'EOF'
+          cd /opt/finance-tracker
+          
+          # 새 버전 이미지 풀
+          docker-compose -f docker-compose.production.yml pull
+          
+          # Green 환경에 새 버전 배포
+          docker-compose -f docker-compose.green.yml up -d
+          
+          # 헬스체크
+          sleep 30
+          ./scripts/health-check.sh green
+          
+          # 트래픽 전환 (Blue -> Green)
+          ./scripts/switch-traffic.sh green
+          
+          # 이전 Blue 환경 정리
+          docker-compose -f docker-compose.blue.yml down
+        EOF
+        
+    - name: 프로덕션 헬스체크
+      run: |
+        curl -f ${{ secrets.PRODUCTION_URL }}/health || exit 1
+        curl -f ${{ secrets.PRODUCTION_URL }}/api/health || exit 1
+        
+    - name: 배포 완료 알림
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#production'
+        text: |
+          🎉 프로덕션 배포 완료!
+          버전: ${{ github.ref_name }}
+          커밋: ${{ github.sha }}
+          배포자: ${{ github.actor }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  # 배포 후 검증
+  post-deploy-verification:
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: 기능 검증 테스트
+      run: |
+        # API 엔드포인트 검증
+        curl -f ${{ secrets.PRODUCTION_URL }}/api/categories || exit 1
+        curl -f ${{ secrets.PRODUCTION_URL }}/api/transactions || exit 1
+        
+    - name: 성능 검증
+      run: |
+        # 응답 시간 검증 (2초 이내)
+        response_time=$(curl -o /dev/null -s -w '%{time_total}' ${{ secrets.PRODUCTION_URL }})
+        if (( $(echo "$response_time > 2" | bc -l) )); then
+          echo "응답 시간이 너무 깁니다: ${response_time}s"
+          exit 1
+        fi
+        
+    - name: 모니터링 알림 확인
+      run: |
+        # Grafana 대시보드 접근 확인
+        curl -f ${{ secrets.PRODUCTION_URL }}:8080/grafana/api/health || exit 1
+        
+    - name: 검증 완료 알림
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#production'
+        text: '✅ 프로덕션 배포 검증 완료. 모든 시스템이 정상 작동 중입니다.'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  # 실패 시 롤백
+  rollback-on-failure:
+    runs-on: ubuntu-latest
+    needs: [deploy-production, post-deploy-verification]
+    if: failure() && startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: 긴급 롤백 실행
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }} << 'EOF'
+          cd /opt/finance-tracker
+          ./scripts/rollback.sh
+        EOF
+        
+    - name: 롤백 완료 알림
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        channel: '#production'
+        text: |
+          🚨 프로덕션 배포 실패로 인한 긴급 롤백 완료
+          실패한 버전: ${{ github.ref_name }}
+          이전 안정 버전으로 복구되었습니다.
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
