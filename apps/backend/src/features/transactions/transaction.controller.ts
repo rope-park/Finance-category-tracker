@@ -14,7 +14,7 @@
  */
 
 import { Response } from 'express';
-import pool from '../config/database';
+import pool from '../../core/config/database';
 import { 
   CreateTransactionRequest, 
   UpdateTransactionRequest,
@@ -23,8 +23,8 @@ import {
   MonthlyStats,
   CategoryStats
 } from '@finance-tracker/shared';
-import { AuthRequest } from '../middleware/auth';
-import { transactionRepository } from '../repositories';
+import { AuthRequest } from '../../shared/middleware/auth';
+import { transactionRepository } from '../../shared/repositories';
 
 /**
  * 새로운 거래 내역 생성
