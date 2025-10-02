@@ -58,11 +58,8 @@ global.IntersectionObserver = class IntersectionObserver {
   root: Element | null = null;
   rootMargin: string = '';
   thresholds: ReadonlyArray<number> = [];
-  constructor(
-    _callback?: IntersectionObserverCallback,
-    _options?: IntersectionObserverInit
-  ) {
-    // 파라미터들을 사용하지 않으므로 underscore prefix로 표시
+  constructor() {
+    // Mock implementation - no parameters needed
   }
   observe() {}
   unobserve() {}
