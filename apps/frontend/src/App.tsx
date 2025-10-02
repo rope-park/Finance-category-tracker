@@ -1,35 +1,35 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
-import { AppProvider } from './context/AppContext';
-import { AuthProvider } from './context/AuthContext';
-import { useApp } from './hooks/useApp';
-import { useAuth } from './hooks/useAuth';
-import { Header } from './components/Header';
-import { ProfileRequiredModal } from './components/modals/ProfileRequiredModal';
-import { ProfileSettingsModal } from './components/modals/ProfileSettingsModal';
-import { ProfileRedirectModal } from './components/modals/ProfileRedirectModal';
-import { Tooltip, DashboardLoader, AnalyticsLoader, TransactionsLoader, SettingsLoader, PageLoader } from './components/ui';
-import { ErrorBoundaryWrapper } from './components/common/ErrorBoundary';
+import { AppProvider } from './app/providers/AppContext';
+import { AuthProvider } from './app/providers/AuthContext';
+import { useApp } from './app/hooks/useApp';
+import { useAuth } from './features/auth/hooks/useAuth';
+import { Header } from './shared/components/layout/Header';
+import { ProfileRequiredModal } from './features/auth/components/ProfileRequiredModal';
+import { ProfileSettingsModal } from './features/auth/components/ProfileSettingsModal';
+import { ProfileRedirectModal } from './features/auth/components/ProfileRedirectModal';
+import { Tooltip, DashboardLoader, AnalyticsLoader, TransactionsLoader, SettingsLoader, PageLoader } from './index';
+import { ErrorBoundaryWrapper } from './shared/components/feedback/ErrorBoundary';
 import { colors, shadows, borderRadius } from './styles/theme';
 
 // 페이지 컴포넌트들을 Lazy Loading으로 변경
-const DashboardPage = lazy(() => import('./components/pages').then(module => ({ default: module.DashboardPage })));
-const TransactionsPage = lazy(() => import('./components/pages').then(module => ({ default: module.TransactionsPage })));
-const BudgetPage = lazy(() => import('./components/pages').then(module => ({ default: module.BudgetPage })));
-const AnalyticsPage = lazy(() => import('./components/pages').then(module => ({ default: module.AnalyticsPage })));
-const CategoriesPage = lazy(() => import('./components/pages').then(module => ({ default: module.CategoriesPage })));
-const SettingsPage = lazy(() => import('./components/pages').then(module => ({ default: module.SettingsPage })));
-const AutomationCenterPage = lazy(() => import('./components/pages').then(module => ({ default: module.AutomationCenterPage })));
+const DashboardPage = lazy(() => import('./features/analytics/components/DashboardPage').then(module => ({ default: module.DashboardPage })));
+const TransactionsPage = lazy(() => import('./features/transactions/components/TransactionsPage').then(module => ({ default: module.TransactionsPage })));
+const BudgetPage = lazy(() => import('./features/budgets/components/BudgetPage').then(module => ({ default: module.BudgetPage })));
+const AnalyticsPage = lazy(() => import('./features/analytics/components/AnalyticsPage').then(module => ({ default: module.AnalyticsPage })));
+const CategoriesPage = lazy(() => import('./features/transactions/components/CategoriesPage').then(module => ({ default: module.CategoriesPage })));
+const SettingsPage = lazy(() => import('./app/pages/SettingsPage').then(module => ({ default: module.SettingsPage })));
+const AutomationCenterPage = lazy(() => import('./features/transactions/components/AutomationCenterPage'));
 
 // 교육 페이지들 - 에러 처리 강화
 const EducationDashboard = lazy(() => 
-  import('./components/pages/EducationDashboard')
+  import('./features/education/components/EducationDashboard')
     .then(module => ({ default: module.default || module }))
     .catch(() => ({ default: () => <div>교육 페이지를 불러올 수 없습니다.</div> }))
 );
 
 // 소셜 기능 페이지 - 에러 처리 강화
 const SocialDashboard = lazy(() => 
-  import('./components/social/SocialDashboard')
+  import('./features/social/components/SocialDashboard')
     .then(module => ({ default: module.default || module }))
     .catch(() => ({ default: () => <div>소셜 페이지를 불러올 수 없습니다.</div> }))
 );
