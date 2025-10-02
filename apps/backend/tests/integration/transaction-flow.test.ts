@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../src/server';
-import pool from '../../src/config/database';
+import pool from '../../src/core/config/database';
 
 describe('Integration Tests - Transaction Flow', () => {
   let authToken: string;
