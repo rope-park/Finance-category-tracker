@@ -24,7 +24,6 @@
     "noUncheckedSideEffectImports": true,
 
     /* Path mapping */
-    "baseUrl": ".",
     "paths": {
       "@finance-tracker/shared": ["../../packages/shared/src"]
     }
