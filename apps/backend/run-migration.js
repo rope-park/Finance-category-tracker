@@ -7,7 +7,7 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME || 'finance_category_tracker',
   user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'kelly1011',
+  password: process.env.DB_PASSWORD,
 });
 
 async function runMigration() {
