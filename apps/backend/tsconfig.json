@@ -17,18 +17,28 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": false,
     "resolveJsonModule": true,
-    "baseUrl": ".",
     "paths": {
-      "@finance-tracker/shared": ["../../packages/shared/src"]
+      "@finance-tracker/shared": ["../../packages/shared/src/index.ts"],
+      "@finance-tracker/shared/*": ["../../packages/shared/src/*"]
     },
-  "typeRoots": ["./node_modules/@types", "./src/types", "../../packages/shared/src"]
+    "ignoreDeprecations": "6.0",
+  "typeRoots": ["./node_modules/@types", "src/core/types", "../../packages/shared/src/types"]
   },
   "include": [
     "src/**/*",
     "tests/**/*",
-    "../../packages/shared/src/**/*"
+    "../../packages/shared/src/types/**/*",
+    "../../packages/shared/src/constants/**/*"
   ],
-  "exclude": ["node_modules", "dist"],
+  "exclude": [
+    "node_modules", 
+    "dist",
+    "../../packages/shared/src/hooks",
+    "../../packages/shared/src/components",
+    "../../packages/shared/src/utils/client",
+    "**/hooks/**",
+    "**/components/**"
+  ],
   "ts-node": {
     "compilerOptions": {
       "strict": false,
