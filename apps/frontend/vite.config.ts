@@ -33,7 +33,6 @@ export default defineConfig({
     /** 모듈 별칭 설정 - import 경로 단축 */
     alias: {
       '@': path.resolve(__dirname, './src'),                                              // 소스 디렉토리 별칭
-      '@finance-tracker/shared': path.resolve(__dirname, '../../packages/shared/src'),   // 공유 패키지 별칭
     },
     /** React 19 호환성을 위한 모듈 중복 제거 */
     dedupe: ['react', 'react-dom'],
@@ -54,7 +53,8 @@ export default defineConfig({
       'recharts',                // 차트 라이브러리
       'date-fns',                // 날짜 유틸리티
       'axios',                   // HTTP 클라이언트
-      'lucide-react'             // 아이콘 라이브러리
+      'lucide-react',            // 아이콘 라이브러리
+      '@finance-tracker/shared'  // 공유 패키지
     ],
     /** 강제 사전 번들링 - 캐시 무시 */
     force: true,
