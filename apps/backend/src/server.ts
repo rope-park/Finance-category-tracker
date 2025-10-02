@@ -1,12 +1,12 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import session from 'express-session';
-import morgan from 'morgan';
-import { testConnection } from './config/database';
-import { globalErrorHandler, notFoundHandler } from './utils/errors';
-import logger, { loggerHelpers } from './utils/logger';
-import { cacheService } from './services/cacheService';
-import { initSentry } from './utils/sentry';
+const express = require('express');
+const dotenv = require('dotenv');
+const session = require('express-session');
+const morgan = require('morgan');
+import { testConnection } from './core/config/database';
+import { globalErrorHandler, notFoundHandler } from './shared/utils/errors';
+import logger, { loggerHelpers } from '../src/shared/utils/logger';
+import { cacheService } from './shared/services/cacheService';
+import { initSentry } from './shared/utils/sentry';
 
 // 보안 미들웨어
 import { 
@@ -21,7 +21,7 @@ import {
   ipFiltering,
   requestSizeLimits,
   apiLimiter
-} from './middleware/security';
+} from './shared/middleware/security';
 
 // 모니터링 미들웨어
 import { 
@@ -31,44 +31,44 @@ import {
   databaseHealthCheck,
   resetMetrics,
   getSystemInfo
-} from './utils/monitoring';
+} from './shared/utils/monitoring';
 
 // 로깅 미들웨어
 import { 
   apiLoggingMiddleware, 
   performanceLoggingMiddleware 
-} from './middleware/logging';
+} from './shared/middleware/logging';
 
 // 메트릭 시스템
 import { 
   metricsMiddleware, 
   metricsEndpoint,
   metricsHelpers 
-} from './utils/metrics';
+} from './shared/utils/metrics';
 
 // API 문서화
-import { conditionalSwagger } from './config/swagger';
+import { conditionalSwagger } from './core/config/swagger';
 
 // 라우트 import
-import authRoutes from './routes/auth';
-import userRoutes from './routes/users';
-import transactionRoutes from './routes/transactions';
-import budgetRoutes from './routes/budgets';
-import goalRoutes from './routes/goal';
-import categoryRoutes from './routes/categories';
-import categoryRecommendRoutes from './routes/categoryRecommend';
-import categoryRecommendCacheRoutes from './routes/categoryRecommend.cache';
-import analyticsRoutes from './routes/analytics';
-import predictionRoutes from './routes/prediction';
-import recurringTemplateRoutes from './routes/recurringTemplates';
-import notificationRoutes from './routes/notifications';
-import educationRoutes from './routes/educationRoutes';
-import socialRoutes from './routes/social';
-import communityRoutes from './routes/community';
-import performanceRoutes from './routes/performance';
+import authRoutes from './features/auth/auth.routes';
+import userRoutes from './features/users/user.routes';
+import transactionRoutes from './features/transactions/transaction.routes';
+import budgetRoutes from './features/budgets/budget.routes';
+import goalRoutes from '../src/features/budgets/goal.routes';
+import categoryRoutes from './features/transactions/category.routes';
+import categoryRecommendRoutes from './features/transactions/category-recommend.routes';
+import categoryRecommendCacheRoutes from './features/transactions/category-recommend.cache';
+import analyticsRoutes from './features/analytics/analytics.routes';
+import predictionRoutes from './features/analytics/prediction.routes';
+import recurringTemplateRoutes from './features/transactions/recurring-template.routes';
+import notificationRoutes from './features/notifications/notification.routes';
+import educationRoutes from './features/education/education.routes';
+import socialRoutes from './features/social/social.routes';
+import communityRoutes from './features/community/community.routes';
+import performanceRoutes from './features/analytics/performance.routes';
 
 import helmet from 'helmet';
-import cors from 'cors';
+const cors = require('cors');
 
 // 환경 변수 로드
 dotenv.config();
