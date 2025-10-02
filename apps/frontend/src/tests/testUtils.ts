@@ -1,0 +1,73 @@
+import { vi } from 'vitest';
+
+// Mock AppContext 생성 함수
+export const createMockAppContext = (overrides = {}) => ({
+  state: {
+    transactions: [],
+    budgets: [],
+    recurringTemplates: [],
+    notifications: [],
+    loading: false,
+    error: null,
+    darkMode: false,
+    notificationsEnabled: true,
+    amountHidden: false,
+  },
+  dispatch: vi.fn(),
+  addTransaction: vi.fn().mockResolvedValue(undefined),
+  updateTransaction: vi.fn().mockResolvedValue(undefined),
+  deleteTransaction: vi.fn().mockResolvedValue(undefined),
+  updateBudget: vi.fn(),
+  deleteBudget: vi.fn(),
+  checkBudgetAlert: vi.fn(),
+  toggleDarkMode: vi.fn(),
+  toggleNotifications: vi.fn(),
+  toggleAmountHidden: vi.fn(),
+  fetchRecurringTemplates: vi.fn().mockResolvedValue(undefined),
+  addRecurringTemplate: vi.fn().mockResolvedValue(undefined),
+  updateRecurringTemplate: vi.fn().mockResolvedValue(undefined),
+  deleteRecurringTemplate: vi.fn().mockResolvedValue(undefined),
+  // 편의 속성들
+  transactions: [],
+  budgets: [],
+  recurringTemplates: [],
+  notifications: [],
+  loading: false,
+  error: null,
+  darkMode: false,
+  notificationsEnabled: true,
+  amountHidden: false,
+  ...overrides,
+});
+
+// Mock AuthContext 생성 함수
+export const createMockAuthContext = (overrides = {}) => ({
+  state: {
+    user: {
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      profile_completed: true,
+      created_at: '2023-01-01T00:00:00Z',
+      updated_at: '2023-01-01T00:00:00Z',
+      is_active: true,
+      role: 'user' as const,
+      status: 'active' as const,
+      email_verified: true,
+      avatar: null,
+      phone: null,
+      ageGroup: null,
+    },
+    token: 'test-token',
+    isLoading: false,
+    isAuthenticated: true,
+    error: null,
+  },
+  login: vi.fn().mockResolvedValue(undefined),
+  register: vi.fn().mockResolvedValue(undefined),
+  logout: vi.fn(),
+  updateProfile: vi.fn(),
+  updateUser: vi.fn(),
+  clearError: vi.fn(),
+  ...overrides,
+});
