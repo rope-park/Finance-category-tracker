@@ -1,14 +1,21 @@
+/**
+ * 포커스 관리 및 키보드 네비게이션을 위한 공통 커스텀 훅
+ * 
+ * 주요 기능:
+ * - 포커스 트랩
+ * - 키보드 단축키 지원
+ * - 방향키 네비게이션
+ */
 import { useEffect, useRef, useCallback } from 'react';
 
 /**
- * 키보드 네비게이션을 위한 포커스 관리 훅
+ * 포커스 관리 훅
+ * @returns 포커스 관리 훅
  */
 export function useFocusManagement() {
   const trapRef = useRef<HTMLElement>(null);
 
-  /**
-   * 포커스 가능한 요소들을 찾는 함수
-   */
+  // 포커스 가능한 요소들을 가져오는 헬퍼 함수
   const getFocusableElements = useCallback((container: HTMLElement): HTMLElement[] => {
     const focusableSelectors = [
       'button:not([disabled])',
@@ -23,9 +30,7 @@ export function useFocusManagement() {
     return Array.from(container.querySelectorAll(focusableSelectors));
   }, []);
 
-  /**
-   * 포커스 트랩 설정
-   */
+  // 포커스 트랩 설정
   const trapFocus = useCallback((event: KeyboardEvent) => {
     if (event.key !== 'Tab' || !trapRef.current) return;
 
@@ -48,9 +53,7 @@ export function useFocusManagement() {
     }
   }, [getFocusableElements]);
 
-  /**
-   * 첫 번째 포커스 가능한 요소에 포커스
-   */
+  // 첫 번째 포커스 가능한 요소에 포커스
   const focusFirst = useCallback(() => {
     if (!trapRef.current) return;
     
@@ -59,9 +62,7 @@ export function useFocusManagement() {
     firstElement?.focus();
   }, [getFocusableElements]);
 
-  /**
-   * 마지막 포커스 가능한 요소에 포커스
-   */
+  // 마지막 포커스 가능한 요소에 포커스
   const focusLast = useCallback(() => {
     if (!trapRef.current) return;
     
@@ -70,9 +71,7 @@ export function useFocusManagement() {
     lastElement?.focus();
   }, [getFocusableElements]);
 
-  /**
-   * ESC 키로 포커스 해제
-   */
+  // Esc 키로 포커스 해제
   const handleEscape = useCallback((event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       const activeElement = document.activeElement as HTMLElement;
@@ -91,7 +90,8 @@ export function useFocusManagement() {
 }
 
 /**
- * 키보드 단축키를 등록하는 훅
+ * 키보드 단축키 등록 훅
+ * @param shortcuts 단축키와 실행할 함수 매핑 객체
  */
 export function useKeyboardShortcuts(shortcuts: Record<string, () => void>) {
   useEffect(() => {
@@ -127,6 +127,9 @@ export function useKeyboardShortcuts(shortcuts: Record<string, () => void>) {
 
 /**
  * 방향키 네비게이션을 위한 훅
+ * @param items 포커스 가능한 요소 목록
+ * @param options 네비게이션 옵션
+ * @returns 네비게이션 핸들러 및 이동 함수
  */
 export function useArrowNavigation(
   items: HTMLElement[],

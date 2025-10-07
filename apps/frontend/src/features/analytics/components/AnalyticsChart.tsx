@@ -1,3 +1,6 @@
+/**
+ * 분석 차트 컴포넌트
+ */
 import React, { useMemo, memo } from 'react';
 import { 
   Chart as ChartJS, 
@@ -28,6 +31,7 @@ ChartJS.register(
   ArcElement
 );
 
+// 거래 데이터 타입 정의
 interface Transaction {
   id: number;
   amount: number;
@@ -37,6 +41,7 @@ interface Transaction {
   transaction_type: 'income' | 'expense';
 }
 
+// AnalyticsChart 컴포넌트 Props 타입 정의
 interface AnalyticsChartProps {
   transactions: Transaction[];
   type: 'monthly-trend' | 'category-breakdown' | 'income-vs-expense' | 'forecast';
@@ -110,6 +115,7 @@ const generateMonthlyTrendData = (transactions: Transaction[]): ChartData<'line'
   };
 };
 
+// 카테고리별 지출 데이터 생성 함수
 const generateCategoryBreakdownData = (transactions: Transaction[]): ChartData<'doughnut'> | null => {
   if (!transactions || transactions.length === 0) {
     return null;
@@ -145,6 +151,7 @@ const generateCategoryBreakdownData = (transactions: Transaction[]): ChartData<'
   };
 };
 
+// 수입 vs 지출 데이터 생성 함수
 const generateIncomeVsExpenseData = (transactions: Transaction[]): ChartData<'bar'> | null => {
   if (!transactions || transactions.length === 0) {
     return null;
@@ -200,6 +207,7 @@ const generateIncomeVsExpenseData = (transactions: Transaction[]): ChartData<'ba
   };
 };
 
+// 예측 데이터 생성 함수
 const generateForecastData = (transactions: Transaction[]): ChartData<'line'> | null => {
   if (!transactions || transactions.length === 0) {
     return null;

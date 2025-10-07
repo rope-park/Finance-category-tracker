@@ -1,7 +1,19 @@
+/**
+ * 가족 그룹 관리 컴포넌트
+ * 
+ * 주요 기능:
+ * - 가족 그룹 생성, 삭제
+ * - 구성원 초대, 역할 변경, 제거
+ * - 가족 그룹 및 구성원 목록 표시
+ */
 import React, { useState, useEffect } from 'react';
 import { useSocialHooks } from '../../../features/social/hooks/useSocial';
 import type { CreateFamilyRequest, InviteMemberRequest } from '../../../shared/types/social';
 
+/**
+ * 가족 그룹 관리 컴포넌트
+ * @returns 가족 그룹 관리 컴포넌트
+ */
 const FamilyManagement: React.FC = () => {
   const {
     families,
@@ -340,7 +352,12 @@ const FamilyManagement: React.FC = () => {
   );
 };
 
-// 가족 생성 모달 컴포넌트
+/**
+ * 가족 생성 모달 컴포넌트
+ * @param onClose 모달 닫기 핸들러
+ * @param onSubmit 가족 생성 핸들러
+ * @returns 가족 생성 모달 컴포넌트
+ */
 const CreateFamilyModal: React.FC<{
   onClose: () => void;
   onSubmit: (data: CreateFamilyRequest) => void;
@@ -442,7 +459,12 @@ const CreateFamilyModal: React.FC<{
   );
 };
 
-// 구성원 초대 모달 컴포넌트
+/**
+ * 구성원 초대 모달 컴포넌트  
+ * @param param0  onClose 모달 닫기 핸들러
+ * @param param1 onSubmit 구성원 초대 핸들러
+ * @returns 구성원 초대 모달 컴포넌트
+ */
 const InviteMemberModal: React.FC<{
   onClose: () => void;
   onSubmit: (data: InviteMemberRequest) => void;

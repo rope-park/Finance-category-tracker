@@ -1,3 +1,11 @@
+/**
+ * 절약 팁 페이지 컴포넌트
+ * 
+ * 주요 기능:
+ * - 맞춤형 및 일반 절약 팁 필터링
+ * - 팁 카드에 난이도, 절약 금액, 실행 단계, 태그 표시
+ * - 팁에 대한 사용자 평가 및 피드백 수집
+ */
 import React, { useState } from 'react';
 import { 
   LightBulbIcon,
@@ -10,6 +18,10 @@ import {
 import { useSavingTips } from '../hooks/useEducation';
 import { PageLayout, Card, Button, Grid } from '../../../index';
 
+/**
+ * SavingTipsPage 컴포넌트
+ * @returns {JSX.Element} 절약 팁 페이지
+ */
 export const SavingTipsPage: React.FC = () => {
   const [filter, setFilter] = useState({ personalized: true });
   const [showFeedbackModal, setShowFeedbackModal] = useState<number | null>(null);

@@ -1,6 +1,10 @@
+/**
+ * 폼 필드 컴포넌트
+ */
 import React from 'react';
 import { colors } from '../../../styles/theme';
 
+// FormField 컴포넌트의 Props 타입 정의
 interface FormFieldProps {
   label?: string;
   error?: string;
@@ -10,6 +14,11 @@ interface FormFieldProps {
   className?: string;
 }
 
+/**
+ * 폼 필드 컴포넌트
+ * @param param0 - FormField 컴포넌트 props
+ * @returns FormField 컴포넌트
+ */
 export const FormField: React.FC<FormFieldProps> = ({
   label,
   error,

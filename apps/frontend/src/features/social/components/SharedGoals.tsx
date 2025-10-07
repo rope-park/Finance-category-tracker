@@ -1,7 +1,16 @@
+/**
+ * 공유 목표 컴포넌트
+ * 
+ * 주요 기능:
+ * - 가족 단위 공유 목표 목록 표시
+ * - 목표 생성 및 기여 기능
+ * - 목표 진행률, 남은 기간 등 시각적 표시
+ */
 import React, { useState, useEffect } from 'react';
 import { useSocialHooks } from '../../../features/social/hooks/useSocial';
 import type { CreateGoalRequest, ContributeToGoalRequest, SharedGoal } from '../../../shared/types/social';
 
+// 공유 목표 컴포넌트
 const SharedGoals: React.FC<{ familyId: number }> = ({ familyId }) => {
   const {
     sharedGoals,
@@ -16,6 +25,7 @@ const SharedGoals: React.FC<{ familyId: number }> = ({ familyId }) => {
   const [showContributeModal, setShowContributeModal] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<SharedGoal | null>(null);
 
+  // 공유 목표 목록 가져오기
   useEffect(() => {
     if (familyId) {
       fetchSharedGoals(familyId);

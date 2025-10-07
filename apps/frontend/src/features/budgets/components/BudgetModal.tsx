@@ -1,3 +1,12 @@
+/**
+ * 예산 설정 및 수정 모달 컴포넌트
+ * 
+ * 주요 기능:
+ * - 카테고리 선택
+ * - 예산 한도 및 경고 임계값 설정
+ * - 예산 미리보기
+ * - 예산 추가, 수정, 삭제
+ */
 import React, { useState, useContext, useEffect } from 'react';
 import { Modal, FormField, PercentageInput, HierarchicalCategorySelect, Button,getCategoryLabel, EXPENSE_CATEGORIES } from '../../../index';
 import { CurrencyInput } from '../../../shared/components/forms/CurrencyInput';
@@ -6,12 +15,18 @@ import { AppContext } from '../../../index';
 import type { CategoryBudget, TransactionCategory } from '../../../index';
 import { colors } from '../../../styles/theme';
 
+// 모달 컴포넌트 props 타입
 interface BudgetModalProps {
   isOpen: boolean;
   onClose: () => void;
   budget?: CategoryBudget;
 }
 
+/**
+ * 예산 설정 및 수정 모달 컴포넌트
+ * @param param0 BudgetModalProps
+ * @returns JSX.Element
+ */
 export const BudgetModal: React.FC<BudgetModalProps> = ({
   isOpen,
   onClose,
@@ -23,6 +38,7 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
     throw new Error('BudgetModal must be used within an AppProvider');
   }
 
+  // AppContext에서 예산 관련 함수와 상태 가져오기
   const { updateBudget, deleteBudget, state: { darkMode, budgets } } = context;
   const isEditing = !!budget;
 
@@ -67,7 +83,6 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
         currency: 'KRW'
       });
     }
-    // 에러도 초기화
     setErrors({});
   }, [budget]);
 
@@ -76,7 +91,6 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
     console.log('🔵 handleSubmit 호출됨');
     console.log('📝 formData:', formData);
     
-    // 유효성 검사
     const newErrors: Record<string, string> = {};
     
     if (!formData.limit || formData.limit <= 0) {

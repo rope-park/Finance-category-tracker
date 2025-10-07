@@ -1,3 +1,11 @@
+/**
+ * 예산 관리 페이지 컴포넌트
+ * 
+ * 주요 기능:
+ * - 카테고리별 예산 설정 및 수정
+ * - 카테고리별 지출 현황 표시
+ * - 전체 예산, 지출, 남은 예산 요약
+ */
 import React, { useState, useContext } from 'react';
 import { PageLayout, Card, Button, ProgressBar } from '../../../index';
 import { BudgetModal } from './BudgetModal';
@@ -6,6 +14,10 @@ import type { CategoryBudget } from '../../../index';
 import { getCategoryName, getCategoryIcon } from '../../../index';
 import { colors } from '../../../styles/theme';
 
+/**
+ * 예산 관리 페이지 컴포넌트
+ * @returns JSX.Element
+ */
 export const BudgetPage: React.FC = () => {
   const context = useContext(AppContext);
   

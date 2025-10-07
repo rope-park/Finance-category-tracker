@@ -1,47 +1,65 @@
+/**
+ * Finance Tracker API 클라이언트
+ * 
+ * 백엔드 API와의 모든 통신을 담당하는 중앙집중식 API 클라이언트.
+ * RESTful API 패턴을 따르며, 타입 안정성을 보장.
+ * 
+ * 주요 기능:
+ * - 인증 관리 (로그인, 토큰 갱신)
+ * - 거래 내역 CRUD
+ * - 예산 및 목표 관리
+ * - 분석 데이터 조회
+ * - 에러 처리 및 재시도 로직
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import type { Notification, RecurringTemplate } from '../../index';
 
-// ...기존 코드...
+// ==================================================
+// API 설정 및 상수
+// ==================================================
 
-// API 클라이언트 클래스 내부에 반복 거래 템플릿 관련 함수 정의
-// (아래 FinanceTrackerAPI 클래스 내부에 추가)
-
-
-  // (옵션) 자동 실행 내역 조회 (추후 백엔드 구현 시)
-  // async getRecurringExecutionLogs(): Promise<ApiResponse<{ logs: any[] }>> {
-  //   return this.request('/recurring-templates/logs');
-  // }
-// API 기본 URL
+// API 기본 URL (환경에 따라 변경 가능)
 const API_BASE_URL = 'http://localhost:3001/api';
 
-// API 응답 타입
+// ==================================================
+// API 응답 타입 정의
+// ==================================================
+
+// 표준 API 응답 형식
 interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
+  success: boolean;     // 요청 성공 여부
+  data?: T;            // 실제 데이터 (성공시)
+  message?: string;    // 메시지 (성공/실패 설명)
+  error?: string;      // 에러 메시지 (실패시)
 }
 
-// 빈 응답 타입
+// 빈 응답 타입 (데이터 없는 성공 응답)
 interface EmptyResponse {
   message?: string;
 }
 
-// 페이지네이션 타입
+// 페이지네이션 메타데이터
 interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
+  page: number;        // 현재 페이지 번호
+  limit: number;       // 페이지당 항목 수
+  total: number;       // 전체 항목 수
+  totalPages: number;  // 전체 페이지 수
 }
 
-// 통계 데이터 타입들
+// ==================================================
+// 분석 및 통계 데이터 타입들
+// ==================================================
+
+// 거래 통계 데이터
 interface TransactionStats {
-  totalIncome: number;
-  totalExpense: number;
-  balance: number;
-  transactionCount: number;
-  averageTransaction: number;
-  topCategories: Array<{
+  totalIncome: number;         // 총 수입
+  totalExpense: number;        // 총 지출
+  balance: number;             // 잔액 (수입 - 지출)
+  transactionCount: number;    // 총 거래 건수
+  averageTransaction: number;  // 평균 거래 금액
+  topCategories: Array<{       // 상위 카테고리별 통계
     category_key: string;
     category_name: string;
     total_amount: number;
@@ -49,31 +67,33 @@ interface TransactionStats {
   }>;
 }
 
+// 예산 분석 데이터
 interface BudgetAnalysis {
-  totalBudget: number;
-  totalSpent: number;
-  totalRemaining: number;
-  overBudgetCategories: Array<{
+  totalBudget: number;         // 총 예산
+  totalSpent: number;          // 총 지출
+  totalRemaining: number;      // 총 잔여 예산
+  overBudgetCategories: Array<{  // 예산 초과 카테고리들
     category_key: string;
     category_name: string;
     budget_amount: number;
     spent_amount: number;
     over_amount: number;
   }>;
-  budgetUtilization: number;
+  budgetUtilization: number;   // 예산 사용률 (%)
 }
 
+// 카테고리별 사용 통계
 interface CategoryUsageStats {
-  categories: Array<{
+  categories: Array<{          // 카테고리별 상세 통계
     category_key: string;
     category_name: string;
     transaction_count: number;
     total_amount: number;
     average_amount: number;
-    percentage: number;
+    percentage: number;        // 전체 대비 비율
   }>;
-  totalTransactions: number;
-  totalAmount: number;
+  totalTransactions: number;   // 전체 거래 건수
+  totalAmount: number;         // 전체 거래 금액
 }
 
 interface MonthlyStats {

@@ -1,14 +1,28 @@
+/**
+ * 프로필 설정 리다이렉트 모달 컴포넌트
+ * 
+ * 주요 기능:
+ * - 프로필 설정이 완료되지 않은 사용자를 위한 안내 모달
+ * - 5초 카운트다운 후 자동으로 프로필 설정 페이지로 이동
+ * - 즉시 이동 버튼 제공
+ */
 import React, { useEffect, useState } from 'react';
 import { Modal } from '../../../shared/components/data-display/Modal';
 import { Button } from '../../../shared/components/forms/Button';
 import { useApp } from '../../../app/hooks/useApp';
 import { colors } from '../../../styles/theme';
 
+// 프로필 리다이렉트 모달 Props 인터페이스
 interface ProfileRedirectModalProps {
   isOpen: boolean;
   onProceed: () => void;
 }
 
+/**
+ * 프로필 리다이렉트 모달 컴포넌트
+ * @param param0 ProfileRedirectModalProps
+ * @returns JSX.Element
+ */
 export const ProfileRedirectModal: React.FC<ProfileRedirectModalProps> = ({
   isOpen,
   onProceed
@@ -23,6 +37,7 @@ export const ProfileRedirectModal: React.FC<ProfileRedirectModalProps> = ({
       return;
     }
 
+    // 카운트다운 타이머 설정
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {

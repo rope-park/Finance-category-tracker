@@ -1,42 +1,44 @@
+/**
+ * Frontend 전용 인증 관련 타입 정의
+ */
 import type { 
   User as SharedUser,
   LoginData,
   RegisterData
 } from '@finance-tracker/shared';
 
-// 프론트엔드에서 사용하는 User 타입 (공유 타입 확장)
+// 프론트엔드 전용 사용자 타입 (SharedUser 확장)
 export interface User extends SharedUser {
-  // 프론트엔드 전용 camelCase 필드 (호환성을 위해)
-  avatar?: string | null;
-  phone?: string | null;
-  ageGroup?: number | string | null;
-  preferences?: UserPreferences;
+  avatar?: string | null;           // 프로필 이미지 URL
+  phone?: string | null;            // 휴대폰 번호
+  ageGroup?: number | string | null; // 연령대
+  preferences?: UserPreferences;     // 사용자 개인 설정
 }
 
 export interface UserPreferences {
-  currency: 'KRW' | 'USD' | 'EUR' | 'JPY';
-  language: 'ko' | 'en';
-  darkMode: boolean;
-  notifications: {
-    budget: boolean;
-    transaction: boolean;
-    email: boolean;
+  currency: 'KRW' | 'USD' | 'EUR' | 'JPY'; // 기본 통화
+  language: 'ko' | 'en';                   // 언어 설정
+  darkMode: boolean;                       // 다크 모드 사용 여부
+  notifications: {                         // 알림 설정
+    budget: boolean;                       // 예산 알림
+    transaction: boolean;                  // 거래 알림
+    email: boolean;                        // 이메일 알림
   };
 }
 
-// Frontend 전용 폼 데이터 타입들 (UI 호환성을 위한 camelCase)
+// 로그인 폼 데이터
 export interface LoginFormData {
-  email: string;
-  password: string;
-  rememberMe?: boolean; // remember_me의 camelCase 버전
+  email: string;           // 이메일 주소
+  password: string;        // 비밀번호
+  rememberMe?: boolean;    // 로그인 상태 유지 (remember_me의 camelCase 버전)
 }
 
 export interface RegisterFormData {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string; // password_confirmation의 camelCase 버전
-  agreeToTerms: boolean; // terms_accepted의 camelCase 버전
+  name: string;            // 사용자 이름
+  email: string;           // 이메일 주소
+  password: string;        // 비밀번호
+  confirmPassword: string; // 비밀번호 확인 (password_confirmation의 camelCase 버전)
+  agreeToTerms: boolean;   // 약관 동의 여부 (terms_accepted의 camelCase 버전)
 }
 
 // 공통 타입들을 Frontend에서 사용하기 위한 변환 유틸리티
@@ -56,21 +58,21 @@ export const toRegisterData = (formData: RegisterFormData): RegisterData => ({
 
 // 프론트엔드 AuthResponse
 export interface AuthResponse {
-  user: User;
-  token: string;
-  refreshToken?: string;
+  user: User;              // 사용자 정보
+  token: string;           // 액세스 토큰
+  refreshToken?: string;   // 리프레시 토큰
 }
 
 export interface AuthError {
-  code: string;
-  message: string;
-  field?: string;
+  code: string;     // 에러 코드
+  message: string;  // 에러 메시지
+  field?: string;   // 에러가 발생한 필드명
 }
 
 export interface AuthState {
-  user: User | null;
-  token: string | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  error: AuthError | null;
+  user: User | null;           // 현재 사용자 정보
+  token: string | null;        // 인증 토큰
+  isLoading: boolean;          // 로딩 상태
+  isAuthenticated: boolean;    // 인증 상태
+  error: AuthError | null;     // 에러 정보
 }

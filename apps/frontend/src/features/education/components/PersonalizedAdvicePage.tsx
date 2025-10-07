@@ -1,3 +1,11 @@
+/**
+ * 맞춤 조언 페이지 컴포넌트
+ * 
+ * 주요 기능:
+ * - 사용자 맞춤 재정 조언 표시
+ * - 조언 생성, 읽음 처리, 해제 기능
+ * - 우선순위에 따른 시각적 구분
+ */
 import React, { useState } from 'react';
 import { 
   LightBulbIcon,
@@ -11,6 +19,7 @@ import {
 import { usePersonalizedAdvice } from '../hooks/useEducation';
 import { PageLayout, Card, Button, Grid } from '../../../index';
 
+// 맞춤 조언 페이지 컴포넌트
 const PersonalizedAdvicePage: React.FC = () => {
   const { 
     advice, 

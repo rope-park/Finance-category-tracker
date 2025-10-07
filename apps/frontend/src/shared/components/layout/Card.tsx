@@ -1,7 +1,11 @@
+/**
+ * Card 레이아웃 컴포넌트
+ */
 import React, { type CSSProperties } from 'react';
 import { colors, shadows, borderRadius } from '../../../styles/theme';
 import { useApp } from '../../../app/hooks/useApp';
 
+// 카드 컴포넌트 props 정의
 interface CardProps {
   children: React.ReactNode;
   className?: string;
@@ -13,6 +17,11 @@ interface CardProps {
   hoverable?: boolean;
 }
 
+/**
+ * 카드 컴포넌트
+ * @param param0 - 카드 컴포넌트 props
+ * @returns  카드 컴포넌트
+ */
 export const Card: React.FC<CardProps> = ({
   children,
   className = '',
@@ -31,6 +40,7 @@ export const Card: React.FC<CardProps> = ({
     lg: '32px'
   };
 
+  // 카드 스타일 정의
   const getVariantStyle = () => {
     switch (variant) {
       case 'gradient':
@@ -71,6 +81,7 @@ export const Card: React.FC<CardProps> = ({
     }
   };
 
+  // 최종 카드 스타일
   const cardStyle: CSSProperties = {
     ...getVariantStyle(),
     borderRadius: borderRadius.xl,
@@ -83,6 +94,7 @@ export const Card: React.FC<CardProps> = ({
     ...style
   };
 
+  // 마우스 오버 시 스타일 변화
   const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
     if (interactive || onClick || hoverable) {
       e.currentTarget.style.transform = 'translateY(-3px)';
@@ -103,6 +115,7 @@ export const Card: React.FC<CardProps> = ({
     }
   };
 
+  // 마우스 리브 시 스타일 복원
   const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
     if (interactive || onClick || hoverable) {
       e.currentTarget.style.transform = 'translateY(0)';

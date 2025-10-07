@@ -1,8 +1,18 @@
+/**
+ * 거래 내역 필터 컴포넌트
+ * 
+ * 주요 기능:
+ * - 거래 내역을 다양한 기준(검색어, 날짜, 카테고리, 유형, 금액 범위 등)으로 필터링
+ * - 필터 옵션 확장/축소 기능
+ * - 필터 초기화 기능
+ * - 다크 모드 지원
+ */
 import React, { useState } from 'react';
 import { RangeSlider, Card, Input, Select, DatePicker, Button, HierarchicalCategorySelect } from '../../../index';
 import { colors } from '../../../styles/theme';
 import type { TransactionCategory } from '../../../index';
 
+// 필터 옵션 인터페이스
 interface FilterOptions {
   searchText: string;
   dateFrom: string;
@@ -13,6 +23,7 @@ interface FilterOptions {
   merchant: string;
 }
 
+// 컴포넌트 Props 인터페이스
 interface TransactionFilterProps {
   filters: FilterOptions;
   onFiltersChange: (filters: FilterOptions) => void;
@@ -22,6 +33,11 @@ interface TransactionFilterProps {
   maxAmount: number;
 }
 
+/**
+ * 거래 내역 필터 컴포넌트
+ * @param param0 컴포넌트 Props
+ * @returns JSX.Element
+ */
 export const TransactionFilter: React.FC<TransactionFilterProps> = ({
   filters,
   onFiltersChange,
@@ -32,6 +48,7 @@ export const TransactionFilter: React.FC<TransactionFilterProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // 필터 옵션 변경 핸들러
   const handleFilterChange = <K extends keyof FilterOptions>(key: K, value: FilterOptions[K]) => {
     onFiltersChange({
       ...filters,
@@ -39,16 +56,19 @@ export const TransactionFilter: React.FC<TransactionFilterProps> = ({
     });
   };
 
+  // 금액 포맷터
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ko-KR').format(amount) + '원';
   };
 
+  // 거래 유형 옵션
   const typeOptions = [
     { value: 'all', label: '전체' },
     { value: 'income', label: '수입' },
     { value: 'expense', label: '지출' }
   ];
 
+  // 활성 필터 존재 여부
   const hasActiveFilters = 
     filters.searchText || 
     filters.dateFrom || 

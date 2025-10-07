@@ -1,3 +1,11 @@
+/**
+ * 대시보드 페이지 컴포넌트
+ * 
+ * 주요 기능:
+ * - 재정 현황 요약 (총 잔액, 이번 달 수입/지출/수지)
+ * - 예산 현황 (카테고리별 예산 사용률)
+ * - 최근 거래 내역 (최대 5개)
+ */
 import React, { useState } from 'react';
 import { PageErrorBoundary, 
   PageLayout, 
@@ -17,10 +25,16 @@ import { getCategoryIcon, getCategoryName, formatCurrency } from '../../../index
 import { TransactionModal } from '../../transactions/components/TransactionModal';
 import { BudgetModal } from '../../budgets/components/BudgetModal';
 
+// DashboardPage 컴포넌트의 Props 인터페이스
 interface DashboardPageProps {
   onTabChange?: (tabId: string) => void;
 }
 
+/**
+ * 대시보드 페이지 컴포넌트
+ * @param param0 - DashboardPage 컴포넌트의 Props
+ * @returns 대시보드 페이지 컴포넌트
+ */
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onTabChange }) => {
   const { transactions, budgets, darkMode, deleteTransaction } = useApp();
   const [showTransactionModal, setShowTransactionModal] = useState(false);

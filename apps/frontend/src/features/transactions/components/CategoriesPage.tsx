@@ -1,3 +1,11 @@
+/**
+ * 카테고리 분석 페이지 컴포넌트
+ * 
+ * 주요 기능:
+ * - 다양한 분석 기간 선택 (최근 1주, 1개월, 1년, 전체 기간, 직접 설정)
+ * - 선택한 기간 동안의 총 수입, 총 지출, 순 수지 요약
+ * - 카테고리별 수입/지출 상세 분석
+ */
 import React, { useState } from 'react';
 import { useApp } from '../../../app/hooks/useApp';
 import { useTransactionFilter } from '../hooks/useTransactionFilter';
@@ -14,6 +22,7 @@ import {
 import { colors } from '../../../styles/theme';
 import type { AnalysisPeriod, DateRange, TransactionCategory } from '../../../index';
 
+// 지역화된 기간 옵션 타입
 interface LocalPeriodOption {
   id: AnalysisPeriod;
   label: string;
@@ -21,6 +30,10 @@ interface LocalPeriodOption {
 }
 import { getCategoryIcon, getCategoryName, formatCurrency } from '../../../shared/utils';
 
+/**
+ * 카테고리 분석 페이지 컴포넌트
+ * @returns 카테고리 분석 페이지 컴포넌트
+ */
 export const CategoriesPage: React.FC = () => {
   const { darkMode } = useApp();
   const [selectedPeriod, setSelectedPeriod] = useState<AnalysisPeriod>('month');
@@ -29,11 +42,13 @@ export const CategoriesPage: React.FC = () => {
     end: ''
   });
 
+  // 필터링된 거래 내역과 총 수입/지출 계산
   const { filteredTransactions, totalIncome, totalExpense } = useTransactionFilter(
     selectedPeriod, 
     selectedPeriod === 'custom' ? customDateRange : undefined
   );
 
+  // 지역화된 기간 옵션
   const periodOptions: LocalPeriodOption[] = [
     { id: 'week', label: '최근 1주', value: 'week' },
     { id: 'month', label: '최근 1개월', value: 'month' },

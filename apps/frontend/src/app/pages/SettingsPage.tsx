@@ -1,3 +1,13 @@
+/**
+ * 설정 페이지 컴포넌트
+ * 
+ * 주요 기능:
+ * - 프로필 설정: 사용자 정보 표시 및 편집
+ * - 테마 설정: 다크 모드 및 금액 숨기기 토글
+ * - 알림 설정: 푸시 알림 토글
+ * - 데이터 관리: 데이터 내보내기/가져오기 및 초기화
+ * - 앱 정보: 버전 및 주요 기능 안내
+ */
 import React, { useState } from 'react';
 import { useApp } from '../hooks/useApp';
 import { useAuth } from '../../features/auth/hooks/useAuth';
@@ -5,6 +15,10 @@ import { colors } from '../../styles/theme';
 import { Card, Button, Toggle, Section, TabNavigation } from '../../index';
 import { ProfileSettingsModal } from '../../features/auth/components/ProfileSettingsModal';
 
+/**
+ * 설정 페이지 컴포넌트
+ * @returns 설정 페이지 컴포넌트
+ */
 export const SettingsPage: React.FC = () => {
   const { darkMode, toggleDarkMode, notificationsEnabled, toggleNotifications, amountHidden, toggleAmountHidden } = useApp();
   const { state: { user } } = useAuth();

@@ -1,12 +1,16 @@
+/**
+ * Grid 레이아웃 컴포넌트
+ */
 import React from 'react';
 
-
+// 반응형 그리드 브레이크포인트 타입 정의
 interface GridBreakpoints {
   mobile?: number;
   tablet?: number;
   desktop?: number;
 }
 
+// 그리드 컴포넌트 props 정의
 interface GridProps {
   children: React.ReactNode;
   columns?: number | string;
@@ -16,6 +20,11 @@ interface GridProps {
   breakpoints?: GridBreakpoints;
 }
 
+/**
+ * 그리드 컴포넌트
+ * @param param0 - 그리드 컴포넌트 props
+ * @returns  그리드 컴포넌트
+ */
 export const Grid: React.FC<GridProps> = ({
   children,
   columns = 'repeat(auto-fit, minmax(300px, 1fr))',

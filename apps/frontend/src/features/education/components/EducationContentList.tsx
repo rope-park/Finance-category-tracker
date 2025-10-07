@@ -1,3 +1,11 @@
+/**
+ * 교육 콘텐츠 리스트 컴포넌트
+ * 
+ * 주요 기능:
+ * - 교육 콘텐츠 목록을 그리드 형태로 표시
+ * - 제목/내용 검색 기능
+ * - 카테고리 및 난이도 필터링 기능
+ */
 import React, { useState } from 'react';
 import { useEducationContent, useEducationSearch } from '../hooks/useEducation';
 import { useApp } from '../../../app/hooks/useApp';
@@ -12,10 +20,16 @@ import {
 import { colors } from '../../../styles/theme';
 import type { EducationContentFilter } from '../../../index';
 
+// EducationContentList 컴포넌트의 Props 인터페이스
 interface EducationContentListProps {
   onContentSelect: (contentId: number) => void;
 }
 
+/**
+ * 교육 콘텐츠 리스트 컴포넌트
+ * @param param0 EducationContentListProps
+ * @returns JSX.Element
+ */
 const EducationContentList: React.FC<EducationContentListProps> = ({ onContentSelect }) => {
   const [filter, setFilter] = useState<EducationContentFilter>({
     page: 1,
@@ -28,6 +42,7 @@ const EducationContentList: React.FC<EducationContentListProps> = ({ onContentSe
   const { content, loading, error } = useEducationContent(filter);
   const { searchResults, loading: searchLoading, searchContent, clearSearch } = useEducationSearch();
 
+  // 검색 폼 제출 핸들러
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
@@ -37,6 +52,7 @@ const EducationContentList: React.FC<EducationContentListProps> = ({ onContentSe
     }
   };
 
+  // 필터 변경 핸들러
   const handleFilterChange = (newFilter: Partial<EducationContentFilter>) => {
     setFilter(prev => ({ ...prev, ...newFilter, page: 1 }));
     clearSearch();

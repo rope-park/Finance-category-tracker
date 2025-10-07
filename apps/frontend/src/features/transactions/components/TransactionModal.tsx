@@ -1,3 +1,11 @@
+/**
+ * 거래 추가/수정 모달 컴포넌트
+ * 
+ * 주요 기능:
+ * - 거래 내역 추가 및 수정 폼 제공
+ * - 금액, 설명, 카테고리, 날짜, 상점 등 입력 필드 포함
+ * - 유효성 검사 및 에러 처리
+ */
 import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Button, Input, DatePicker, Select, HierarchicalCategorySelect } from '../../../index';
 import { CurrencyInput } from '../../../shared/components/forms/CurrencyInput';
@@ -6,12 +14,18 @@ import type { Transaction, TransactionCategory } from '../../../index';
 import { EXPENSE_CATEGORIES } from '../../../index';
 import { colors } from '../../../styles/theme';
 
+// TransactionModal 컴포넌트의 Props 인터페이스
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   transaction?: Transaction;
 }
 
+/**
+ * 거래 추가/수정 모달 컴포넌트
+ * @param param0 TransactionModalProps
+ * @returns JSX.Element
+ */
 export const TransactionModal: React.FC<TransactionModalProps> = ({
   isOpen,
   onClose,
@@ -26,6 +40,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const { addTransaction, updateTransaction, state: { darkMode } } = context;
   const isEditing = !!transaction;
 
+  // 폼 상태
   const [formData, setFormData] = useState<{
     amount: string;
     description: string;

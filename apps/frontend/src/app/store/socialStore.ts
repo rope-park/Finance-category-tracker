@@ -1,3 +1,10 @@
+/**
+ * 소셜 스토어 (가족/그룹, 공유 목표, 가족 거래, 커뮤니티)
+ * 
+ * Zustand를 사용하여 소셜 관련 상태를 관리.
+ * 가족/그룹, 공유 목표, 가족 거래, 커뮤니티 게시물 및 댓글에 대한 상태와 액션을 포함.
+ * 비동기 작업 없이 동기적으로 상태를 업데이트하는 간단한 구조.
+ */
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type {
@@ -10,6 +17,7 @@ import type {
   PostComment
 } from '../../shared/types/social';
 
+// 상태 인터페이스
 interface SocialState {
   // 가족/그룹 상태
   families: Family[];
@@ -54,6 +62,7 @@ interface SocialState {
   error: string | null;
 }
 
+// 액션 인터페이스
 interface SocialActions {
   // 가족/그룹 액션
   setFamilies: (families: Family[]) => void;
@@ -108,6 +117,7 @@ interface SocialActions {
   reset: () => void;
 }
 
+// 초기 상태
 const initialState: SocialState = {
   families: [],
   currentFamily: null,
@@ -132,6 +142,9 @@ const initialState: SocialState = {
   error: null,
 };
 
+/**
+ * 소셜 스토어 훅
+ */
 export const useSocialStore = create<SocialState & SocialActions>()(
   devtools(
     (set) => ({

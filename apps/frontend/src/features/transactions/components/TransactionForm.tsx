@@ -1,11 +1,25 @@
+/**
+ * 거래 추가/수정 폼 컴포넌트
+ * 
+ * 주요 기능:
+ * - 금액, 설명, 카테고리, 거래 유형, 거래 날짜 입력 필드 제공
+ * - 입력값 검증 및 제출 처리
+ * - 설명 입력 시 실시간 카테고리 추천 기능 포함
+ */
 import React, { useState, useRef } from 'react'
 import type { Transaction } from '@finance-tracker/shared'
 
+// 폼 컴포넌트 Props 인터페이스
 interface TransactionFormProps {
   onSubmit?: (transaction: Partial<Transaction>) => void
   initialData?: Partial<Transaction>
 }
 
+/**
+ * 거래 추가/수정 폼 컴포넌트
+ * @param param0 TransactionFormProps
+ * @returns JSX.Element
+ */
 const TransactionForm: React.FC<TransactionFormProps> = ({
   onSubmit,
   initialData = {}
@@ -25,6 +39,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
+  // 폼 검증
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
@@ -40,6 +55,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     return Object.keys(newErrors).length === 0
   }
 
+  // 폼 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     

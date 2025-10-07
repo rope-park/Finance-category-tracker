@@ -1,6 +1,10 @@
+/**
+ * 진행률 바 컴포넌트
+ */
 import React from 'react';
 import { colors } from '../../../styles/theme';
 
+// ProgressBar 컴포넌트의 Props 타입 정의
 interface ProgressBarProps {
   percentage: number;
   color?: 'success' | 'warning' | 'error' | 'primary';
@@ -9,6 +13,11 @@ interface ProgressBarProps {
   animated?: boolean;
 }
 
+/**
+ * 진행률 바 컴포넌트
+ * @param param0 - ProgressBar 컴포넌트의 Props
+ * @returns ProgressBar 컴포넌트
+ */
 export const ProgressBar: React.FC<ProgressBarProps> = ({
   percentage,
   color = 'primary',

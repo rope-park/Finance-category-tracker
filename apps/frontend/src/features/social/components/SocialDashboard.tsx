@@ -1,9 +1,18 @@
+/**
+ * 소셜 대시보드 컴포넌트
+ * 
+ * 주요 기능:
+ * - 가족 관리, 공유 목표, 커뮤니티 탭 제공
+ * - 현재 선택된 가족 정보 표시
+ * - 각 탭에 따른 콘텐츠 렌더링
+ */
 import { useState } from 'react';
 import FamilyManagement from './FamilyManagement';
 import SharedGoals from './SharedGoals';
 import Community from './Community';
 import { useSocialHooks } from '../../../features/social/hooks/useSocial';
 
+// 소셜 대시보드 컴포넌트
 const SocialDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'families' | 'goals' | 'community'>('families');
   const { currentFamily } = useSocialHooks();
@@ -39,6 +48,7 @@ const SocialDashboard: React.FC = () => {
     },
   ];
 
+  // 현재 활성 탭에 따른 콘텐츠 렌더링
   const renderContent = () => {
     switch (activeTab) {
       case 'families':

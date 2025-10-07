@@ -1,3 +1,6 @@
+/**
+ * 헤더 레이아웃 컴포넌트
+ */
 import React, { useState } from 'react';
 import { Button } from '../../../index';
 import { LoginModal, RegisterModal } from '../../../index';
@@ -6,17 +9,23 @@ import { useAuth } from '../../../features/auth/hooks/useAuth';
 import { useApp } from '../../../app/hooks/useApp';
 import { colors } from '../../../styles/theme';
 
+// 헤더 컴포넌트의 Props 타입 정의
 interface HeaderProps {
   onLogoClick?: () => void;
 }
 
+/**
+ * 헤더 컴포넌트
+ * @param param0 - 헤더 컴포넌트의 Props
+ * @returns 헤더 컴포넌트
+ */
 export const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
   const { state: { user, isAuthenticated }, logout } = useAuth();
   const { darkMode, toggleDarkMode } = useApp();
   
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);      // 로그인 모달
+  const [showRegisterModal, setShowRegisterModal] = useState(false);  // 회원가입 모달  
+  const [showProfileModal, setShowProfileModal] = useState(false);     // 프로필 설정 모달
 
   const handleSwitchToRegister = () => {
     setShowLoginModal(false);
@@ -29,7 +38,6 @@ export const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
   };
 
   const handleRegisterSuccess = () => {
-    // 회원가입 성공 시 즉시 프로필 설정 모달 열기
     setShowProfileModal(true);
   };
 
@@ -41,38 +49,41 @@ export const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
 
   return (
     <>
+      {/* 메인 헤더 영역 - 상단 고정되어 스크롤 시에도 항상 보임 */}
       <header style={{
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '16px 24px',
-        background: darkMode 
+        justifyContent: 'space-between',    
+        alignItems: 'center',              
+        padding: '16px 24px',             
+        background: darkMode               
           ? `linear-gradient(135deg, ${colors.gray[900]} 0%, ${colors.gray[800]} 100%)`
           : `linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)`,
-        borderBottom: `1px solid ${darkMode ? colors.gray[700] : colors.gray[200]}`,
-        boxShadow: darkMode 
+        borderBottom: `1px solid ${darkMode ? colors.gray[700] : colors.gray[200]}`, 
+        boxShadow: darkMode              
           ? '0 2px 4px rgba(0, 0, 0, 0.3)' 
           : '0 2px 4px rgba(0, 0, 0, 0.1)',
-        position: 'sticky',
+        position: 'sticky',              
         top: 0,
-        zIndex: 100
+        zIndex: 100                    
       }}>
-        {/* 로고 */}
+        {/* 로고 영역 - 클릭 시 대시보드로 이동, 호버 시 애니메이션 효과 */}
         <div 
           onClick={onLogoClick}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            cursor: onLogoClick ? 'pointer' : 'default',
-            transition: 'transform 0.2s ease'
+            gap: '12px',                                           
+            cursor: onLogoClick ? 'pointer' : 'default',          
+            transition: 'transform 0.2s ease'                     
           }}
           onMouseEnter={(e) => {
+            // 마우스 호버 시 살짝 확대 효과
             if (onLogoClick) {
               e.currentTarget.style.transform = 'scale(1.05)';
             }
           }}
           onMouseLeave={(e) => {
+            // 마우스 떠날 때 원래 크기로 복귀
             if (onLogoClick) {
               e.currentTarget.style.transform = 'scale(1)';
             }

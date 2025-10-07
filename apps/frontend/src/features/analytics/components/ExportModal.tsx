@@ -1,14 +1,28 @@
+/**
+ * 거래 내역 내보내기 모달 컴포넌트
+ * 
+ * 주요 기능:
+ * - 전체 거래 내역, 필터된 거래 내역, 월별 리포트, 연간 리포트 내보내기 지원
+ * - 거래 타입, 카테고리, 날짜 범위 등 다양한 필터 옵션 제공
+ * - CSV 파일로 내보내기 기능 구현
+ */
 import React, { useState, useContext } from 'react';
 import { Modal, Button, FormField, Select } from '../../../index';
 import { AppContext } from '../../../index';
 import { type TransactionCategory, ExpenseSecondaryCategory, IncomeSecondaryCategory, getCategoryLabel, getCategoryIcon } from '../../../index';
 import { exportToCSV, downloadCSV, generateMonthlyReport, generateYearlyReport, type ExportOptions } from '../../../shared/utils/exportUtils';
 
+// ExportModal 컴포넌트의 Props 인터페이스
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+/**
+ * 내보내기 모달 컴포넌트
+ * @param param0 - 내보내기 모달 컴포넌트의 Props
+ * @returns 내보내기 모달 컴포넌트
+ */
 export const ExportModal: React.FC<ExportModalProps> = ({
   isOpen,
   onClose

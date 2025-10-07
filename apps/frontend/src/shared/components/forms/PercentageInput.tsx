@@ -1,6 +1,10 @@
+/**
+ * 퍼센트 입력 폼 컴포넌트
+ */
 import React from 'react';
 import { Select, FormField } from '../../../index';
 
+// PercentageInput 컴포넌트의 Props 타입 정의
 interface PercentageInputProps {
   label?: string;
   value?: number;
@@ -13,6 +17,11 @@ interface PercentageInputProps {
   customOptions?: number[];
 }
 
+/**
+ * 퍼센트 입력 폼 컴포넌트
+ * @param param0 - PercentageInput 컴포넌트 props
+ * @returns PercentageInput 컴포넌트
+ */
 export const PercentageInput: React.FC<PercentageInputProps> = ({
   label,
   value,
@@ -34,6 +43,7 @@ export const PercentageInput: React.FC<PercentageInputProps> = ({
       label: `${percent}%`
     }));
 
+  // 값 변경 핸들러
   const handleChange = (stringValue: string) => {
     const numericValue = parseInt(stringValue, 10);
     onChange?.(numericValue);

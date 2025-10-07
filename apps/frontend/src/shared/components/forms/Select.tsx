@@ -1,11 +1,16 @@
+/**
+ * 선택 폼 컴포넌트
+ */
 import React, { useState } from 'react';
 import { colors } from '../../../styles/theme';
 
+// Select 컴포넌트의 옵션 타입 정의
 interface SelectOption {
   value: string;
   label: string;
 }
 
+// Select 컴포넌트의 Props 타입 정의
 interface SelectProps {
   value: string;
   onChange: (value: string) => void;
@@ -18,6 +23,11 @@ interface SelectProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+/**
+ * 선택 폼 컴포넌트
+ * @param param0 - Select 컴포넌트 props
+ * @returns Select 컴포넌트
+ */
 export const Select: React.FC<SelectProps> = ({
   value,
   onChange,

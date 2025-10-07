@@ -1,3 +1,11 @@
+/**
+ * 교육 콘텐츠 상세 페이지 컴포넌트
+ * 
+ * 주요 기능:
+ * - 콘텐츠 메타 정보 표시 (예상 학습 시간, 조회수, 완료율 등)
+ * - 학습 진행 상황 표시 및 업데이트
+ * - 학습 노트 작성 및 저장
+ */
 import React, { useState, useEffect } from 'react';
 import { 
   ClockIcon,
@@ -11,11 +19,17 @@ import {
 import { useEducationContentDetail } from '../hooks/useEducation';
 import { PageLayout, Card, Button, Grid } from '../../../index';
 
+// 컴포넌트 Props 인터페이스
 interface EducationContentDetailProps {
   contentId: number;
   onBack: () => void;
 }
 
+/**
+ * 교육 콘텐츠 상세 페이지 컴포넌트
+ * @param param0 EducationContentDetailProps
+ * @returns JSX.Element
+ */
 const EducationContentDetail: React.FC<EducationContentDetailProps> = ({ contentId, onBack }) => {
   
   const { content, loading, error, updateProgress } = useEducationContentDetail(contentId);

@@ -1,3 +1,12 @@
+/**
+ * 반복 거래 템플릿 추가/수정 모달 컴포넌트
+ * 
+ * 주요 기능:
+ * - 템플릿 이름, 설명, 금액, 카테고리, 타입(수입/지출) 입력
+ * - 반복 주기(매일, 매주, 매월, 매년) 및 요일/날짜 선택
+ * - 자동 실행 및 알림 설정 토글
+ * - 입력 검증 및 오류 메시지 표시
+ */
 import React, { useState, useContext } from 'react';
 import { Modal, Button, Select, Input, Toggle, FormField, AppContext, getCategoryLabel, getCategoryIcon, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../../index';
 import type { TransactionCategory, RecurringTemplate } from '../../../index';
@@ -5,7 +14,12 @@ import type { TransactionCategory, RecurringTemplate } from '../../../index';
 // 로컬 RecurrenceType 정의
 type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
-// 로컬 유틸리티 함수들
+/**
+ * 다음 결제일 계산
+ * @param recurrenceType  반복 주기 타입
+ * @param recurrenceDay  반복 주기 요일/날짜 (선택적)
+ * @returns 다음 결제일 (YYYY-MM-DD 형식)
+ */
 const calculateNextDueDate = (recurrenceType: RecurrenceType, recurrenceDay?: number): string => {
   const now = new Date();
   const nextDate = new Date(now);
@@ -36,6 +50,11 @@ const calculateNextDueDate = (recurrenceType: RecurrenceType, recurrenceDay?: nu
   return nextDate.toISOString().split('T')[0];
 };
 
+/**
+ * 반복 주기 옵션 가져오기
+ * @param recurrenceType 반복 주기 타입
+ * @returns 반복 주기 옵션 배열
+ */
 const getRecurrenceDayOptions = (recurrenceType: RecurrenceType): { value: number; label: string }[] => {
   switch (recurrenceType) {
     case 'weekly':
@@ -76,6 +95,7 @@ interface LocalRecurringTemplate {
   updatedAt: string;
 }
 
+// 컴포넌트 Props 정의
 interface RecurringTemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -83,6 +103,11 @@ interface RecurringTemplateModalProps {
   onSave?: (data: Partial<RecurringTemplate>) => void;
 }
 
+/**
+ * 반복 거래 템플릿 모달 컴포넌트
+ * @param props 컴포넌트 Props
+ * @returns JSX.Element
+ */
 export const RecurringTemplateModal: React.FC<RecurringTemplateModalProps> = (props) => {
   const { isOpen, onClose, template, onSave } = props;
   const context = useContext(AppContext);

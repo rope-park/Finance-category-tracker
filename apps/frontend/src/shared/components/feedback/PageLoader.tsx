@@ -1,11 +1,20 @@
+/**
+ * 페이지 로더 컴포넌트 및 다양한 페이지별 로더
+ */
 import React from 'react';
 import { useApp } from '../../../app/hooks/useApp';
 import { colors } from '../../../styles/theme';
 
+// 페이지 로더 컴포넌트 props 정의
 interface PageLoaderProps {
   message?: string;
 }
 
+/**
+ * 페이지 로더 컴포넌트
+ * @param param0 - 페이지 로더 컴포넌트 props
+ * @returns 페이지 로더 컴포넌트
+ */
 export const PageLoader: React.FC<PageLoaderProps> = ({ 
   message = "페이지를 불러오는 중..." 
 }) => {

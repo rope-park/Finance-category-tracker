@@ -1,8 +1,17 @@
+/**
+ * 목표 설정 및 추적 컴포넌트
+ * 
+ * 주요 기능:
+ * - 목표 추가, 수정, 삭제
+ * - 목표 진행 상황 시각화 (진행 바)
+ * - 목표 달성률 표시
+ */
 import React, { useState } from 'react';
 import { Card, Button, Input, FormField } from '../../index';
 import { colors } from '../../styles/theme';
 import { useApp } from '../../app/hooks/useApp';
 
+// 목표 타입 정의
 interface Goal {
   id: string;
   title: string;
@@ -10,11 +19,15 @@ interface Goal {
   currentAmount: number;
 }
 
+// 초기 목표 데이터 (예시)
 const initialGoals: Goal[] = [
   { id: '1', title: '비상금 모으기', targetAmount: 1000000, currentAmount: 250000 },
   { id: '2', title: '여행 자금', targetAmount: 2000000, currentAmount: 800000 },
 ];
 
+/**
+ * GoalTracker 컴포넌트
+ */
 const GoalTracker: React.FC = () => {
   const { darkMode } = useApp();
   const [goals, setGoals] = useState<Goal[]>(initialGoals);

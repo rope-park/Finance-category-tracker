@@ -1,5 +1,10 @@
-// 은행 API 연동 샘플
-// TODO: 실제 은행 API 연동 로직 작성 필요
+/**
+ * 은행 데이터 가져오기 유틸리티
+ * 
+ * @param dummy - 더미 데이터 사용 여부 (기본값: true)
+ * @returns 
+ */
+ // TODO: 실제 은행 API 연동 로직 작성 필요
 export async function importBankData(dummy: boolean = true) {
   if (dummy) {
     // 샘플 데이터 반환

@@ -1,8 +1,18 @@
-// TODO: 에러 없이 동작하도록 수정 필요
+/**
+ * 커뮤니티 페이지 컴포넌트
+ * 
+ * 주요 기능:
+ * - 게시글 목록 조회 및 필터링
+ * - 게시글 작성 모달
+ * - 게시글 상세 모달 (댓글 포함)
+ * - 좋아요, 댓글 작성 기능
+ * - 페이지네이션
+ */
 import React, { useState, useEffect } from 'react';
 import { useSocialHooks } from '../hooks/useSocial';
 import type { CreatePostRequest, CreateCommentRequest, CommunityPost, PostComment } from '../../../shared/types/social';
 
+// 게시글 상세 모달 컴포넌트
 const Community: React.FC = () => {
   const {
     communityPosts,
@@ -24,6 +34,7 @@ const Community: React.FC = () => {
   const [showPostDetail, setShowPostDetail] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // 게시글 목록 불러오기
   useEffect(() => {
     fetchCommunityPosts(selectedCategory, currentPage);
   }, [selectedCategory, currentPage, fetchCommunityPosts]);

@@ -1,7 +1,17 @@
+/**
+ * 앱 전역 상태 관리를 위한 Context 및 Provider
+ * 
+ * 거래 내역, 예산, 알림, 테마 설정 등 앱 전반의 상태를 관리
+ * 
+ * 주요 기능:
+ * - 거래 내역 추가, 수정, 삭제
+ * - 카테고리별 예산 설정 및 알림
+ */
 import React, { createContext, useReducer, useEffect } from 'react';
 import type { Transaction, CategoryBudget, Notification, TransactionCategory, RecurringTemplate, TransactionType } from '../../index';
 import { getBudgetStatus } from '../../shared/utils';
 
+// 앱의 전체 상태 타입 정의
 interface AppState {
   transactions: Transaction[];
   budgets: CategoryBudget[];
@@ -14,6 +24,7 @@ interface AppState {
   amountHidden: boolean;
 }
 
+// 앱 상태 변경을 위한 액션 타입 정의
 type AppAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
@@ -102,6 +113,7 @@ const saveSettingsToStorage = (state: AppState) => {
   }
 };
 
+// 초기 앱 상태 정의
 const initialState: AppState = {
   transactions: [],
   budgets: [],
@@ -114,6 +126,7 @@ const initialState: AppState = {
   amountHidden: false,
 };
 
+// 앱 상태를 관리하는 리듀서 함수
 const appReducer = (state: AppState, action: AppAction): AppState => {
   switch (action.type) {
     // 반복 거래 템플릿 관련
@@ -233,6 +246,7 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
   }
 };
 
+// Context 타입 정의
 interface AppContextType {
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
@@ -269,6 +283,11 @@ export { AppContext };
 
 import * as api from '../services/api';
 
+/**
+ * AppProvider 컴포넌트
+ * @param param0  children - 하위 컴포넌트들
+ * @returns {JSX.Element} AppContext.Provider로 감싼 컴포넌트
+ */
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
   // 반복 거래 템플릿 API 연동

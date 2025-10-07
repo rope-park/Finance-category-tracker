@@ -1,3 +1,11 @@
+/**
+ * 교육 서비스
+ * 
+ * 주요 기능:
+ * - 교육 콘텐츠 관리 (목록 조회, 상세 조회, 검색, 필터링)
+ * - 사용자 진행 상황 추적 (진행률 업데이트, 요약 정보 제공)
+ * - 재정 건강도 점수 관리 (점수 조회, 히스토리 조회)
+ */
 import type {
   EducationContent,
   UserEducationProgress,
@@ -150,6 +158,7 @@ const mockHealthScore: FinancialHealthScore = {
   createdAt: "2024-01-15"
 };
 
+// 교육 서비스 클래스
 class EducationService {
   private async request<T>(
     endpoint: string,

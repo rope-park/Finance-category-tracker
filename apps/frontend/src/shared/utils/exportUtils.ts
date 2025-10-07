@@ -11,19 +11,13 @@
  * 브라우저 전용 API를 사용하므로 서버 사이드에서는 사용 불가.
  * packages/shared의 getCategoryName 함수를 활용하여 카테고리 정보 처리.
  * 
- * @author Finance Category Tracker Team
- * @version 1.0.0
+ * @author Ju Eul Park (rope-park)
  */
 
 import type { Transaction } from '../types';
 import { getCategoryName } from '@finance-tracker/shared';
 
-/**
- * CSV 내보내기 옵션 인터페이스
- * 
- * 거래 내역 내보내기 시 사용할 필터링 옵션들 정의.
- * 모든 옵션은 선택사항이며, 지정하지 않으면 모든 데이터 내보냄.
- */
+// 내보내기 옵션 인터페이스
 export interface ExportOptions {
   dateRange?: {
     start: Date;
@@ -35,21 +29,9 @@ export interface ExportOptions {
 
 /**
  * 거래 내역을 CSV 파일로 내보내기
- * 
- * 주어진 거래 내역을 필터링하고 CSV 형식으로 변환하여 브라우저에서 다운로드.
- * Excel에서 올바르게 표시되도록 UTF-8 BOM 추가.
- * 
- * @param transactions - 내보낼 거래 내역 배열
- * @param options - 내보내기 옵션 (필터링, 선택사항)
- * @example
- * // 모든 거래 내역 내보내기
- * exportToCSV(transactions);
- * 
- * // 2024년 1월 지출 내역만 내보내기
- * exportToCSV(transactions, {
- *   dateRange: { start: new Date('2024-01-01'), end: new Date('2024-01-31') },
- *   type: 'expense'
- * });
+ * @param transactions - 거래 내역 배열
+ * @param options  - 내보내기 옵션 (날짜 범위, 카테고리, 타입)
+ * @returns  CSV 문자열
  */
 export const exportToCSV = (transactions: Transaction[], options: ExportOptions = {}) => {
   // 필터링
@@ -107,6 +89,11 @@ export const exportToCSV = (transactions: Transaction[], options: ExportOptions 
   return BOM + csvContent;
 };
 
+/**
+ * CSV 파일 다운로드
+ * @param csvContent - CSV 문자열
+ * @param filename - 다운로드할 파일명
+ */
 export const downloadCSV = (csvContent: string, filename: string) => {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -122,6 +109,13 @@ export const downloadCSV = (csvContent: string, filename: string) => {
   }
 };
 
+/**
+ * 월별 리포트 생성
+ * @param transactions - 거래 내역 배열
+ * @param year - 대상 연도
+ * @param month - 대상 월
+ * @returns - 월별 리포트 객체
+ */
 export const generateMonthlyReport = (transactions: Transaction[], year: number, month: number) => {
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 0);
@@ -156,6 +150,12 @@ export const generateMonthlyReport = (transactions: Transaction[], year: number,
   };
 };
 
+/**
+ * 연도별 리포트 생성
+ * @param transactions - 거래 내역 배열
+ * @param year - 대상 연도
+ * @returns - 연도별 리포트 객체
+ */
 export const generateYearlyReport = (transactions: Transaction[], year: number) => {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31);

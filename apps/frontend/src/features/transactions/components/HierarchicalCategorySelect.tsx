@@ -1,3 +1,11 @@
+/**
+ * 계층적 카테고리 선택 컴포넌트
+ * 
+ * 주요 기능:
+ * - 거래 유형(수입/지출) 선택
+ * - 선택된 거래 유형에 따른 카테고리 목록 표시
+ * - 카테고리 선택 시 부모 컴포넌트에 선택된 카테고리 전달
+ */
 import React, { useState } from 'react';
 import { 
   type TransactionCategory, 
@@ -8,13 +16,14 @@ import {
   EXPENSE_CATEGORIES
 } from '../../../index';
 
-
+// 카테고리 옵션 인터페이스
 interface CategoryOption {
   value: string;
   label: string;
   icon: string;
 }
 
+// 컴포넌트 props 인터페이스
 interface HierarchicalCategorySelectProps {
   value?: TransactionCategory;
   onChange: (category: TransactionCategory) => void;
@@ -24,6 +33,11 @@ interface HierarchicalCategorySelectProps {
   darkMode?: boolean;
 }
 
+/**
+ * 계층적 카테고리 선택 컴포넌트
+ * @param param0 컴포넌트 props
+ * @returns JSX.Element
+ */
 const HierarchicalCategorySelect: React.FC<HierarchicalCategorySelectProps> = ({
   value,
   onChange,
@@ -53,8 +67,7 @@ const HierarchicalCategorySelect: React.FC<HierarchicalCategorySelectProps> = ({
     return [];
   };
 
-
-
+  // value가 변경되면 선택된 카테고리의 타입 설정
   React.useEffect(() => {
     if (value) {
       // 선택된 카테고리의 타입 결정

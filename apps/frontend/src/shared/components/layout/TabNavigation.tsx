@@ -1,19 +1,29 @@
+/**
+ * 탭 내비게이션 레이아웃 컴포넌트
+ */
 import React from 'react';
 import { colors } from '../../../styles/theme';
 import { useApp } from '../../../app/hooks/useApp';
 
+// 탭 정의 및 컴포넌트 props 정의
 interface Tab {
   id: string;
   label: string;
   icon: string;
 }
 
+// 탭 내비게이션 컴포넌트 props 정의
 interface TabNavigationProps {
   tabs: Tab[];
   activeTab: string;
   onTabChange: (tabId: string) => void;
 }
 
+/**
+ * 탭 내비게이션 컴포넌트
+ * @param param0 - 탭 내비게이션 컴포넌트 props
+ * @returns 탭 내비게이션 컴포넌트
+ */
 export const TabNavigation: React.FC<TabNavigationProps> = ({
   tabs,
   activeTab,

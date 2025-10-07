@@ -1,3 +1,6 @@
+/**
+ * 재정 건강도 점수 컴포넌트
+ */
 import React from 'react';
 import { useHealthScore } from '../../education/hooks/useEducation';
 import { useApp } from '../../../app/hooks/useApp';
@@ -11,12 +14,19 @@ import {
 } from '../../../index';
 import { colors } from '../../../styles/theme';
 
+// 교육 페이지 타입
 type EducationPage = 'dashboard' | 'content' | 'content-detail' | 'health-score' | 'tips' | 'advice';
 
+// HealthScorePage 컴포넌트의 Props 인터페이스
 interface HealthScorePageProps {
   onNavigate?: (page: EducationPage, contentId?: number) => void;
 }
 
+/**
+ * 재정 건강도 점수 컴포넌트
+ * @param param0 - HealthScorePage 컴포넌트의 Props
+ * @returns 재정 건강도 점수 컴포넌트
+ */
 const HealthScorePage: React.FC<HealthScorePageProps> = ({ onNavigate }) => {
   const { healthScore, loading, error } = useHealthScore();
   const { darkMode } = useApp();

@@ -1,6 +1,10 @@
+/**
+ * 범위 슬라이더 폼 컴포넌트
+ */
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { colors } from '../../../styles/theme';
 
+// RangeSlider 컴포넌트의 Props 타입 정의
 interface RangeSliderProps {
   min: number;
   max: number;
@@ -12,6 +16,11 @@ interface RangeSliderProps {
   darkMode?: boolean;
 }
 
+/**
+ * 범위 슬라이더 폼 컴포넌트
+ * @param param0 - RangeSlider 컴포넌트 props
+ * @returns RangeSlider 컴포넌트
+ */
 export const RangeSlider: React.FC<RangeSliderProps> = ({
   min,
   max,

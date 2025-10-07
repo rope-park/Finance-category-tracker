@@ -1,5 +1,15 @@
-// TODO: Toss Payments API 통합 서비스 기능 구현
-// Toss Payments API 응답 타입
+/**
+ * Toss Payments API와 상호작용하는 서비스
+ * 
+ * 주요 기능:
+ * - 결제 내역 조회
+ * - 결제 상세 정보 조회
+ * - 결제 데이터를 앱의 Transaction 타입으로 변환
+ * 
+ * TODO: 실제 API 응답 구조에 맞게 타입 정의 및 변환 로직 조정 필요
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
 interface TossPaymentData {
   paymentKey: string;
   approvedAt: string;
@@ -11,7 +21,12 @@ interface TossPaymentData {
   };
 }
 
-// Toss Payments API 관련 서비스
+/**
+ * Toss Payments 서비스 클래스
+ * 
+ * Toss Payments API와 통신하여 결제 정보를 가져옴
+ * API 키는 환경 변수에서 관리
+ */
 export class TossPaymentsService {
   private secretKey: string;
   private baseUrl = 'https://api.tosspayments.com/v1';
@@ -65,7 +80,10 @@ export class TossPaymentsService {
   }
 }
 
-// 환경 변수에서 API 키를 가져오는 함수
+/**
+ * Toss Payments API와 상호작용하는 서비스 인스턴스 반환
+ * @returns TossPaymentsService 인스턴스 또는 null (API 키 미설정 시)
+ */
 export const getTossPaymentsService = () => {
   const clientKey = import.meta.env.VITE_TOSS_CLIENT_KEY;
   const secretKey = import.meta.env.VITE_TOSS_SECRET_KEY;
@@ -78,10 +96,13 @@ export const getTossPaymentsService = () => {
   return new TossPaymentsService(clientKey, secretKey);
 };
 
-// 결제 데이터를 Transaction 형태로 변환하는 함수
+/**
+ * Toss Payments 결제 데이터를 Transaction 형태로 변환
+ * @param payment - Toss Payments 결제 데이터
+ * @returns Transaction 형태의 데이터
+ */
 export const convertTossPaymentToTransaction = (payment: TossPaymentData) => {
-  // Toss Payments API 응답을 우리 앱의 Transaction 타입으로 변환
-  // 실제 API 응답 구조에 맞게 조정해야 함
+  // TODO: Toss Payments API 응답을 우리 앱의 Transaction 타입으로 변환
   return {
     id: payment.paymentKey,
     date: payment.approvedAt,

@@ -1,58 +1,37 @@
 /**
- * 금액 입력 컴포넌트
- * 
- * 주요 기능:
- * - 금액 입력 및 유효성 검사 (0원 ~ 100억원)
- * - 천 단위 자동 콤마 포맷팅
- * - +/- 버튼으로 천원 단위 증감
- * - 빠른 금액 추가 버튼 (+1만, +5만, +10만, +100만)
- * - 키보드 방향키(↑↓)로 금액 조절
- * - 다양한 통화 지원 (KRW, USD, EUR, JPY 등)
- * - 다크모드 지원
- * 
- * @author Finance Category Tracker Team
- * @version 1.0.0
+ * 금액 입력 폼 컴포넌트
  */
 
 import React, { useState, useEffect } from 'react';
 import { Input, Select, FormField, Button } from '../../../index';
 import { useApp } from '../../../app/hooks/useApp';
 
-/** 지원되는 통화 타입 */
+// 지원되는 통화 타입 정의
 export type CurrencyType = 'KRW' | 'USD' | 'EUR' | 'JPY' | 'GBP' | 'CNY';
 
-/** CurrencyInput 컴포넌트 Props */
+// CurrencyInput 컴포넌트 Props 타입 정의
 interface CurrencyInputProps {
-  /** 라벨 텍스트 */
   label?: string;
-  /** 금액 값 (숫자) */
   value?: number;
-  /** 금액과 통화가 변경될 때 호출되는 콜백 */
   onChange?: (value: number, currency: CurrencyType) => void;
-  /** 금액만 변경될 때 호출되는 콜백 */
   onValueChange?: (value: number) => void;
-  /** 통화가 변경될 때 호출되는 콜백 */
   onCurrencyChange?: (currency: CurrencyType) => void;
-  /** 플레이스홀더 텍스트 */
   placeholder?: string;
-  /** 필수 입력 여부 */
   required?: boolean;
-  /** 오류 메시지 */
   error?: string;
-  /** 다크모드 사용 여부 */
   darkMode?: boolean;
-  /** 최소값 (사용되지 않음 - 내부에서 처리) */
   min?: number;
-  /** 최대값 (사용되지 않음 - 내부에서 처리) */
   max?: number;
-  /** 기본 통화 */
   currency?: CurrencyType;
-  /** 통화 선택기 표시 여부 */
   showCurrencySelector?: boolean;
-  /** 비활성화 여부 */
   disabled?: boolean;
 }
 
+/**
+ * CurrencyInput 컴포넌트
+ * @param param0 - CurrencyInput 컴포넌트 Props
+ * @returns CurrencyInput 컴포넌트
+ */
 export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   label,
   value = 0,
@@ -71,24 +50,26 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   // 상태 변수 및 전역 설정
   // ==================================================
   
-  /** 전역 다크모드 상태 */
+  // 앱 전역 상태에서 다크모드 설정 가져오기
   const { darkMode } = useApp();
   
-  /** 입력 필드에 표시되는 포맷팅된 문자열 */
+  // 입력 필드 값 (문자열, 천 단위 콤마 포함)
   const [inputValue, setInputValue] = useState<string>('');
   
-  /** 현재 선택된 통화 */
+  // 선택된 통화 타입
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyType>(currency);
 
-  /** 실제 사용할 다크모드 값 (prop > 전역 설정 순서) */
+  // 다크모드 설정 (prop이 우선)
   const isDark = propDarkMode ?? darkMode;
 
-  /** 지원되는 통화 목록과 심볼 */
+  // 지원되는 통화 옵션들
   const CURRENCIES = [
-    { value: 'KRW', label: 'KRW', symbol: '₩' },    // 한국 원
+    { value: 'KRW', label: 'KRW', symbol: '₩' },     // 한국 원
     { value: 'USD', label: 'USD', symbol: '$' },     // 미국 달러
     { value: 'EUR', label: 'EUR', symbol: '€' },     // 유로
-    { value: 'JPY', label: 'JPY', symbol: '¥' }      // 일본 엔
+    { value: 'JPY', label: 'JPY', symbol: '¥' },     // 일본 엔
+    { value: 'GBP', label: 'GBP', symbol: '£' },     // 영국 파운드
+    { value: 'CNY', label: 'CNY', symbol: '¥' }      // 중국 위안
   ];
 
   // ==================================================
@@ -96,7 +77,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   // ==================================================
   
   /**
-   * 통화별 입력 범위 제한 가져오기
+   * 통화별 유효성 검사 최소/최대값 반환
    * @param currency - 통화 타입
    * @returns 최소값과 최대값 객체
    */
@@ -109,6 +90,10 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
         return { min: 0, max: 100000000 }; // 1억 달러/유로
       case 'JPY':
         return { min: 0, max: 1000000000 }; // 10억 엔
+      case 'GBP':
+        return { min: 0, max: 80000000 }; // 8천만 파운드
+      case 'CNY':
+        return { min: 0, max: 700000000 }; // 7억 위안
       default:
         return { min: 0, max: 10000000000 };
     }
@@ -124,7 +109,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   };
 
   /**
-   * 콤마가 포함된 문자열에서 숫자만 추출
+   * 문자열에서 숫자 파싱
    * @param str - 파싱할 문자열
    * @returns 숫자 값 (e.g., "1,000" -> 1000)
    */
@@ -136,7 +121,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   // 사이드 이팩트
   // ==================================================
   
-  /** 외부에서 전달된 value prop이 변경될 때 입력 필드 업데이트 */
+  // 외부에서 전달된 value prop이 변경될 때 입력 필드 값 업데이트
   useEffect(() => {
     if (value && value > 0) {
       setInputValue(formatNumberWithCommas(value));
@@ -145,7 +130,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
     }
   }, [value]);
 
-  /** 외부에서 전달된 currency prop이 변경될 때 선택된 통화 업데이트 */
+  // 외부에서 전달된 currency prop이 변경될 때 선택된 통화 업데이트
   useEffect(() => {
     setSelectedCurrency(currency);
   }, [currency]);
@@ -236,7 +221,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   return (
     <FormField label={label} required={required} error={error}>
       <div className="space-y-3">
-        {/* 빠른 금액 추가 버튼들 - 수평 배치 NEW VERSION */}
+        {/* 빠른 금액 추가 버튼들 - 수평 배치 */}
         <div className="flex flex-row w-full gap-2 p-2 bg-red-100 rounded">
           {quickAmounts.map((item) => (
             <Button

@@ -8,8 +8,7 @@
  * - 컴포넌트 상태 관련 타입
  * - Frontend별 유틸리티 타입
  * 
- * @author Finance Category Tracker Team
- * @version 1.0.0
+ * @author Ju Eul Park (rope-park)
  */
 
 // ==================================================
@@ -48,7 +47,7 @@ import {
   getGroupedCategoryOptions
 } from '@finance-tracker/shared';
 
-// 공통 타입들 재export (다른 파일에서 쉽게 사용할 수 있도록)
+// 공통 타입들 재export
 export type {
   Currency,
   TransactionType,
@@ -99,15 +98,15 @@ export type AnalysisPeriod = 'week' | 'month' | 'year' | 'all' | 'custom';
 
 /** 카테고리별 예산 인터페이스 - Frontend에서 사용하는 간단한 예산 구조 */
 export interface CategoryBudget {
-  id: string;
-  category: Category;
-  amount: number;
-  spent: number;
-  remaining: number;
-  period: string;
-  limit: number;
-  warningThreshold: number;
-  currency: Currency;
+  id: string;           // 예산 ID
+  category: Category;   // 카테고리
+  amount: number;       // 예산 금액
+  spent: number;        // 사용된 금액
+  remaining: number;    // 남은 금액
+  period: string;       // 기간
+  limit: number;        // 예산 한도
+  warningThreshold: number; // 경고 임계값
+  currency: Currency;  // 통화
 }
 
 /** 지출 2차 카테고리 */
@@ -138,50 +137,33 @@ export type IncomeSecondaryCategory = typeof IncomeSecondaryCategory[keyof typeo
 
 /** 날짜 범위 인터페이스 - 시작일과 종료일 정의 */
 export interface DateRange {
-  /** 시작 날짜 (YYYY-MM-DD 형식) */
-  start: string;
-  /** 종료 날짜 (YYYY-MM-DD 형식) */
-  end: string;
+  start: string;  // 시작일 (YYYY-MM-DD)
+  end: string;    // 종료일 (YYYY-MM-DD)
 }
 
 /** 기간 옵션 인터페이스 - UI에서 사용되는 기간 선택 옵션 */
 export interface PeriodOption {
-  /** 기간 옵션 ID */
-  id: AnalysisPeriod;
-  /** 사용자에게 보여지는 라벨 */
-  label: string;
-  /** 실제 값 */
-  value: AnalysisPeriod;
+  id: AnalysisPeriod;       // 기간 식별자
+  label: string;            // 사용자에게 표시될 라벨
+  value: AnalysisPeriod;    // 실제 값
 }
-
-// RecurrenceType은 packages/shared에서 import
 
 /** 알림 인터페이스 - 사용자에게 표시될 알림 메시지 */
 export interface Notification {
-  /** 알림 고유 ID */
-  id: string;
-  /** 알림 메시지 내용 */
-  message: string;
-  /** 알림 유형 (성공, 오류, 경고, 정보) */
-  type: 'success' | 'error' | 'warning' | 'info';
-  /** 알림 생성 시간 (timestamp) */
-  timestamp: number;
-  /** 읽음 여부 (선택적) */
-  is_read?: boolean;
+  id: string;                   // 알림 고유 ID
+  message: string;              // 알림 메시지 내용
+  type: 'success' | 'error' | 'warning' | 'info'; // 알림 유형
+  timestamp: number;            // 알림 생성 타임스탬프
+  is_read?: boolean;            // 읽음 여부
 }
 
 /** 전체 애플리케이션 상태 인터페이스 */
 export interface AppState {
-  /** 전체 거래 내역 목록 */
-  transactions: Transaction[];
-  /** 카테고리별 예산 목록 */
-  budgets: Budget[];
-  /** 반복 거래 템플릿 목록 */
-  recurringTemplates: RecurringTemplate[];
-  /** 다크 모드 설정 */
-  darkMode: boolean;
-  /** 기본 통화 단위 */
-  currency: Currency;
+  transactions: Transaction[];    // 모든 거래 내역
+  budgets: Budget[];              // 모든 예산 내역
+  recurringTemplates: RecurringTemplate[];  // 반복 거래 템플릿
+  darkMode: boolean;              // 다크 모드 설정
+  currency: Currency;             // 기본 통화
 }
 
 /**
@@ -199,36 +181,21 @@ export const getTransactionTypeLabel = (type: TransactionType): string => {
 
 /** 반복 거래 템플릿 인터페이스 - 정기적으로 반복되는 거래 설정 */
 export interface RecurringTemplate {
-  /** 템플릿 고유 ID */
-  id: string;
-  /** 템플릿 이름 */
-  name: string;
-  /** 템플릿 설명 */
-  description: string;
-  /** 거래 금액 */
-  amount: number;
-  /** 거래 카테고리 */
-  category: Category;
-  /** 거래 유형 (수입/지출) */
-  type: TransactionType;
-  /** 반복 주기 유형 */
-  recurrenceType: RecurrenceType;
-  /** 반복 실행 일자 (선택적) */
-  recurrenceDay?: number;
-  /** 활성 상태 여부 */
-  isActive: boolean;
-  /** 다음 실행 예정일 */
-  nextDueDate: string;
-  /** 마지막 실행일 (선택적) */
-  lastExecuted?: string;
-  /** 자동 실행 여부 */
-  autoExecute: boolean;
-  /** 알림 설정 여부 */
-  notificationEnabled: boolean;
-  /** 생성 일시 */
-  createdAt: string;
-  /** 수정 일시 */
-  updatedAt: string;
+  id: string;                       // 템플릿 고유 ID
+  name: string;                     // 템플릿 이름
+  description: string;              // 템플릿 설명
+  amount: number;                   // 거래 금액
+  category: Category;               // 거래 카테고리
+  type: TransactionType;            // 거래 유형 (수입/지출)
+  recurrenceType: RecurrenceType;   // 반복 주기 유형
+  recurrenceDay?: number;           // 반복 주기 (예: 매월 15일)
+  isActive: boolean;                // 활성화 여부
+  nextDueDate: string;              // 다음 실행 예정일
+  lastExecuted?: string;            // 마지막 실행일 (선택적)
+  autoExecute: boolean;             // 자동 실행 여부
+  notificationEnabled: boolean;     // 알림 설정 여부
+  createdAt: string;                // 생성 일시
+  updatedAt: string;                // 수정 일시
 }
 
 /**
@@ -245,7 +212,7 @@ export const LegacyCategoryMapping: Record<string, Category> = {
   'salary': INCOME_CATEGORIES.SALARY,
 };
 
-// 기본 카테고리 반환 함수 (하위호환성)
+// 기본 카테고리 반환 함수 (하위 호환성)
 export const getDefaultCategory = (): Category => {
   return EXPENSE_CATEGORIES.FOOD;
 };

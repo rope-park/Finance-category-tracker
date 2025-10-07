@@ -1,5 +1,14 @@
+/**
+ * 페이지 메타데이터 및 PWA 매니페스트 설정 훅
+ * 
+ * 주요 기능:
+ * - 페이지 타이틀, 설명, 키워드, Open Graph, Twitter Card 메타 태그 설정
+ * - JSON-LD 구조화 데이터 추가
+ * - PWA 매니페스트 링크 설정
+ */
 import { useEffect } from 'react';
 
+// 메타데이터 인터페이스 정의
 interface MetaData {
   title?: string;
   description?: string;
@@ -19,6 +28,8 @@ interface MetaData {
 
 /**
  * 페이지 메타데이터를 동적으로 설정하는 훅
+ * @param metadata - 설정할 메타데이터 객체
+ * @returns null
  */
 export function useMetaData(metadata: MetaData) {
   useEffect(() => {
@@ -105,6 +116,9 @@ export function useMetaData(metadata: MetaData) {
 
 /**
  * 메타 태그를 업데이트하거나 생성하는 함수
+ * @param attribute - 메타 태그의 속성 (예: property, name)
+ * @param name - 메타 태그의 이름
+ * @param content - 메타 태그의 내용
  */
 function updateOrCreateMeta(attribute: string, name: string, content: string) {
   if (!content) return;
@@ -120,6 +134,7 @@ function updateOrCreateMeta(attribute: string, name: string, content: string) {
   element.setAttribute('content', content);
 }
 
+// JSON-LD 구조화 데이터 인터페이스
 interface JsonLdData {
   '@context': string;
   '@type': string;
@@ -136,6 +151,7 @@ interface JsonLdData {
 
 /**
  * JSON-LD 구조화 데이터를 업데이트하는 함수
+ * @param data - JSON-LD 데이터 객체
  */
 function updateJsonLd(data: JsonLdData) {
   const existingScript = document.querySelector('script[type="application/ld+json"]');
@@ -150,7 +166,9 @@ function updateJsonLd(data: JsonLdData) {
 }
 
 /**
- * PWA 매니페스트 설정을 위한 훅
+ * PWA 매니페스트 링크를 설정하는 훅
+ * 
+ * @returns null
  */
 export function usePWAManifest() {
   useEffect(() => {

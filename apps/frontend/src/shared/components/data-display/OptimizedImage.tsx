@@ -1,7 +1,11 @@
+/**
+ * 이미지 최적화 컴포넌트
+ */
 import React, { useState } from 'react';
-import { useApp } from '../../../hooks/useApp';
+import { useApp } from '../../../app/hooks/useApp';
 import { colors } from '../../../styles/theme';
 
+// OptimizedImage 컴포넌트의 Props 타입 정의
 interface OptimizedImageProps {
   src: string;
   alt: string;
@@ -15,6 +19,11 @@ interface OptimizedImageProps {
   onError?: () => void;
 }
 
+/**
+ * 이미지 최적화 컴포넌트
+ * @param param0 - OptimizedImage 컴포넌트의 Props
+ * @returns OptimizedImage 컴포넌트
+ */
 export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   src,
   alt,
@@ -133,6 +142,11 @@ interface AvatarImageProps {
   className?: string;
 }
 
+/**
+ * 아바타 이미지 컴포넌트
+ * @param param0 - AvatarImage 컴포넌트의 Props
+ * @returns AvatarImage 컴포넌트
+ */
 export const AvatarImage: React.FC<AvatarImageProps> = ({
   src,
   name,

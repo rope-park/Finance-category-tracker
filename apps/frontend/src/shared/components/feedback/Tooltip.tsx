@@ -1,7 +1,11 @@
+/**
+ * 툴팁 컴포넌트
+ */
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../../app/hooks/useApp';
 import { colors, shadows, borderRadius, animation } from '../../../styles/theme';
 
+// 툴팁 컴포넌트 props 정의
 interface TooltipProps {
   children: React.ReactNode;
   text: string;
@@ -11,6 +15,11 @@ interface TooltipProps {
   className?: string;
 }
 
+/**
+ * 툴팁 컴포넌트
+ * @param param0 - 툴팁 컴포넌트 props
+ * @returns 툴팁 컴포넌트
+ */
 export const Tooltip: React.FC<TooltipProps> = ({
   children,
   text,

@@ -1,3 +1,13 @@
+/**
+ * 소셜 기능 관련 훅
+ * 
+ * 가족/그룹 관리, 가족 구성원 관리, 공유 목표, 가족 거래, 커뮤니티 게시물 및 댓글 관리 등을 포함
+ * 
+ * 주요 기능:
+ * - 가족/그룹 생성, 조회, 수정, 삭제
+ * - 가족 구성원 초대, 역할 변경, 삭제
+ * - 공유 목표 생성, 조회, 기여
+ */
 import { useCallback } from 'react';
 import { useSocialStore } from '../../../app/store/socialStore';
 import { SocialApiService } from '../../../features/social/services/socialApi';
@@ -12,6 +22,11 @@ import type {
   FamilyMember
 } from '../../../shared/types/social';
 
+/**
+ * 소셜 훅 모음
+ * 
+ * useSocialStore를 사용하여 상태 관리
+ */
 export const useSocialHooks = () => {
   const store = useSocialStore();
 

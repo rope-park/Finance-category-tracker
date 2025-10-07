@@ -1,3 +1,10 @@
+/**
+ * 교육 대시보드 컴포넌트
+ * 
+ * 주요 기능:
+ * - 교육 요약 정보 표시
+ * - 재정 건강도 점수 시각화
+ */
 import { useState } from 'react';
 import { useEducationDashboard } from '../hooks/useEducation';
 import { useApp } from '../../../app/hooks/useApp';
@@ -20,8 +27,13 @@ import HealthScorePage from '../../analytics/components/HealthScorePage';
 import { SavingTipsPage } from '../components/SavingTipsPage';
 import PersonalizedAdvicePage from '../components/PersonalizedAdvicePage';
 
+// 현재 보고 있는 교육 페이지 타입
 type EducationPage = 'dashboard' | 'content' | 'content-detail' | 'health-score' | 'tips' | 'advice';
 
+/**
+ * 교육 대시보드 컴포넌트
+ * @returns 교육 대시보드 컴포넌트
+ */
 const EducationDashboard: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<EducationPage>('dashboard');
   const [selectedContentId, setSelectedContentId] = useState<string | number | undefined>();
@@ -37,10 +49,12 @@ const EducationDashboard: React.FC = () => {
     { id: 'advice', label: '맞춤 조언', icon: '🎯' }
   ];
 
+  // 탭 변경 핸들러
   const handleTabChange = (tabId: string) => {
     setCurrentPage(tabId as EducationPage);
   };
 
+  // 교육 콘텐츠 선택 핸들러
   const handleContentSelect = (contentId: string | number) => {
     setSelectedContentId(contentId);
     setCurrentPage('content-detail');

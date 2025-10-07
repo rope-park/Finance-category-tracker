@@ -1,14 +1,28 @@
+/**
+ * 프로필 설정이 필요한 경우 표시되는 모달 컴포넌트
+ * 
+ * 주요 기능:
+ * - 프로필 설정 필요성을 사용자에게 알림
+ * - 프로필 설정 페이지로 이동하는 버튼 제공
+ * - 프로필 설정이 왜 필요한지에 대한 안내 메시지 포함
+ */
 import React from 'react';
 import { Modal } from '../../../shared/components/data-display/Modal';
 import { Button } from '../../../shared/components/forms/Button';
 import { useApp } from '../../../app/hooks/useApp';
 import { colors } from '../../../styles/theme';
 
+// 프로필 설정 필요 모달 Props 인터페이스
 interface ProfileRequiredModalProps {
   isOpen: boolean;
   onContinueToProfile: () => void;
 }
 
+/**
+ * 프로필 설정 필요 모달 컴포넌트
+ * @param param0 ProfileRequiredModalProps
+ * @returns JSX.Element
+ */
 export const ProfileRequiredModal: React.FC<ProfileRequiredModalProps> = ({
   isOpen,
   onContinueToProfile

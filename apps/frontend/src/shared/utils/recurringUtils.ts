@@ -1,5 +1,5 @@
 /**
- * 반복 거래 관련 유틸리티 함수들 (Frontend 전용)
+ * 반복 거래 관련 유틸리티 (Frontend 전용)
  * 
  * 주요 기능:
  * - 반복 거래 템플릿 관리 및 상태 확인
@@ -7,11 +7,7 @@
  * - 반복 주기 옵션 제공 (UI용)
  * - packages/shared의 핵심 로직 재사용
  * 
- * 공통 로직은 packages/shared에서 import하여 사용하고,
- * Frontend 전용 UI 관련 기능들만 여기에 정의
- * 
- * @author Finance Category Tracker Team
- * @version 1.0.0
+ * @author Ju Eul Park (rope-park)
  */
 
 import type { RecurringTemplate, RecurrenceType } from '../types';
@@ -53,12 +49,9 @@ export { getRecurrenceTypeLabel };
 // ==================================================
 
 /**
- * 지정된 날짜가 오늘 이전인지 확인 (기한 도래 여부)
+ * 오늘 이전 날짜인지 확인
  * @param dueDate - 확인할 날짜 (YYYY-MM-DD 형식)
  * @returns 오늘 이전 날짜이면 true, 그렇지 않으면 false
- * @example
- * isDue('2024-01-01') // 오늘이 2024-01-02라면 true
- * isDue('2024-12-31') // 오늘이 2024-01-02라면 false
  */
 export const isDue = (dueDate: string): boolean => {
   const today = new Date().toISOString().split('T')[0];
@@ -66,12 +59,9 @@ export const isDue = (dueDate: string): boolean => {
 };
 
 /**
- * 기한이 지난 반복 거래 템플릿들을 찾아서 반환
+ * 기한 지난 반복 거래 템플릿 반환
  * @param templates - 반복 거래 템플릿 배열
  * @returns 기한이 지난 템플릿들의 배열
- * @example
- * const overdueTemplates = getOverdueTemplates(allTemplates);
- * console.log(`기한 지난 템플릿: ${overdueTemplates.length}개`);
  */
 export const getOverdueTemplates = (templates: RecurringTemplate[]): RecurringTemplate[] => {
   return templates.filter(template => 
@@ -80,13 +70,10 @@ export const getOverdueTemplates = (templates: RecurringTemplate[]): RecurringTe
 };
 
 /**
- * 지정된 기간 내에 실행 예정인 반복 거래 템플릿들을 반환
+ * 실행 예정인 반복 거래 템플릿 반환
  * @param templates - 반복 거래 템플릿 배열
  * @param days - 예정 기간 (일 단위, 기본값: 7일)
  * @returns 예정된 템플릿들의 배열
- * @example
- * const upcomingTemplates = getUpcomingTemplates(allTemplates, 3); // 3일 내 예정
- * console.log(`예정된 템플릿: ${upcomingTemplates.length}개`);
  */
 export const getUpcomingTemplates = (templates: RecurringTemplate[], days: number = 7): RecurringTemplate[] => {
   const targetDate = new Date();
@@ -101,12 +88,9 @@ export const getUpcomingTemplates = (templates: RecurringTemplate[], days: numbe
 };
 
 /**
- * 반복 거래 템플릿의 반복 주기를 사용자가 이해하기 쉬운 형태로 포맷팅
+ * 반복 거래 템플릿의 반복 주기를 포맷팅
  * @param template - 반복 거래 템플릿
  * @returns 포맷팅된 반복 주기 설명 문자열
- * @example
- * formatRecurrenceDetails({ recurrenceType: 'weekly', recurrenceDay: 1 }) // '매주 월요일'
- * formatRecurrenceDetails({ recurrenceType: 'monthly', recurrenceDay: 15 }) // '매월 15일'
  */
 export const formatRecurrenceDetails = (template: RecurringTemplate): string => {
   const { recurrenceType, recurrenceDay } = template;
@@ -137,6 +121,11 @@ export const formatRecurrenceDetails = (template: RecurringTemplate): string => 
   }
 };
 
+/**
+ * 반복 주기 옵션을 반환하는 함수
+ * @param type - 반복 주기 타입
+ * @returns 반복 주기 옵션 배열
+ */
 export const getRecurrenceDayOptions = (type: RecurrenceType) => {
   switch (type) {
     case 'weekly':

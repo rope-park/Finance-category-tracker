@@ -1,8 +1,12 @@
+/**
+ * Lazy 컴포넌트를 위한 Suspense + ErrorBoundary 래퍼
+ */
 import React, { Suspense } from 'react';
 import { Card, Button, Spinner, ErrorBoundary } from '../../../index';
 import { useApp } from '../../../app/hooks/useApp';
 import { colors } from '../../../styles/theme';
 
+// 컴포넌트 props 정의
 interface LazyWrapperProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
@@ -11,6 +15,8 @@ interface LazyWrapperProps {
 
 /**
  * Lazy 컴포넌트를 위한 Suspense + ErrorBoundary 래퍼
+ * @param param0 - 래퍼 컴포넌트 props
+ * @returns 래퍼 컴포넌트
  */
 export const LazyWrapper: React.FC<LazyWrapperProps> = ({
   children,
@@ -26,9 +32,7 @@ export const LazyWrapper: React.FC<LazyWrapperProps> = ({
   );
 };
 
-/**
- * 기본 로딩 폴백 컴포넌트
- */
+// 기본 로딩 폴백 컴포넌트
 const LoadingFallback: React.FC = () => {
   const { darkMode } = useApp();
   
@@ -51,9 +55,7 @@ const LoadingFallback: React.FC = () => {
   );
 };
 
-/**
- * 기본 에러 폴백 컴포넌트
- */
+// 기본 에러 폴백 컴포넌트
 const ErrorFallback: React.FC = () => {
   const { darkMode } = useApp();
   

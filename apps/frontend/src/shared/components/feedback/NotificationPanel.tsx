@@ -1,8 +1,16 @@
+/**
+ * 알림 패널 컴포넌트
+ */
 import React, { useEffect, useState } from 'react';
 import type { Notification } from '../../../index';
 
-// 알림 API 호출 함수
-// TODO: 실제 API 엔드포인트로 교체
+/**
+ * 서버에서 알림 목록을 가져옴
+ * 
+ * TODO: 실제 API 엔드포인트로 변경 필요
+ * 
+ * @returns 알림 목록
+ */
 async function fetchNotifications(): Promise<Notification[]> {
 	const token = localStorage.getItem('auth_token');
 	const res = await fetch('http://localhost:3001/api/notifications', {
@@ -28,6 +36,7 @@ async function deleteNotification(id: string) {
 	});
 }
 
+// 알림 패널 컴포넌트
 const NotificationPanel: React.FC = () => {
 	const [notifications, setNotifications] = useState<Notification[]>([]);
 	const [selected, setSelected] = useState<Notification | null>(null);

@@ -1,18 +1,5 @@
 /**
- * 모달 대화상자 컴포넌트
- * 
- * 주요 기능:
- * - React Portal을 사용한 오버레이 모달
- * - ESC 키로 모달 닫기
- * - 배경 클릭으로 모달 닫기
- * - 다양한 크기 옵션 (small, medium, large, extra-large)
- * - 다양한 스타일 변형 (default, glass, elevated)
- * - 스크롤 잘김 방지
- * - 다크모드 대응
- * - 접근성 지원
- * 
- * @author Finance Category Tracker Team
- * @version 1.0.0
+ * 모달 컴포넌트
  */
 
 import React, { useEffect } from 'react';
@@ -20,24 +7,22 @@ import { createPortal } from 'react-dom';
 import { colors, borderRadius } from '../../../styles/theme';
 import { useApp } from '../../../app/hooks/useApp';
 
-/** Modal 컴포넌트 Props */
+// Modal 컴포넌트의 Props 타입 정의
 interface ModalProps {
-  /** 모달 열림 상태 */
   isOpen: boolean;
-  /** 모달 닫기 콜백 함수 */
   onClose: () => void;
-  /** 모달 제목 */
   title: string;
-  /** 모달 내용 */
   children: React.ReactNode;
-  /** 모달 크기 */
   size?: 'small' | 'medium' | 'large' | 'extra-large';
-  /** 모달 스타일 변형 */
   variant?: 'default' | 'glass' | 'elevated';
-  /** 닫기 버튼 표시 여부 */
   showCloseButton?: boolean;
 }
 
+/**
+ * 모달 컴포넌트
+ * @param param0 - Modal 컴포넌트의 Props
+ * @returns Modal 컴포넌트
+ */
 export const Modal: React.FC<ModalProps> = ({ 
   isOpen, 
   onClose, 
@@ -47,23 +32,9 @@ export const Modal: React.FC<ModalProps> = ({
   variant = 'default',
   showCloseButton = true
 }) => {
-  // ==================================================
-  // 전역 상태 및 설정
-  // ==================================================
-  
-  /** 다크모드 상태 */
   const { darkMode } = useApp();
 
-  // ==================================================
-  // 사이드 이팩트
-  // ==================================================
-  
-  /** ESC 키 이벤트 및 스크롤 관리 */
   useEffect(() => {
-    /**
-     * ESC 키 눌렀을 때 모달 닫기
-     * @param e - 키보드 이벤트
-     */
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         onClose();

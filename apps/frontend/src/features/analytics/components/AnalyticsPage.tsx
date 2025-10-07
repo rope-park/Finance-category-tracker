@@ -1,3 +1,16 @@
+/**
+ * 분석 리포트 페이지 컴포넌트
+ * 
+ * 주요 기능:
+ * - 총 수입/지출/순자산 요약 통계
+ * - 저축률 계산 및 시각화
+ * - 카테고리별 지출 분석 및 순위
+ * - 월별 거래 현황 요약
+ * - 일평균 지출 계산
+ * - 데이터 기반 재정 관리 팁 제공
+ * - 반응형 차트 및 그래프 표시
+ */
+
 import React, { useMemo } from 'react';
 import { useApp } from '../../../app/hooks/useApp';
 import { 
@@ -12,40 +25,46 @@ import { colors } from '../../../styles/theme';
 import { type TransactionCategory } from '../../../index';
 import { formatCurrency, getCategoryIcon, getCategoryName } from '../../../shared/utils';
 
+/**
+ * AnalyticsPage 컴포넌트
+ * @returns 분석 리포트 페이지 컴포넌트
+ */
 export const AnalyticsPage: React.FC = () => {
   const { transactions, darkMode } = useApp();
 
-  // 기본 통계 계산
+  // 주요 분석 지표 계산
   const analytics = useMemo(() => {
     const income = transactions.filter(t => t.transaction_type === 'income');
+    
     const expenses = transactions.filter(t => t.transaction_type === 'expense');
     
     const totalIncome = income.reduce((sum, t) => sum + t.amount, 0);
+    
     const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
+    
     const netAmount = totalIncome - totalExpenses;
     
-    // 카테고리별 지출 분석
     const expensesByCategory = expenses.reduce((acc, transaction) => {
       acc[transaction.category] = (acc[transaction.category] || 0) + transaction.amount;
       return acc;
     }, {} as Record<TransactionCategory, number>);
 
-    // 가장 큰 지출 카테고리
     const topExpenseCategory = Object.entries(expensesByCategory)
       .sort(([,a], [,b]) => b - a)[0];
 
-    // 최근 7일 지출
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
     const recentExpenses = expenses.filter(t => 
       new Date(t.date) >= sevenDaysAgo
     );
+    
     const recentTotal = recentExpenses.reduce((sum, t) => sum + t.amount, 0);
+    
     const avgDailySpending = recentTotal / 7;
 
-    // 월별 통계 (현재 월)
     const currentMonth = new Date().getMonth();
+    
     const currentYear = new Date().getFullYear();
     
     const monthlyTransactions = transactions.filter(t => {
@@ -61,7 +80,6 @@ export const AnalyticsPage: React.FC = () => {
       .filter(t => t.transaction_type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // 저축률 계산
     const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0;
 
     return {

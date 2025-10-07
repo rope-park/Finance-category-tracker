@@ -1,6 +1,10 @@
+/**
+ * 입력 폼 컴포넌트
+ */
 import React, { type CSSProperties } from 'react';
 import { colors  } from '../../../styles/theme';
 
+// Input 컴포넌트의 Props 타입 정의
 interface InputProps {
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'search';
   placeholder?: string;
@@ -21,6 +25,11 @@ interface InputProps {
   step?: number | string;
 }
 
+/**
+ * 입력 폼 컴포넌트
+ * @param param0 - Input 컴포넌트 props
+ * @returns Input 컴포넌트
+ */
 export const Input: React.FC<InputProps> = ({
   type = 'text',
   placeholder,
@@ -46,6 +55,7 @@ export const Input: React.FC<InputProps> = ({
     lg: { padding: '12px 16px', fontSize: '16px', minHeight: '48px' }
   };
 
+  // 기본 스타일 설정
   const inputStyle: CSSProperties = {
     ...sizeStyles[size],
     backgroundColor: darkMode ? colors.dark[700] : '#ffffff',

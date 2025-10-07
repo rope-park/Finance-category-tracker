@@ -1,6 +1,10 @@
+/**
+ * 날짜 선택 폼 컴포넌트
+ */
 import React, { useState } from 'react';
 import { colors } from '../../../styles/theme';
 
+// DatePicker 컴포넌트의 Props 타입 정의
 interface DatePickerProps {
   value: string;
   onChange: (value: string) => void;
@@ -12,6 +16,11 @@ interface DatePickerProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+/**
+ * 날짜 선택 폼 컴포넌트
+ * @param param0 - DatePicker 컴포넌트 props
+ * @returns DatePicker 컴포넌트
+ */
 export const DatePicker: React.FC<DatePickerProps> = ({
   value,
   onChange,

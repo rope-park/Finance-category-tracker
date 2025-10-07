@@ -1,3 +1,12 @@
+/**
+ * 자동화 센터 페이지
+ * 
+ * 주요 기능:
+ * - 반복 거래 템플릿 목록/추가/수정/삭제/실행 내역 UI 구현
+ * - 스마트 알림/예산 경고 관리
+ * - 자동 카테고리 분류 체험
+ * - 나이대/직업군별 카테고리 추천
+ */
 import React, { useContext, useEffect, useState } from 'react';
 import { 
   RecurringTemplateModal,
@@ -10,14 +19,21 @@ import {
 } from '../../../index';
 import TransactionForm from './TransactionForm';
 
-// RecurringTemplate을 RecurringTemplateModal에서 사용하는 타입으로 변환
+/**
+ * 서버에서 받아온 RecurringTemplate 객체를 로컬에서 사용하는 형식으로 변환
+ * @param template - 서버에서 받아온 RecurringTemplate 객체
+ * @returns 로컬에서 사용하는 형식으로 변환된 RecurringTemplate 객체
+ */
 const convertToLocalTemplate = (template: RecurringTemplate) => ({
   ...template,
   type: template.type === 'transfer' ? 'expense' : template.type as 'income' | 'expense'
 });
 
 
-// 반복 거래 템플릿 목록/추가/수정/삭제/실행 내역 UI 구현
+/**
+ * 자동화 센터 페이지 컴포넌트
+ * @returns 자동화 센터 페이지 JSX
+ */
 const AutomationCenterPage: React.FC = () => {
   const context = useContext(AppContext);
   const [modalOpen, setModalOpen] = useState(false);
@@ -60,7 +76,7 @@ const AutomationCenterPage: React.FC = () => {
   return (
     <PageLayout>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">자동화 센터</h1>
+        <h1 className="mb-2 text-3xl font-bold">자동화 센터</h1>
         <p className="text-muted-foreground">반복 거래와 스마트 기능을 관리하세요</p>
       </div>
 
@@ -185,35 +201,35 @@ const AutomationCenterPage: React.FC = () => {
           onSave={handleSave}
         />
         
-        <div className="text-sm text-muted-foreground mt-4">
+        <div className="mt-4 text-sm text-muted-foreground">
           반복 거래 템플릿을 등록하면 자동으로 거래가 생성됩니다.
         </div>
 
         {/* 실행 내역 */}
-        <div className="mt-8 pt-8 border-t border-border">
-          <h3 className="text-lg font-semibold mb-2">자동 실행 내역 (준비중)</h3>
+        <div className="pt-8 mt-8 border-t border-border">
+          <h3 className="mb-2 text-lg font-semibold">자동 실행 내역 (준비중)</h3>
           <div className="text-sm text-muted-foreground">실행 내역은 추후 제공됩니다.</div>
         </div>
       </Card>
 
       {/* 스마트 알림/예산 경고 */}
       <Card className="mb-8">
-        <h2 className="text-xl font-semibold mb-6">스마트 알림/예산 경고</h2>
+        <h2 className="mb-6 text-xl font-semibold">스마트 알림/예산 경고</h2>
         <NotificationPanel />
       </Card>
 
       {/* 자동 카테고리 분류 체험 */}
       <Card className="mb-8">
-        <h2 className="text-xl font-semibold mb-6">자동 카테고리 분류 체험</h2>
+        <h2 className="mb-6 text-xl font-semibold">자동 카테고리 분류 체험</h2>
         <TransactionForm />
-        <div className="text-sm text-muted-foreground mt-4">
+        <div className="mt-4 text-sm text-muted-foreground">
           설명/상호명을 입력하면 카테고리가 자동 추천됩니다.
         </div>
       </Card>
 
       {/* 나이대/직업군별 카테고리 추천 */}
       <Card>
-        <h2 className="text-xl font-semibold mb-6">나이대/직업군별 카테고리 추천</h2>
+        <h2 className="mb-6 text-xl font-semibold">나이대/직업군별 카테고리 추천</h2>
         <div className="text-sm text-muted-foreground">
           프로필에서 나이대/직업군을 설정하면 맞춤 카테고리가 추천됩니다.
         </div>

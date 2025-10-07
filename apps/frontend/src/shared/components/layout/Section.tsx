@@ -1,7 +1,11 @@
+/**
+ * 섹션 레이아웃 컴포넌트
+ */
 import React from 'react';
 import { colors } from '../../../styles/theme';
 import { useApp } from '../../../app/hooks/useApp';
 
+// 섹션 컴포넌트 props 정의
 interface SectionProps {
   title: string;
   subtitle?: string;
@@ -10,6 +14,11 @@ interface SectionProps {
   className?: string;
 }
 
+/**
+ * 섹션 컴포넌트
+ * @param param0 - 섹션 컴포넌트 props
+ * @returns 섹션 컴포넌트
+ */
 export const Section: React.FC<SectionProps> = ({
   title,
   subtitle,

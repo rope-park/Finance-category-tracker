@@ -1,6 +1,10 @@
+/**
+ * 대시보드 요약 컴포넌트
+ */
 import React, { memo } from 'react';
 import { AmountDisplay } from './AmountDisplay';
 
+// 요약 데이터 타입 정의
 interface SummaryData {
   totalIncome: number;
   totalExpense: number;
@@ -10,12 +14,18 @@ interface SummaryData {
   topCategory: string;
 }
 
+// DashboardSummary 컴포넌트의 Props 타입 정의
 interface DashboardSummaryProps {
   data: SummaryData | null;
   isLoading?: boolean;
   error?: string;
 }
 
+/**
+ * DashboardSummary 컴포넌트
+ * @param param0 - DashboardSummary 컴포넌트의 Props
+ * @returns DashboardSummary 컴포넌트
+ */
 const DashboardSummary: React.FC<DashboardSummaryProps> = memo(({ 
   data, 
   isLoading = false, 

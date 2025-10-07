@@ -1,8 +1,12 @@
+/**
+ * StatsCard 컴포넌트
+ */
 import React from 'react';
 import { Card } from '../layout/Card';
 import { colors } from '../../../styles/theme';
 import { useApp } from '../../../app/hooks/useApp';
 
+// StatsCard 컴포넌트의 Props 타입 정의
 interface StatsCardProps {
   title: string;
   value: string | number;
@@ -16,6 +20,11 @@ interface StatsCardProps {
   className?: string;
 }
 
+/**
+ * StatsCard 컴포넌트
+ * @param param0 - StatsCard 컴포넌트의 Props
+ * @returns StatsCard 컴포넌트
+ */
 export const StatsCard: React.FC<StatsCardProps> = ({
   title,
   value,

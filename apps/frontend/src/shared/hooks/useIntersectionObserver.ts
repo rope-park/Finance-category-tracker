@@ -1,3 +1,11 @@
+/**
+ * Intersection Observer를 활용한 공통 커스텀 훅
+ * 
+ * 주요 기능:
+ * - 요소의 가시성 추적
+ * - 무한 스크롤 지원
+ * - 성능 최적화
+ */
 import { useState, useEffect, useRef } from 'react';
 
 /**
@@ -10,6 +18,7 @@ export function useInfiniteScroll(
   const [isIntersecting, setIsIntersecting] = useState(false);
   const targetRef = useRef<HTMLDivElement>(null);
 
+  // Intersection Observer 설정 및 콜백
   useEffect(() => {
     const target = targetRef.current;
     if (!target) return;
@@ -41,6 +50,7 @@ export function useInView(options: IntersectionObserverInit = {}) {
   const [hasBeenInView, setHasBeenInView] = useState(false);
   const ref = useRef<HTMLElement>(null);
 
+  // Intersection Observer 설정 및 콜백
   useEffect(() => {
     const element = ref.current;
     if (!element) return;

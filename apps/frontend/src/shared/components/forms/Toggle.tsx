@@ -1,12 +1,21 @@
+/**
+ * 토글 폼 컴포넌트
+ */
 import React from 'react';
 import { colors } from '../../../styles/theme';
 
+// Toggle 컴포넌트의 Props 타입 정의
 interface ToggleProps {
   enabled: boolean;
   onChange: () => void;
   size?: 'sm' | 'md' | 'lg';
 }
 
+/**
+ * 토글 컴포넌트
+ * @param param0 - Toggle 컴포넌트 props
+ * @returns Toggle 컴포넌트
+ */
 export const Toggle: React.FC<ToggleProps> = ({
   enabled,
   onChange,

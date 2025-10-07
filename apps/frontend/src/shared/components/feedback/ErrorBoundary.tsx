@@ -1,13 +1,18 @@
+/**
+ * 에러 바운더리 피드백 컴포넌트
+ */
 import { Component } from 'react';
 import type { ReactNode } from 'react';
 import { colors, shadows } from '../../../styles/theme';
 
+// 에러 바운더리 상태 및 props 정의
 interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
   errorInfo?: React.ErrorInfo;
 }
 
+// 에러 바운더리 컴포넌트 props 정의
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
@@ -15,14 +20,23 @@ interface ErrorBoundaryProps {
   resetKeys?: Array<string | number>;
 }
 
+/**
+ * 에러 바운더리 컴포넌트
+ */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   private resetTimeoutId?: NodeJS.Timeout;
 
+  // 생성자 및 초기 상태 설정
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
   }
 
+  /**
+   * 에러 발생 시 상태 업데이트
+   * @param error - 발생한 에러 객체
+   * @returns 새로운 상태
+   */
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return {
       hasError: true,
@@ -178,7 +192,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 }
 
-// Hook 기반 에러 바운더리 래퍼
+/**
+ * 에러 바운더리 래퍼 컴포넌트
+ * @param param0 - 에러 바운더리 래퍼 컴포넌트 props
+ * @returns 에러 바운더리 래퍼 컴포넌트
+ */
 export const ErrorBoundaryWrapper: React.FC<{
   children: ReactNode;
   fallback?: ReactNode;
@@ -202,7 +220,11 @@ export const ErrorBoundaryWrapper: React.FC<{
   );
 };
 
-// 특정 컴포넌트용 에러 바운더리들
+/**
+ * 페이지 레벨 에러 바운더리
+ * @param param0 - 페이지 레벨 에러 바운더리 props
+ * @returns 페이지 레벨 에러 바운더리 컴포넌트
+ */
 export const PageErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (
   <ErrorBoundary
     onError={(error) => {
@@ -214,6 +236,11 @@ export const PageErrorBoundary: React.FC<{ children: ReactNode }> = ({ children 
   </ErrorBoundary>
 );
 
+/**
+ * 모달 레벨 에러 바운더리
+ * @param param0 - 모달 레벨 에러 바운더리 props
+ * @returns 모달 레벨 에러 바운더리 컴포넌트
+ */
 export const ModalErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (
   <ErrorBoundary
     fallback={
