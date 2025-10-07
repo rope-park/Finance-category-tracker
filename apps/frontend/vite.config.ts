@@ -9,8 +9,7 @@
  * - 개발 서버 설정
  * - 의존성 사전 번들링
  * 
- * @author Finance Category Tracker Team
- * @version 1.0.0
+ * @author Ju Eul Park (rope-park)
  */
 
 import { defineConfig } from 'vite'
@@ -46,7 +45,7 @@ export default defineConfig({
   optimizeDeps: {
     /** 사전 번들링할 라이브러리 목록 */
     include: [
-      'react',                    // React 코어
+      'react',                   // React 코어
       'react-dom',               // React DOM
       'react/jsx-runtime',       // JSX 런타임
       'react-router-dom',        // 라우팅
