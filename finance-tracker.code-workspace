@@ -15,6 +15,14 @@
     {
       "name": "Shared",
       "path": "./packages/shared"
+    },
+    {
+      "name": "Docker",
+      "path": "./docker"
+    },
+    { 
+      "name": "Config",
+      "path": "./config"
     }
   ],
   "settings": {

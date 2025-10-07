@@ -16,9 +16,15 @@ build/
 .env.development.local
 .env.test.local
 .env.test
+.env.setup.js
 .env.production.local
 apps/*/.env
 packages/*/.env
+
+# Test environment setup files
+**/tests/env.setup.js
+**/test/env.setup.js
+apps/backend/tests/env.setup.js
 
 # Logs
 npm-debug.log*

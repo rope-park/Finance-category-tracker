@@ -2,34 +2,80 @@
   "name": "finance-category-tracker",
   "private": true,
   "version": "1.0.0",
-  "description": "Personal finance management application",
+  "description": "Personal finance management application - 개인 재정 관리 애플리케이션",
   "type": "module",
   "workspaces": [
     "apps/frontend",
-    "apps/backend",
+    "apps/backend", 
     "packages/shared"
   ],
   "scripts": {
+    "// ===== 설치 및 정리 =====": "",
     "install:all": "npm install && npm install --prefix apps/frontend && npm install --prefix apps/backend && npm install --prefix packages/shared",
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
+    "clean:install": "npm run clean && npm run install:all",
+    
+    "// ===== 개발 서버 =====": "",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "npm run dev --prefix apps/frontend",
     "dev:backend": "npm run dev --prefix apps/backend",
-    "build": "npm run build --prefix apps/frontend && npm run build --prefix apps/backend",
-    "build:frontend": "npm run build --prefix apps/frontend",
-    "build:backend": "npm run build --prefix apps/backend",
-    "test": "npm test --prefix apps/frontend && npm test --prefix apps/backend",
-    "test:e2e": "npx playwright test",
-    "test:e2e:ui": "npx playwright test --ui",
-    "lint": "npm run lint --prefix apps/frontend",
     "start": "npm run dev",
-    "start:server": "scripts/start-server.bat",
-    "start:server:linux": "scripts/start-server.sh",
+    "start:server": "scripts/dev/start-server.bat",
+    "start:server:linux": "scripts/dev/start-server.sh",
+    
+    "// ===== 유틸리티 =====": "",
+    "sample:data": "echo '브라우저 콘솔에서 다음 스크립트를 실행하세요:' && echo '파일 위치: scripts/dev/add-sample-data.js'",
     "kill:3001": "npx kill-port 3001",
-    "docker:dev": "docker-compose -f docker-compose.dev.yml up -d",
-    "docker:prod": "docker-compose up -d",
+    
+    "// ===== 빌드 =====": "",
+    "build": "npm run build:shared && npm run build:backend && npm run build:frontend",
+    "build:shared": "npm run build --prefix packages/shared",
+    "build:frontend": "npm run build --prefix apps/frontend", 
+    "build:backend": "npm run build --prefix apps/backend",
+    
+    "// ===== 테스트 =====": "",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:frontend": "npm test --prefix apps/frontend",
+    "test:backend": "npm test --prefix apps/backend",
+    "test:e2e": "playwright test --config=config/playwright.config.ts",
+    "test:e2e:ui": "playwright test --ui --config=config/playwright.config.ts",
+    "test:watch": "concurrently \"npm run test:frontend -- --watch\" \"npm run test:backend -- --watch\"",
+    "test:coverage": "npm run test:frontend -- --coverage && npm run test:backend -- --coverage",
+    
+    "// ===== 코드 품질 =====": "",
+    "lint": "eslint . --config config/eslint.config.js",
+    "lint:fix": "eslint . --config config/eslint.config.js --fix",
+    "format": "prettier --write . --config config/prettier.config.json",
+    "format:check": "prettier --check . --config config/prettier.config.json",
+    "type-check": "npm run type-check --prefix apps/frontend && npm run type-check --prefix apps/backend",
+    
+    "// ===== Docker =====": "",
+    "docker:dev": "docker-compose -f docker/docker-compose.dev.yml up",
+    "docker:prod": "docker-compose -f docker/docker-compose.production.yml up",
+    "docker:build": "docker-compose -f docker/docker-compose.yml build",
+    "docker:build:prod": "docker-compose -f docker/docker-compose.production.yml build",
     "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
     "db:setup": "npm run db:migrate --prefix apps/backend && npm run db:seed --prefix apps/backend",
-    "type-check": "npm run type-check --prefix apps/frontend && npm run type-check --prefix apps/backend"
+    "db:migrate": "npm run db:migrate --prefix apps/backend",
+    "db:seed": "npm run db:seed --prefix apps/backend",
+    "db:reset": "npm run db:reset --prefix apps/backend",
+    "db:test-data": "psql -f scripts/database/comprehensive_mock_data.sql",
+    "db:create-users": "psql -f scripts/database/create-test-users.sql",
+    "db:add-budgets": "psql -f scripts/database/budgets_and_goals.sql",
+    "db:add-transactions": "psql -f scripts/database/realistic_transactions.sql",
+    "deploy:prod": "scripts/deploy/deploy-production.sh",
+    "backup:db": "scripts/deploy/backup-restore.sh backup",
+    "restore:db": "scripts/deploy/backup-restore.sh restore",
+    "deploy:check": "npm run lint && npm run type-check && npm run test && npm run build",
+    "health:check": "scripts/monitoring/health-check.sh",
+    "monitor:memory": "scripts/monitoring/memory-monitor.sh",
+    "monitor:all": "concurrently \"npm run health:check\" \"npm run monitor:memory\"",
+    "workspace:info": "npm ls --depth=0 --workspaces",
+    "outdated": "npm outdated --workspaces",
+    "security:audit": "npm audit --workspaces",
+    "security:fix": "npm audit fix --workspaces",
+    "postinstall": "echo '✅ 설치 완료! npm run dev로 개발 서버를 시작하세요.'"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
@@ -63,6 +109,8 @@
     "npm": ">=9.0.0"
   },
   "dependencies": {
+    "@sentry/react": "^10.16.0",
+    "@sentry/tracing": "^7.120.4",
     "chart.js": "^4.5.0",
     "csurf": "^1.11.0",
     "date-fns": "^4.1.0",
@@ -77,5 +125,24 @@
     "rxjs": "^7.8.2",
     "zustand": "^5.0.8"
   },
-  "overrides": {}
+  "overrides": {},
+  "keywords": [
+    "finance",
+    "budget",
+    "personal-finance",
+    "expense-tracker",
+    "react",
+    "node.js",
+    "typescript"
+  ],
+  "author": "Ju Eul Park <eulmidesign@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rope-park/Finance-category-tracker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rope-park/Finance-category-tracker/issues"
+  },
+  "homepage": "https://github.com/rope-park/Finance-category-tracker#readme"
 }
