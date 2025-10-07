@@ -1,3 +1,6 @@
+/**
+ * 통화 유틸리티 함수들
+ */
 import {
   Currency,
   CURRENCIES,
@@ -5,10 +8,6 @@ import {
   CURRENCY_GROUPS,
   CurrencyMetadata,
 } from '../constants/currencies';
-
-/**
- * 통화 관련 유틸리티 함수들
- */
 
 /**
  * 통화 포맷팅
@@ -67,7 +66,8 @@ export const isValidCurrency = (currency: string): currency is Currency => {
 };
 
 /**
- * 통화 변환 (기본 환율 계산 - 실제로는 API에서 가져와야 함)
+ * 통화 변환
+ * TODO: 실제 환율 API 연동 필요
  */
 export const convertCurrency = (
   amount: number,

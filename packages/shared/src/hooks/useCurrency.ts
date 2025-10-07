@@ -1,3 +1,10 @@
+/**
+ * 통화 관련 공통 커스텀 훅
+ * 
+ * 주요 기능:
+ * - useCurrency: 단일 통화 관리 및 금액 포맷팅, 파싱, 변환 기능 제공
+ * - useMultiCurrency: 다중 통화 관리 및 환율 업데이트, 다중 통화 변환, 포트폴리오 총액 계산 기능 제공
+ */
 import { useState, useCallback, useMemo } from 'react';
 import { 
   Currency, 
@@ -11,6 +18,8 @@ import {
 /**
  * 통화 관련 유틸리티를 제공하는 hook
  * 금액 포맷팅, 파싱, 변환 등의 기능
+ * @param defaultCurrency - 기본 통화 (기본값: KRW)
+ * @returns  통화 관련 유틸리티
  */
 export function useCurrency(defaultCurrency: Currency = DEFAULT_CURRENCY) {
   const [currentCurrency, setCurrentCurrency] = useState<Currency>(defaultCurrency);
@@ -70,6 +79,8 @@ export function useCurrency(defaultCurrency: Currency = DEFAULT_CURRENCY) {
 /**
  * 다중 통화 관리 hook
  * 여러 통화를 동시에 관리하고 변환할 때 사용
+ * @param baseCurrency - 기준 통화 (기본값: KRW)
+ * @returns  다중 통화 관리 훅
  */
 export function useMultiCurrency(baseCurrency: Currency = DEFAULT_CURRENCY) {
   const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});

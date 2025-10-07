@@ -1,3 +1,6 @@
+/**
+ * 중앙 집중식 타입 정의 모음
+ */
 // 핵심 비즈니스 타입들
 export * from './user';
 export * from './auth';

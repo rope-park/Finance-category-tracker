@@ -1,3 +1,8 @@
+/**
+ * 카테고리 유틸리티 함수들
+ * 
+ * 거래 카테고리와 관련된 다양한 유틸리티 함수 제공.
+ */
 import {
   Category,
   IncomeCategory,
@@ -12,10 +17,6 @@ import {
   CategoryMetadata,
   CategoryGroup,
 } from './categories';
-
-/**
- * 카테고리 관련 유틸리티 함수들
- */
 
 /**
  * 카테고리가 수입 카테고리인지 확인

@@ -1,9 +1,19 @@
+/**
+ * 예산 및 목표 관리를 위한 공통 커스텀 훅
+ * 
+ * 주요 기능:
+ * - 예산 및 목표 CRUD
+ * - 예산 분석 (사용 현황, 남은 금액, 초과 여부 등)
+ * - 카테고리별 예산 사용률 계산
+ * - 목표 달성률 계산
+ * - 월별 예산 요약
+ */
 import { useState, useCallback, useEffect } from 'react';
 import type { Budget, Goal, Transaction } from '../types';
 import { EXPENSE_CATEGORIES, type Category } from '../constants';
 
 /**
- * 예산 관리를 위한 hook
+ * 예산 및 목표 관리를 위한 훅
  */
 export function useBudget() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -182,17 +192,17 @@ export function useBudget() {
     setBudgets,
     setGoals,
     
-    // Budget CRUD
+    // 예산 CRUD
     addBudget,
     updateBudget,
     deleteBudget,
     
-    // Goal CRUD
+    // 목표 CRUD
     addGoal,
     updateGoal,
     deleteGoal,
     
-    // Analysis
+    // 분석 함수들
     getBudgetAnalysis,
     getCategoryBudgetUsage,
     getGoalProgress,

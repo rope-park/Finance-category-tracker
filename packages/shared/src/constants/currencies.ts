@@ -1,15 +1,14 @@
 /**
  * 통화 관련 상수 정의
+ * 
+ * 주요 통화 코드, 통화 메타데이터, 통화 그룹, 인기 통화, 기본 통화, 환율 API 설정 등 포함.
  */
 
 // 주요 통화 코드
 export const CURRENCIES = {
-  // 아시아 통화
   KRW: 'KRW', // 한국 원
   JPY: 'JPY', // 일본 엔
   CNY: 'CNY', // 중국 위안
-  
-  // 서구 통화
   USD: 'USD', // 미국 달러
   EUR: 'EUR', // 유로
   GBP: 'GBP', // 영국 파운드
@@ -24,9 +23,9 @@ export const CURRENCY_METADATA = {
     code: 'KRW',
     country: '대한민국',
     flag: '🇰🇷',
-    decimalPlaces: 0,
-    thousandsSeparator: ',',
-    decimalSeparator: '.',
+    decimalPlaces: 0,         // 소수점 이하 자릿수
+    thousandsSeparator: ',',  // 천 단위 구분자
+    decimalSeparator: '.',    // 소수점 구분자
     symbolPosition: 'before', // before | after
     format: '₩{amount}',
     locale: 'ko-KR',
@@ -166,6 +165,7 @@ export const EXCHANGE_RATE_SETTINGS = {
 // 타입 정의
 export type Currency = typeof CURRENCIES[keyof typeof CURRENCIES];
 
+// 통화 메타데이터 타입
 export type CurrencyMetadata = {
   name: string;
   symbol: string;
@@ -180,16 +180,18 @@ export type CurrencyMetadata = {
   locale: string;
 };
 
+// 통화 그룹 타입
 export type CurrencyGroup = {
-  name: string;
-  currencies: readonly Currency[];
-  icon: string;
+  name: string;                     // 그룹 이름
+  currencies: readonly Currency[];  // 그룹에 속한 통화 목록
+  icon: string;                     // 그룹 아이콘
 };
 
+// 환율 정보 타입
 export type ExchangeRate = {
-  from: Currency;
-  to: Currency;
-  rate: number;
-  timestamp: string;
-  provider: string;
+  from: Currency;      // 기준 통화
+  to: Currency;        // 변환할 통화
+  rate: number;        // 환율
+  timestamp: string;   // 타임스탬프
+  provider: string;    // 데이터 제공자
 };

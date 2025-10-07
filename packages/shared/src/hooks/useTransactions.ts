@@ -1,3 +1,12 @@
+/**
+ * 거래 데이터 관리 및 분석을 위한 커스텀 훅
+ * 
+ * 주요 기능:
+ * - 거래 추가, 수정, 삭제
+ * - 거래 필터링 (날짜, 금액, 카테고리, 거래처 등)
+ * - 거래 통계 계산 (총 수입/지출, 순이익, 평균 거래액 등)
+ * - 필터 및 통계 실시간 업데이트
+ */
 import { useState, useCallback, useMemo } from 'react';
 import { 
   Category,
@@ -10,7 +19,9 @@ import type {
 } from '../types';
 
 /**
- * 거래 데이터 관리 및 분석을 위한 hook
+ * 거래 데이터 관리 및 분석을 위한 커스텀 훅
+ * @param initialTransactions 초기 거래 데이터
+ * @returns 거래 데이터 및 관련 함수들
  */
 export function useTransactions(initialTransactions: Transaction[] = []) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);

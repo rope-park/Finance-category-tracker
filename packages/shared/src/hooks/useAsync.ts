@@ -1,9 +1,22 @@
+/**
+ * 비동기 작업과 관련된 상태 관리를 위한 공통 커스텀 훅
+ * 
+ * 주요 기능:
+ * - useAsyncState: 비동기 상태 관리 (로딩, 에러, 데이터)
+ * - useAPI: API 호출 및 상태 관리
+ * - usePagination: 페이지네이션 로직 관리
+ * - useSort: 데이터 정렬 관리
+ *
+ *
+ * @author Ju Eul Park (rope-park)
+ */
 import { useState, useCallback, useEffect } from 'react';
 import type { LoadingState, AsyncState } from '../types';
 
 /**
- * 비동기 상태 관리를 위한 hook
- * API 호출, 데이터 로딩 등에 사용
+ * 비동기 상태 관리를 위한 커스텀 훅
+ * @param initialData - 초기 데이터
+ * @returns 비동기 상태와 상태 업데이트 함수들
  */
 export function useAsyncState<T, E = string>(
   initialData?: T
@@ -57,8 +70,10 @@ export function useAsyncState<T, E = string>(
 }
 
 /**
- * API 호출을 위한 hook
- * 자동 로딩 상태 관리, 에러 처리, 재시도 기능 포함
+ * API 호출을 위한 커스텀 훅
+ * @param apiFunction - 호출할 API 함수
+ * @param options - 추가 옵션 (즉시 호출, 재시도 횟수 등)
+ * @returns 비동기 상태와 API 호출 함수
  */
 export function useAPI<T, P = void>(
   apiFunction: (params: P) => Promise<T>,
@@ -112,7 +127,11 @@ export function useAPI<T, P = void>(
 }
 
 /**
- * 페이지네이션을 위한 hook
+ * 페이지네이션을 위한 커스텀 훅
+ * @param totalItems - 전체 아이템 수
+ * @param itemsPerPage - 페이지당 아이템 수 (기본값: 10)
+ * @param initialPage - 초기 페이지 (기본값: 1)
+ * @returns 페이지네이션 상태와 조작 함수들
  */
 export function usePagination(
   totalItems: number,
@@ -166,7 +185,11 @@ export function usePagination(
 }
 
 /**
- * 정렬을 위한 hook
+ * 정렬 관리를 위한 커스텀 훅
+ * @param data - 정렬할 데이터 배열
+ * @param initialSortKey - 초기 정렬 키
+ * @param initialSortOrder - 초기 정렬 순서 ('asc' | 'desc', 기본값: 'asc')
+ * @returns 정렬된 데이터와 정렬 상태 및 조작 함수들
  */
 export function useSort<T>(
   data: T[],

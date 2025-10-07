@@ -1,8 +1,21 @@
+/**
+ * 로컬스토리지 및 세션스토리지 관련 공통 커스텀 훅
+ * 
+ * 주요 기능:
+ * - useLocalStorage: 로컬스토리지 상태 관리 훅, 페이지 새로고침 후에도 상태 유지
+ * - useSessionStorage: 세션스토리지 상태 관리 훅, 브라우저 탭 단위로 상태 유지
+ * - useStorageEvent: 스토리지 이벤트 감지 훅, 다른 탭에서 로컬스토리지가 변경되었을 때 감지
+ */
 import { useState, useEffect, useCallback } from 'react';
 
 /**
  * 로컬스토리지 상태 관리 훅
- * 상태를 로컬스토리지와 동기화하여 페이지 새로고침 후에도 유지
+ * 
+ * 브라우저를 닫아도 상태 유지됨
+ * 
+ * @param key 로컬스토리지 키 이름
+ * @param initialValue 키가 존재하지 않을 때 사용할 기본값
+ * @return [값, 값 설정 함수, 값 제거 함수]
  */
 export function useLocalStorage<T>(
   key: string,
@@ -59,7 +72,12 @@ export function useLocalStorage<T>(
 
 /**
  * 세션스토리지 상태 관리 훅
- * 브라우저 탭 단위로 상태를 유지 (탭 닫으면 사라짐)
+ * 
+ * 브라우저 탭 단위로 상태 유지 (탭 닫으면 사라짐)
+ * 
+ * @param key 세션스토리지 키 이름
+ * @param initialValue 키가 존재하지 않을 때 사용할 기본값
+ * @return [값, 값 설정 함수, 값 제거 함수]
  */
 export function useSessionStorage<T>(
   key: string,
@@ -111,7 +129,11 @@ export function useSessionStorage<T>(
 
 /**
  * 스토리지 이벤트 감지 훅
+ * 
  * 다른 탭에서 로컬스토리지가 변경되었을 때 감지
+ * 
+ * @param key 감지할 로컬스토리지 키 이름
+ * @param callback 키 값이 변경되었을 때 호출할 함수
  */
 export function useStorageEvent(key: string, callback: (newValue: string | null) => void) {
   useEffect(() => {

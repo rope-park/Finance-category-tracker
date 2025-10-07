@@ -82,7 +82,7 @@ import { categoryUtils, currencyUtils } from '@finance-tracker/shared';
 - 그룹화된 카테고리 구조
 
 ### 2. 통화 지원
-- 20개 이상의 주요 통화 지원
+- 달러, 유로, 엔화 등 이상의 주요 통화 지원
 - 통화별 포맷팅 규칙
 - 지역별 통화 그룹
 

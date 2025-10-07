@@ -94,7 +94,6 @@ export const formatRelativeTime = (
       return rtf.format(-Math.floor(diffInSeconds / 31536000), 'year');
     }
   } catch (error) {
-    // Fallback for unsupported locales
     if (diffInSeconds < 60) {
       return '방금 전';
     } else if (diffInSeconds < 3600) {

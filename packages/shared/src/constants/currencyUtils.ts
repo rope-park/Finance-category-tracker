@@ -1,3 +1,8 @@
+/**
+ * 통화 유틸리티 함수들
+ * 
+ * 거래 및 예산 관리에서 통화와 관련된 다양한 유틸리티 함수 제공.
+ */
 import {
   Currency,
   CURRENCIES,
@@ -8,10 +13,6 @@ import {
   CurrencyMetadata,
   ExchangeRate,
 } from './currencies';
-
-/**
- * 통화 관련 유틸리티 함수들
- */
 
 /**
  * 통화 메타데이터 가져오기
