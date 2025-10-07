@@ -1,6 +1,28 @@
+/**
+ * 커뮤니티 기능 컨트롤러
+ * 
+ * 사용자 간 소통과 정보 공유를 위한 커뮤니티 기능 관리.
+ * 게시글, 댓글, 좋아요 등의 소셜 기능 제공.
+ * 
+ * 주요 기능:
+ * - 게시글 CRUD (작성, 조회, 수정, 삭제)
+ * - 댓글 시스템 관리
+ * - 좋아요/싫어요 처리
+ * - 인기 태그 관리
+ * - 컨텐츠 검색 및 필터링
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import { Request, Response } from 'express';
 import { CommunityService } from './community.service';
 
+/**
+ * 커뮤니티 컨트롤러 클래스
+ * 
+ * 커뮤니티 관련 API 요청을 처리하는 컨트롤러로, CommunityService와 상호작용하여
+ * 게시글 작성, 댓글 관리, 좋아요 처리 등의 기능을 수행.
+ */
 export class CommunityController {
   // 게시글 생성
   static async createPost(req: Request, res: Response) {

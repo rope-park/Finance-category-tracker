@@ -1,6 +1,46 @@
+/**
+ * 소셜 기능 관리 컨트롤러
+ * 
+ * 가족, 친구, 커뮤니티 간의 소셜 기능을 관리하는 핵심 컨트롤러.
+ * 개인정보 보호를 최우선으로 하면서 사용자 간 소통과 경험 공유를 지원.
+ * 적절한 데이터 익명화와 권한 관리를 통해 안전한 소셜 환경을 제공.
+ * 
+ * 핵심 기능:
+ * - 가족 그룹 생성 및 관리 (Family Group Management)
+ * - 친구 관계 관리 (Friend Relationships)
+ * - 지출 패턴 공유 및 비교 (Spending Pattern Sharing)
+ * - 절약 챌린지 및 게임화 기능 (Savings Challenges)
+ * - 소셜 랭킹 및 순위 시스템 (Social Ranking)
+ * - 실시간 소셜 알림 처리 (Social Notifications)
+ * - 커뮤니티 기반 재정 목표 공유 (Community Goals)
+ * 
+ * API 엔드포인트:
+ * - POST /api/social/family - 가족 그룹 생성
+ * - GET /api/social/friends - 친구 목록 조회
+ * - POST /api/social/friends/invite - 친구 초대
+ * - GET /api/social/challenges - 챌린지 목록 조회
+ * - POST /api/social/share - 지출 패턴 공유
+ * - GET /api/social/rankings - 소셜 랭킹 조회
+ * - POST /api/social/notifications - 알림 설정 관리
+ * 
+ * 보안 및 개인정보 보호:
+ * - 모든 공유 데이터의 익명화 처리
+ * - 개인 금융 정보의 선택적 공개 설정
+ * - 가족/친구 간 적절한 접근 권한 관리
+ * - 민감한 거래 내역의 자동 필터링
+ * - GDPR 및 개인정보보호법 준수
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import { Request, Response } from 'express';
 import { SocialService } from './social.service';
 
+/**
+ * 소셜 기능 관리 컨트롤러
+ * 
+ * 가족, 친구, 커뮤니티 간의 소셜 기능을 관리하는 핵심 컨트롤러.
+ */
 export class SocialController {
   // 가족 그룹 생성
   static async createFamily(req: Request, res: Response) {

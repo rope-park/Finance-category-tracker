@@ -1,15 +1,39 @@
+/**
+ * 전역 오류 처리 미들웨어
+ * 
+ * Express.js 애플리케이션에서 발생하는 모든 오류를 중앙집중식으로 처리.
+ * 예측 가능한 비즈니스 오류와 예상치 못한 시스템 오류를 구분하여 처리.
+ * 
+ * 주요 기능:
+ * - 전역 오류 상황 로깅 및 모니터링
+ * - 비즈니스 오류와 시스템 오류의 차별화된 처리
+ * - 보안 카치 및 민감한 정보 노출 방지
+ * - 클라이언트 친화적 오류 메시지 제공
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/errors';
 
-// 에러 로깅 함수
+/**
+ * 오류 로깅 유틸리티 함수
+ * 
+ * 발생한 오류의 상세 정보를 구조적으로 로깅하여 디버깅과 모니터링을 지원.
+ * 요청 정보(메서드, URL, IP 등)와 함께 오류 상세 내역을 기록.
+ * 
+ * @param error - 발생한 오류 객체
+ * @param req - 오류가 발생한 HTTP 요청 객체
+ */
 const logError = (error: Error, req: Request) => {
-  const timestamp = new Date().toISOString();
-  const method = req.method;
-  const url = req.originalUrl;
-  const ip = req.ip || req.connection.remoteAddress;
-  const userAgent = req.get('User-Agent');
-  const userId = (req as any).user?.userId || 'anonymous';
+  const timestamp = new Date().toISOString();         // 에러 발생 시간
+  const method = req.method;                          // HTTP 메서드 (GET, POST 등)
+  const url = req.originalUrl;                        // 요청된 URL 경로
+  const ip = req.ip || req.connection.remoteAddress;  // 클라이언트 IP 주소
+  const userAgent = req.get('User-Agent');            // 클라이언트 브라우저 정보
+  const userId = (req as any).user?.userId || 'anonymous';  // 인증된 사용자 ID
 
+  // 구조적인 오류 로그 출력 (디버깅 및 모니터링용)
   console.error(`
 === ERROR LOG ===
 Timestamp: ${timestamp}

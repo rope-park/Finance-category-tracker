@@ -1,14 +1,26 @@
+/**
+ * 향상된 캐시 서비스 유틸리티
+ *
+ * Redis 기반의 고성능 캐시 서비스
+ * 
+ * 주요 기능:
+ * - 기본 GET/SET/DELETE 작업
+ * - 조건부 캐싱 (값이 없을 때만 설정)
+ * - 함수 결과 캐싱 래퍼
+ */
 import Redis from 'ioredis';
 import logger from './logger';
 import { metricsHelpers } from './metrics';
 
+// 캐시 설정 인터페이스
 interface CacheConfig {
-  ttl: number; // Time To Live in seconds
+  ttl: number;          // 생존 시간(초), 0이면 만료 없음
   keyPrefix?: string;
   compress?: boolean;
   serialize?: boolean;
 }
 
+// 캐시 통계 인터페이스
 interface CacheStats {
   hits: number;
   misses: number;
@@ -18,11 +30,17 @@ interface CacheStats {
   hitRate: number;
 }
 
+/**
+ * 향상된 캐시 서비스 클래스
+ * 
+ * Redis 연결 관리, 에러 처리, 통계 수집, 태그 기반 무효화 등 다양한 기능 포함.
+ */
 export class EnhancedCacheService {
   private redis: Redis;
   private stats: Map<string, CacheStats> = new Map();
   private readonly defaultTTL = 3600; // 1 hour
 
+  // 생성자 - Redis 연결 설정
   constructor(redisConfig: any) {
     this.redis = new Redis(redisConfig);
     this.setupEventHandlers();

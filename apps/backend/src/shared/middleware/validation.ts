@@ -1,8 +1,33 @@
+/**
+ * 데이터 유효성 검사 미들웨어
+ * 
+ * 사용자 입력 데이터의 유효성을 검사하고 보안 취약점을 방지하는 미들웨어.
+ * Express Validator를 기반으로 다양한 입력 데이터 형식을 검증하고 정제.
+ * 
+ * 주요 기능:
+ * - 이메일 형식 및 길이 검증
+ * - 비밀번호 정책 강도 검사 (8자 이상, 대소문자, 숫자, 특수문자 포함)
+ * - 사용자 이름 형식 및 금지 문자 검사
+ * - XSS (Cross-Site Scripting) 대응 입력 정제
+ * - SQL 인젝션 방지를 위한 데이터 정제
+ * - 국제화 지원 (한글, 영어, 숫자 혼용)
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
 import { Request, Response, NextFunction } from 'express';
 import { body, validationResult, param, query } from 'express-validator';
 import { ApiResponse } from '../../core/types';
 
-// 에러 핸들링 미들웨어
+/**
+ * 유효성 검사 오류 처리 미들웨어
+ * 
+ * Express Validator에서 발생한 유효성 검사 오류를 처리하고 클라이언트에게 명확한 오류 메시지 전달.
+ * 다중 필드 오류를 배열로 정리하여 사용성 향상.
+ * 
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체  
+ * @param next - 다음 미들웨어로 전달하는 함수
+ */
 export const handleValidationErrors = (req: Request, res: Response, next: NextFunction) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -19,13 +44,21 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
   next();
 };
 
-// 이메일 형식 검증
+/**
+ * 이메일 형식 검증
+ * @param email - 검증할 이메일 문자열
+ * @returns 이메일 형식이 유효하면 true, 그렇지 않으면 false
+ */
 export const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-// 비밀번호 강도 검증 (최소 8자, 대소문자, 숫자, 특수문자 포함)
+/**
+ * 비밀번호 강도 검증
+ * @param password - 검증할 비밀번호 문자열
+ * @returns 비밀번호가 강도 기준을 만족하면 true, 그렇지 않으면 false
+ */
 export const validatePassword = (password: string): boolean => {
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return passwordRegex.test(password);
@@ -224,7 +257,12 @@ export const validatePasswordChange = [
   handleValidationErrors
 ];
 
-// 회원가입 데이터 검증
+/**
+ * 회원가입 데이터 검증 미들웨어
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ * @param next - 다음 미들웨어 함수
+ */
 export const validateRegisterData = (req: Request, res: Response, next: NextFunction) => {
   const { email, password, name } = req.body;
 
@@ -263,7 +301,12 @@ export const validateRegisterData = (req: Request, res: Response, next: NextFunc
   next();
 };
 
-// 로그인 데이터 검증
+/**
+ * 로그인 데이터 검증 미들웨어
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ * @param next - 다음 미들웨어 함수
+ */
 export const validateLoginData = (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
 
@@ -284,7 +327,12 @@ export const validateLoginData = (req: Request, res: Response, next: NextFunctio
   next();
 };
 
-// 거래 데이터 검증
+/**
+ * 거래 데이터 검증 미들웨어
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ * @param next - 다음 미들웨어 함수
+ */
 export const validateTransactionData = (req: Request, res: Response, next: NextFunction) => {
   const { category_key, transaction_type, amount, transaction_date } = req.body;
 
@@ -321,7 +369,12 @@ export const validateTransactionData = (req: Request, res: Response, next: NextF
   next();
 };
 
-// 예산 데이터 검증
+/**
+ * 예산 데이터 검증 미들웨어
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ * @param next - 다음 미들웨어 함수
+ */
 export const validateBudgetData = (req: Request, res: Response, next: NextFunction) => {
   const { category_key, amount, period_start, period_end } = req.body;
 
@@ -359,7 +412,12 @@ export const validateBudgetData = (req: Request, res: Response, next: NextFuncti
   next();
 };
 
-// 프로필 업데이트 데이터 검증
+/**
+ * 프로필 업데이트 데이터 검증 미들웨어
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ * @param next - 다음 미들웨어 함수
+ */
 export const validateProfileData = (req: Request, res: Response, next: NextFunction) => {
   const { name, age_group, phone_number } = req.body;
 

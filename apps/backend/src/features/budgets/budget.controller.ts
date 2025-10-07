@@ -1,3 +1,30 @@
+/**
+ * 예산 관리 컨트롤러
+ * 
+ * 사용자의 예산 설정, 조회, 수정, 삭제 등 예산과 관련된 모든 API 요청 처리 컨트롤러.
+ * 카테고리별 예산 설정, 예산 진행률 추적, 예산 초과 알림 등의 기능 제공.
+ * 
+ * 주요 기능:
+ * - 예산 CRUD 작업 (생성, 조회, 수정, 삭제)
+ * - 예산 진행률 및 사용 현황 모니터링
+ * - 월별/카테고리별 예산 요약 정보 제공
+ * - 예산 초과 알림 및 경고 시스템
+ * 
+ * API 엔드포인트:
+ * - POST /api/budgets - 새 예산 생성
+ * - GET /api/budgets - 예산 목록 조회
+ * - GET /api/budgets/:id - 특정 예산 상세 조회
+ * - PUT /api/budgets/:id - 예산 정보 수정
+ * - DELETE /api/budgets/:id - 예산 삭제
+ * - GET /api/budgets/summary - 예산 요약 정보 조회
+ * 
+ * 보안:
+ * - JWT 토큰 기반 사용자 인증
+ * - 사용자별 예산 데이터 접근 제어
+ * - 입력 데이터 유효성 검사 및 SQL 인젝션 방지
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
 import { Response } from 'express';
 import pool from '../../core/config/database';
 import { 
@@ -11,9 +38,19 @@ import type { BudgetRecord } from './budget.repository';
 import { AuthRequest } from '../../shared/middleware/auth';
 import { BudgetRepository } from './budget.repository';
 
+// 예산 데이터 접근을 위한 리포지토리 인스턴스
 const budgetRepository = new BudgetRepository();
 
-// 예산 생성
+/**
+ * 새로운 예산 생성 컨트롤러 함수
+ * 
+ * 사용자가 특정 카테고리에 대한 예산을 설정할 수 있도록 지원.
+ * 예산 기간, 금액, 카테고리 등의 정보를 받아 데이터베이스에 저장.
+ * 
+ * @param req - 인증된 사용자 요청 객체 (예산 생성 데이터 포함)
+ * @param res - HTTP 응답 객체
+ * @returns 생성된 예산 정보 또는 오류 메시지
+ */
 export const createBudget = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -94,7 +131,16 @@ export const createBudget = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 예산 목록 조회
+/**
+ * 예산 목록 조회 컨트롤러 함수
+ * 
+ * 사용자의 예산 정보를 필터링하여 목록 형태로 반환.
+ * 다양한 조건(카테고리, 기간, 활성 상태 등)을 기반으로 예산을 조회.
+ * 
+ * @param req - 인증된 사용자 요청 객체 (필터 쿼리 함)
+ * @param res - HTTP 응답 객체
+ * @returns 예산 목록
+ */
 export const getBudgets = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -172,7 +218,16 @@ export const getBudgets = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 단일 예산 조회 (실제 지출과 비교)
+/**
+ * 단일 예산 상세 정보 조회 컨트롤러 함수
+ * 
+ * 특정 예산의 상세 정보와 실제 지출 대비 진행 상황 제공.
+ * 예산 사용률, 남은 금액, 예상 지출 등의 분석 데이터 포함.
+ * 
+ * @param req - 인증된 사용자 요청 객체 (예산 ID 포함)
+ * @param res - HTTP 응답 객체
+ * @returns 예산 상세 정보와 진행 상황 분석
+ */
 export const getBudget = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -239,7 +294,16 @@ export const getBudget = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 예산 요약 정보 조회
+/**
+ * 사용자의 전체 예산 요약 정보 조회 컨트롤러 함수
+ * 
+ * 모든 예산의 통합 현황과 통계 정보 제공.
+ * 대시보드나 요약 화면에서 사용되는 핵심 지표들 포함.
+ * 
+ * @param req - 인증된 사용자 요청 객체
+ * @param res - HTTP 응답 객체
+ * @returns 예산 통합 요약 정보
+ */
 export const getBudgetSummary = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -271,7 +335,16 @@ export const getBudgetSummary = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 예산 알림 조회
+/**
+ * 예산 관련 알림 목록 조회 컨트롤러 함수
+ * 
+ * 예산 초과, 임계점 도달, 기간 만료 등의 알림 정보를 제공.
+ * 사용자에게 예산 관리에 대한 주의사항이나 경고를 전달.
+ * 
+ * @param req - 인증된 사용자 요청 객체
+ * @param res - HTTP 응답 객체
+ * @returns 예산 알림 목록
+ */
 export const getBudgetAlerts = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -303,7 +376,26 @@ export const getBudgetAlerts = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 예산 수정
+/**
+ * 기존 예산 정보 수정 컨트롤러 함수
+ * 
+ * 예산 금액, 기간 등의 정보 부분적으로 업데이트 가능.
+ * 동적 쿼리 생성을 통해 변경된 필드만 업데이트.
+ * 
+ * 수정 가능한 필드:
+ * - amount: 예산 금액
+ * - period_start: 예산 시작일
+ * - period_end: 예산 종료일
+ * 
+ * 검증 사항:
+ * - 예산 소유권 확인 (본인 예산만 수정 가능)
+ * - 최소 하나 이상의 수정 필드 존재
+ * - 업데이트 시간 자동 갱신
+ * 
+ * @param req - 인증된 사용자 요청 객체 (예산 ID 및 수정 데이터 포함)
+ * @param res - HTTP 응답 객체
+ * @returns 수정된 예산 정보
+ */
 export const updateBudget = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -386,7 +478,25 @@ export const updateBudget = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 예산 삭제
+/**
+ * 예산 삭제 컨트롤러 함수
+ * 
+ * 사용자의 기존 예산 완전히 삭제.
+ * 소유권 검증을 통해 본인의 예산만 삭제 가능.
+ * 
+ * 보안 검증:
+ * - 사용자 인증 상태 확인
+ * - 예산 소유권 확인 (user_id 매칭)
+ * - 존재하지 않는 예산에 대한 404 처리
+ * 
+ * 참고:
+ * - 하드 삭제로 데이터가 완전히 제거됨
+ * - 삭제된 예산과 관련된 거래 데이터는 유지됨
+ * 
+ * @param req - 인증된 사용자 요청 객체 (예산 ID 포함)
+ * @param res - HTTP 응답 객체
+ * @returns 삭제 성공/실패 메시지
+ */
 export const deleteBudget = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -425,7 +535,22 @@ export const deleteBudget = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 현재 월의 예산 현황 요약
+/**
+ * 현재 월의 예산 현황 요약 및 조회하는 컨트롤러 함수
+ * 
+ * 이번 달에 해당하는 모든 예산의 실행 현황 분석하여 제공.
+ * 월별 예산 관리 대시보드의 핵심 데이터 생성.
+ * 
+ * 제공 정보:
+ * - 개별 예산별 지출 현황 및 잔여 금액
+ * - 예산 사용률 및 초과 여부 분석
+ * - 월 전체 예산 통계 (총 예산, 총 지출, 초과 건수)
+ * - 카테고리별 예산 진행 상황
+ * 
+ * @param req - 인증된 사용자 요청 객체
+ * @param res - HTTP 응답 객체
+ * @returns 현재 월 예산 현황 요약 정보
+ */
 export const getCurrentMonthBudgetSummary = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.id;

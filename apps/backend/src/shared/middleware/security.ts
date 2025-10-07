@@ -1,3 +1,20 @@
+/**
+ * 보안 미들웨어 모음
+ * 
+ * Express.js 애플리케이션의 전반적인 보안을 강화하는 다양한 보안 미들웨어 제공.
+ * OWASP Top 10 보안 취약점을 방지하고 엔터프라이즈 수준의 애플리케이션 보안 달성.
+ * 
+ * 주요 보안 기능:
+ * - XSS(Cross-Site Scripting) 공격 방지
+ * - CSRF(Cross-Site Request Forgery) 공격 방지
+ * - SQL Injection 및 NoSQL Injection 방지
+ * - Rate Limiting 및 DDoS 공격 차단
+ * - 입력 데이터 살균화 및 유효성 검사
+ * - CORS(Cross-Origin Resource Sharing) 정책 관리
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import slowDown from 'express-slow-down';
@@ -8,19 +25,30 @@ import validator from 'validator';
 import { ValidationError, AuthenticationError } from '../utils/errors';
 import logger, { loggerHelpers } from '../utils/logger';
 
-// Rate Limiting 설정
+/**
+ * 사용자 정의 Rate Limiter 생성 함수
+ * 
+ * 다양한 API 엔드포인트에 맞는 맞춤형 요청 제한 정책을 생성.
+ * 보안에 민감한 API(로그인, 회원가입)는 더 엄격한 제한을 적용.
+ * 
+ * @param windowMs - 제한 시간 창 (밀리초)
+ * @param max - 시간 창 내 최대 요청 횟수
+ * @param message - 제한 초과 시 표시할 메시지
+ * @returns 설정된 Rate Limiter Express 미들웨어
+ */
 export const createRateLimit = (windowMs: number, max: number, message: string) => {
   return rateLimit({
-    windowMs,
-    max,
+    windowMs,                    // 제한 시간 창 (밀리초)
+    max,                         // 시간 창 내 최대 요청 횟수
     message: {
       success: false,
       message,
       errorCode: 'RATE_LIMIT_EXCEEDED'
     },
-    standardHeaders: true,
-    legacyHeaders: false,
+    standardHeaders: true,       // 표준 Rate Limit 헤더 사용
+    legacyHeaders: false,        // 레거시 헤더 비활성화
     handler: (req, res) => {
+      // 제한 초과 시 보안 로깅 및 알림
       logger.warn('Rate limit exceeded', {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
@@ -37,28 +65,36 @@ export const createRateLimit = (windowMs: number, max: number, message: string) 
   });
 };
 
-// 일반 API용 Rate Limit
+/**
+ * 일반 API용 Rate Limit 설정
+ */
 export const generalRateLimit = createRateLimit(
   15 * 60 * 1000, // 15분
   100, // 요청 100개
   '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.'
 );
 
-// 인증 API용 Rate Limit (더 엄격)
+/**
+ * 인증 관련 API용 Rate Limit 설정
+ */
 export const authRateLimit = createRateLimit(
   15 * 60 * 1000, // 15분
   process.env.NODE_ENV === 'test' ? 1000 : 5, // 테스트 환경에서는 더 관대하게
   '로그인 시도가 너무 많습니다. 15분 후 다시 시도해주세요.'
 );
 
-// 민감한 작업용 Rate Limit
+/**
+ * 민감한 작업용 Rate Limit 설정
+ */
 export const sensitiveActionLimit = createRateLimit(
   60 * 60 * 1000, // 1시간
   process.env.NODE_ENV === 'test' ? 1000 : 3, // 테스트 환경에서는 더 관대하게
   '민감한 작업 요청이 너무 많습니다. 1시간 후 다시 시도해주세요.'
 );
 
-// 속도 제한 (점진적 지연)
+/**
+ * 속도 제한 미들웨어
+ */
 export const speedLimiter = slowDown({
   windowMs: 15 * 60 * 1000, // 15분
   delayAfter: process.env.NODE_ENV === 'test' ? 1000 : 50, // 테스트 환경에서는 비활성화
@@ -69,7 +105,9 @@ export const speedLimiter = slowDown({
   }
 });
 
-// CORS 설정
+/**
+ * CORS 설정
+ */
 export const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
@@ -111,7 +149,9 @@ export const corsOptions = {
   exposedHeaders: ['X-Total-Count', 'X-Page-Count']
 };
 
-// Helmet 보안 헤더 설정
+/**
+ * Helmet 보안 헤더 설정
+ */
 export const helmetConfig = helmet({
   contentSecurityPolicy: {
     directives: {
@@ -137,7 +177,9 @@ export const helmetConfig = helmet({
 });
 
 /**
- * XSS 방지를 위한 입력 검증 및 정화
+ * 입력 문자열 정화 및 XSS 공격 방지
+ * @param input - 정화할 입력 문자열
+ * @returns - 정화된 문자열
  */
 export const sanitizeInput = (input: any): string => {
   if (typeof input !== 'string') {
@@ -163,6 +205,9 @@ export const sanitizeInput = (input: any): string => {
 
 /**
  * 요청 본문 정화 미들웨어
+ * @param req - 요청 객체
+ * @param res - 응답 객체
+ * @param next - 다음 미들웨어 함수
  */
 export const sanitizeRequestBody = (req: Request, res: Response, next: NextFunction) => {
   if (req.body && typeof req.body === 'object') {
@@ -195,7 +240,10 @@ export const sanitizeRequestBody = (req: Request, res: Response, next: NextFunct
 };
 
 /**
- * CSRF 토큰 검증을 위한 간단한 미들웨어
+ * CSRF 보호 미들웨어
+ * @param req - 요청 객체
+ * @param res - 응답 객체
+ * @param next - 다음 미들웨어 함수
  */
 export const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
   // GET, HEAD, OPTIONS 요청은 CSRF 검증 제외
@@ -223,15 +271,14 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction) 
 };
 
 /**
- * CSRF 토큰 생성
+ * 랜덤한 CSRF 토큰 생성
+ * @returns 랜덤한 CSRF 토큰
  */
 export const generateCSRFToken = (): string => {
   return require('crypto').randomBytes(32).toString('hex');
 };
 
-/**
- * 헬멧 보안 헤더 설정
- */
+// 보안 헤더 설정 미들웨어
 export const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
@@ -258,9 +305,7 @@ export const securityHeaders = helmet({
   referrerPolicy: { policy: 'same-origin' }
 });
 
-/**
- * 인증 관련 요청 제한
- */
+// 인증 관련 요청 제한
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15분
   max: 5, // 최대 5번 시도
@@ -280,9 +325,7 @@ export const authLimiter = rateLimit({
   }
 });
 
-/**
- * 일반 API 요청 제한
- */
+// 일반 API 요청 제한
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15분
   max: 100, // 최대 100번 요청
@@ -297,6 +340,8 @@ export const apiLimiter = rateLimit({
 
 /**
  * 이메일 형식 검증
+ * @param value - 검증할 이메일 문자열
+ * @returns 유효한 이메일 형식이면 true, 그렇지 않으면 false
  */
 export const isValidEmail = (value: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -305,6 +350,8 @@ export const isValidEmail = (value: string): boolean => {
 
 /**
  * 비밀번호 강도 검증
+ * @param value - 검증할 비밀번호 문자열
+ * @returns 비밀번호 강도 검증 결과
  */
 export const isStrongPassword = (value: string): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
@@ -332,28 +379,58 @@ export const isStrongPassword = (value: string): { isValid: boolean; errors: str
   return { isValid: errors.length === 0, errors };
 };
 
-// 간단한 검증 함수들
+/**
+ * 이메일 형식 검증
+ * @param email - 검증할 이메일 문자열
+ * @returns 유효한 이메일 형식이면 true, 그렇지 않으면 false
+ */
 export const validateEmail = (email: string): boolean => {
   return isValidEmail(email) && email.length <= 255;
 };
 
+/**
+ * 비밀번호 검증
+ * @param password - 검증할 비밀번호 문자열
+ * @returns 비밀번호 강도 검증 결과
+ */
 export const validatePassword = (password: string): { isValid: boolean; errors: string[] } => {
   return isStrongPassword(password);
 };
 
+/**
+ * 이름 검증
+ * @param name - 검증할 이름 문자열
+ * @returns 유효한 이름 형식이면 true, 그렇지 않으면 false
+ */
 export const validateName = (name: string): boolean => {
   return name.length >= 2 && name.length <= 50 && /^[a-zA-Z가-힣\s]+$/.test(name);
 };
 
+/**
+ * 금액 검증
+ * @param amount - 검증할 금액
+ * @returns 유효한 금액 형식이면 true, 그렇지 않으면 false
+ */
 export const validateAmount = (amount: number): boolean => {
   return amount >= 0.01 && amount <= 999999999.99;
 };
 
+/**
+ * 카테고리 키 검증
+ * @param categoryKey - 검증할 카테고리 키 문자열
+ * @returns 유효한 카테고리 키 형식이면 true, 그렇지 않으면 false
+ */
 export const validateCategoryKey = (categoryKey: string): boolean => {
   return categoryKey.length >= 1 && categoryKey.length <= 100 && /^[a-zA-Z0-9_]+$/.test(categoryKey);
 };
 
-// 회원가입 검증 미들웨어
+/**
+ * 회원가입 검증 미들웨어
+ * @param req - 요청 객체
+ * @param res - 응답 객체
+ * @param next - 다음 미들웨어 함수
+ * @returns 유효성 검사 결과에 따라 다음 미들웨어 호출 또는 400 에러 응답
+ */
 export const validateRegister = (req: Request, res: Response, next: NextFunction) => {
   const { email, password, name } = req.body;
   const errors: string[] = [];
@@ -389,7 +466,12 @@ export const validateRegister = (req: Request, res: Response, next: NextFunction
   next();
 };
 
-// 로그인 검증 미들웨어
+/**
+ * 로그인 검증 미들웨어
+ * @param req - 요청 객체
+ * @param res - 응답 객체
+ * @param next - 다음 미들웨어 함수
+ */
 export const validateLogin = (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
   const errors: string[] = [];
@@ -415,7 +497,12 @@ export const validateLogin = (req: Request, res: Response, next: NextFunction) =
   next();
 };
 
-// 거래 검증 미들웨어
+/**
+ * 거래 검증 미들웨어
+ * @param req - 요청 객체
+ * @param res - 응답 객체
+ * @param next - 다음 미들웨어 함수
+ */
 export const validateTransaction = (req: Request, res: Response, next: NextFunction) => {
   const { category_key, transaction_type, amount, description, transaction_date } = req.body;
   const errors: string[] = [];
@@ -456,7 +543,12 @@ export const validateTransaction = (req: Request, res: Response, next: NextFunct
   next();
 };
 
-// 예산 검증 미들웨어
+/**
+ * 예산 검증 미들웨어
+ * @param req - 요청 객체
+ * @param res - 응답 객체
+ * @param next - 다음 미들웨어 함수
+ */
 export const validateBudget = (req: Request, res: Response, next: NextFunction) => {
   const { category_key, amount, period_start, period_end } = req.body;
   const errors: string[] = [];
@@ -496,6 +588,9 @@ export const validateBudget = (req: Request, res: Response, next: NextFunction) 
 
 /**
  * SQL Injection 방지를 위한 쿼리 매개변수 검증
+ * @param req - 요청 객체
+ * @param res - 응답 객체
+ * @param next - 다음 미들웨어 함수
  */
 export const sanitizeQueryParams = (req: Request, res: Response, next: NextFunction) => {
   const dangerousPatterns = [
@@ -544,6 +639,9 @@ export const sanitizeQueryParams = (req: Request, res: Response, next: NextFunct
 
 /**
  * 보안 로깅 미들웨어
+ * @param req - 요청 객체
+ * @param res - 응답 객체
+ * @param next - 다음 미들웨어 함수
  */
 export const securityLogger = (req: Request, res: Response, next: NextFunction) => {
   const suspiciousPatterns = [
@@ -581,7 +679,12 @@ export const securityLogger = (req: Request, res: Response, next: NextFunction) 
   next();
 };
 
-// XSS 방지 미들웨어
+/**
+ * XSS 방지 미들웨어
+ * @param req - 요청 객체
+ * @param res - 응답 객체
+ * @param next - 다음 미들웨어 함수
+ */
 export const xssProtection = (req: Request, res: Response, next: NextFunction) => {
   try {
     // 요청 본문의 모든 문자열 필드를 XSS로부터 보호
@@ -632,7 +735,12 @@ export const xssProtection = (req: Request, res: Response, next: NextFunction) =
   }
 };
 
-// SQL 인젝션 방지
+/**
+ * SQL 인젝션 방지 미들웨어
+ * @param req - 요청 객체
+ * @param res - 응답 객체
+ * @param next - 다음 미들웨어 함수
+ */
 export const sqlInjectionProtection = (req: Request, res: Response, next: NextFunction) => {
   const suspiciousPatterns = [
     /(\%27)|(\')|(\-\-)|(\%23)|(#)/gi,
@@ -647,6 +755,7 @@ export const sqlInjectionProtection = (req: Request, res: Response, next: NextFu
     /DROP(?:\s+TABLE)?\s+/gi
   ];
 
+  // 단일 값 검사
   const checkValue = (value: any, path: string): boolean => {
     if (typeof value === 'string') {
       for (const pattern of suspiciousPatterns) {
@@ -666,6 +775,7 @@ export const sqlInjectionProtection = (req: Request, res: Response, next: NextFu
     return false;
   };
 
+  // 객체 재귀 검사
   const validateObject = (obj: any, basePath: string = ''): boolean => {
     for (const [key, value] of Object.entries(obj)) {
       const currentPath = basePath ? `${basePath}.${key}` : key;
@@ -715,7 +825,9 @@ export const sqlInjectionProtection = (req: Request, res: Response, next: NextFu
   }
 };
 
-// 파일 업로드 보안
+/**
+ * 파일 업로드 보안 설정
+ */
 export const fileUploadSecurity = {
   // 허용된 MIME 타입
   allowedMimeTypes: [
@@ -772,7 +884,9 @@ export const fileUploadSecurity = {
   }
 };
 
-// 요청 크기 제한
+/**
+ * 요청 본문 크기 제한 설정
+ */
 export const requestSizeLimits = {
   // JSON 페이로드 크기 제한 (1MB)
   json: '1mb',
@@ -824,7 +938,13 @@ export const ipFiltering = (req: Request, res: Response, next: NextFunction) => 
   next();
 };
 
-// 보안 헤더 검증
+/**
+ * 보안 헤더 검증 미들웨어  
+ * @param req - 요청 객체
+ * @param res - 응답 객체
+ * @param next - 다음 미들웨어 함수
+ * @returns 보안 헤더가 의심스러운 경우 403 또는 415 상태 코드 응답, 그렇지 않으면 다음 미들웨어 호출
+ */
 export const securityHeadersValidation = (req: Request, res: Response, next: NextFunction) => {
   const userAgent = req.get('User-Agent');
   const contentType = req.get('Content-Type');

@@ -1,3 +1,18 @@
+/**
+ * 모니터링 유틸리티
+ * 
+ * 성능 메트릭 수집, 헬스체크, 시스템 정보 조회 등을 담당
+ * 
+ * 주요 기능:
+ * - 요청 및 응답 시간 추적
+ * - 에러율 및 활성 연결 수 모니터링
+ * - 메모리 및 CPU 사용량 추적
+ * - 헬스체크 엔드포인트 제공
+ * - 데이터베이스 연결 상태 확인
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import os from 'os';
 import process from 'process';
@@ -6,29 +21,34 @@ import logger from './logger';
 
 // 성능 메트릭 인터페이스
 interface PerformanceMetrics {
-  requestCount: number;
-  responseTime: {
+  requestCount: number; // 총 요청 수
+  responseTime: {       // 응답 시간 통계
     min: number;
     max: number;
     avg: number;
     total: number;
   };
-  errors: number;
-  activeConnections: number;
-  memoryUsage: NodeJS.MemoryUsage;
-  cpuUsage: NodeJS.CpuUsage;
-  systemLoad: number[];
-  uptime: number;
+  errors: number;             // 총 에러 수
+  activeConnections: number;  // 현재 활성 연결 수
+  memoryUsage: NodeJS.MemoryUsage;  // 메모리 사용량
+  cpuUsage: NodeJS.CpuUsage;        // CPU 사용량
+  systemLoad: number[];             // 1, 5, 15분 평균 시스템 부하
+  uptime: number;                   // 프로세스 가동 시간
 }
 
-// 성능 메트릭 저장소
+/**
+ * 메트릭 수집기 클래스
+ * 
+ * 요청 및 시스템 메트릭을 수집하고 관리
+ */
 class MetricsCollector {
-  private metrics: PerformanceMetrics;
-  private metricsInterval?: NodeJS.Timeout;
-  private responseTimes: number[];
-  private maxResponseTimeHistory: number;
-  private lastCpuUsage: NodeJS.CpuUsage;
+  private metrics: PerformanceMetrics;    // 성능 메트릭
+  private metricsInterval?: NodeJS.Timeout; // 주기적 메트릭 업데이트 타이머
+  private responseTimes: number[];        // 응답 시간 기록
+  private maxResponseTimeHistory: number; // 최대 응답 시간 기록 개수
+  private lastCpuUsage: NodeJS.CpuUsage;  // 마지막 CPU 사용량 (차이 계산용)
 
+  // 생성자 - 초기 메트릭 설정 및 주기적 업데이트 시작
   constructor() {
     this.metrics = {
       requestCount: 0,
@@ -174,7 +194,12 @@ class MetricsCollector {
 // 전역 메트릭 수집기
 const metricsCollector = new MetricsCollector();
 
-// 성능 모니터링 미들웨어
+/**
+ * 성능 모니터링 미들웨어
+ * @param req - Express 요청 객체
+ * @param res - Express 응답 객체
+ * @param next - 다음 미들웨어 함수
+ */
 export const performanceMonitoring = (req: Request, res: Response, next: NextFunction) => {
   const startTime = performance.now();
   
@@ -226,7 +251,12 @@ export const performanceMonitoring = (req: Request, res: Response, next: NextFun
   next();
 };
 
-// 메트릭 수집 라우트
+/**
+ * 메트릭 수집 라우트
+ * @param req - Express 요청 객체
+ * @param res - Express 응답 객체
+ * @returns JSON 형식의 메트릭 데이터
+ */
 export const getMetrics = (req: Request, res: Response) => {
   try {
     const metrics = metricsCollector.getDetailedMetrics();
@@ -249,7 +279,11 @@ export const getMetrics = (req: Request, res: Response) => {
   }
 };
 
-// 간단한 헬스체크
+/**
+ * 헬스체크 엔드포인트
+ * @param req - Express 요청 객체
+ * @param res - Express 응답 객체
+ */
 export const healthCheck = (req: Request, res: Response) => {
   try {
     const metrics = metricsCollector.getMetrics();
@@ -314,10 +348,13 @@ export const healthCheck = (req: Request, res: Response) => {
   }
 };
 
-// 데이터베이스 헬스체크 (database.ts의 checkConnection 사용)
+/**
+ * 데이터베이스 헬스체크
+ * @param req - Express 요청 객체
+ * @param res - Express 응답 객체
+ */
 export const databaseHealthCheck = async (req: Request, res: Response) => {
   try {
-    // database.ts에서 가져올 checkConnection 함수 (실제 구현에서는 import 필요)
     const { checkConnection } = await import('../../core/config/database');
     
     const dbStatus = await checkConnection();
@@ -340,7 +377,12 @@ export const databaseHealthCheck = async (req: Request, res: Response) => {
   }
 };
 
-// 메트릭 리셋 (개발/테스트 환경에서만 사용)
+/**
+ * 메트릭 리셋 엔드포인트
+ * @param req - Express 요청 객체
+ * @param res - Express 응답 객체
+ * @returns 메트릭 리셋 결과
+ */
 export const resetMetrics = (req: Request, res: Response) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(403).json({
@@ -359,7 +401,11 @@ export const resetMetrics = (req: Request, res: Response) => {
   });
 };
 
-// 시스템 정보 조회
+/**
+ * 시스템 정보 조회
+ * @param req - Express 요청 객체
+ * @param res - Express 응답 객체
+ */
 export const getSystemInfo = (req: Request, res: Response) => {
   try {
     const metrics = metricsCollector.getDetailedMetrics();
@@ -393,6 +439,7 @@ export const getSystemInfo = (req: Request, res: Response) => {
 // 경고 임계값 모니터링
 let thresholdMonitorInterval: NodeJS.Timeout;
 
+// 임계값 모니터링 함수
 const monitorThresholds = () => {
   if (process.env.NODE_ENV === 'test') {
     return; // 테스트 환경에서는 모니터링 비활성화
@@ -439,7 +486,9 @@ const monitorThresholds = () => {
   }, 30000); // 30초마다 체크 (빠른 감지로 최적화)
 };
 
-// 모니터링 정리 함수
+/**
+ * 모니터링 정리 함수
+ */
 export const cleanupMonitoring = () => {
   if (thresholdMonitorInterval) {
     clearInterval(thresholdMonitorInterval);

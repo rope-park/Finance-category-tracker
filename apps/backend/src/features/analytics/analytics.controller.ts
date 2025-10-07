@@ -1,9 +1,30 @@
+/**
+ * 분석 및 통계 컨트롤러
+ * 
+ * 사용자의 재정 데이터를 분석하여 유용한 인사이트 제공.
+ * 복잡한 통계 계산과 데이터 집계 담당.
+ * 
+ * 주요 기능:
+ * - 지출 패턴 분석 (월별, 카테고리별)
+ * - 수입/지출 트렌드 분석
+ * - 예산 대비 실제 지출 비교
+ * - 카테고리별 상세 분석
+ * - 시각화를 위한 데이터 가공
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import { Request, Response } from 'express';
 import { AuthRequest } from '../../shared/middleware/auth';
 import { ApiResponse } from '@finance-tracker/shared';
 import { AnalyticsRepository } from './analytics.repository';
 import logger from '../../shared/utils/logger';
 
+/**
+ * 분석 컨트롤러 클래스
+ * 
+ * 사용자의 재정 데이터를 분석하여 다양한 인사이트를 제공하는 메서드들을 포함.
+ */
 export class AnalyticsController {
   private analyticsRepo: AnalyticsRepository;
 

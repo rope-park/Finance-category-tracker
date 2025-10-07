@@ -1,7 +1,27 @@
+/**
+ * 캐시 미들웨어
+ * 
+ * 다양한 라우트에 대해 캐시 미들웨어를 생성하고, 캐시 무효화 미들웨어도 함께 제공.
+ * 캐시 키 생성, TTL 설정, 조건부 캐싱 등을 지원.
+ * 
+ * 주요 기능:
+ * - createCacheMiddleware: 캐시 미들웨어 생성기
+ * - invalidateCacheMiddleware: 특정 패턴의 캐시 무효화 미들웨어
+ * - invalidateUserCache: 사용자별 캐시 무효화
+ * - cacheMiddlewares: 자주 사용하는 라우트용 캐시 미들웨어 모음
+ * - cacheInvalidators: 자주 사용하는 캐시 무효화 미들웨어 모음
+ * - 캐시 히트/미스에 따른 응답 헤더 설정
+ */
 import { Request, Response, NextFunction } from 'express';
 import { cacheService, CacheKeys, CacheTTL } from '../services/cacheService';
 import logger from '../utils/logger';
 
+/**
+ * 캐시 옵션 인터페이스
+ * 
+ * 캐시 미들웨어 생성 시 설정 가능한 옵션들을 정의.
+ * TTL, 캐시 키 생성기, 조건부 캐싱 함수 등을 포함.
+ */
 interface CacheOptions {
   ttl?: number;
   keyGenerator?: (req: Request) => string;
@@ -9,7 +29,13 @@ interface CacheOptions {
   skipCache?: (req: Request) => boolean;
 }
 
-// 캐시 미들웨어 생성기
+/** 
+ * 캐시 미들웨어 생성기
+ * 
+ * 주어진 옵션에 따라 캐시 미들웨어를 생성.
+ * GET 요청에 대해 기본적으로 캐싱하며, 조건부 캐싱 및 캐시 건너뛰기 기능 지원.
+ * 캐시 히트 시 응답을 즉시 반환하고, 미스 시 원본 응답을 캐시에 저장.
+ */
 export const createCacheMiddleware = (options: CacheOptions = {}) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const {
@@ -78,7 +104,15 @@ export const createCacheMiddleware = (options: CacheOptions = {}) => {
   };
 };
 
-// 특정 패턴의 캐시 무효화 미들웨어
+/**
+ * 캐시 무효화 미들웨어
+ * 
+ * 특정 패턴에 매칭되는 캐시 항목들을 무효화.
+ * 성공적인 응답 후에만 캐시를 무효화하여 불필요한 삭제 방지.
+ *  
+ * @param patterns - 무효화할 캐시 키 패턴들의 배열 또는 요청에 따라 동적으로 생성하는 함수
+ * @returns 미들웨어 함수
+ */
 export const invalidateCacheMiddleware = (patterns: string[] | ((req: Request) => string[])) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const originalJson = res.json.bind(res);
@@ -104,7 +138,14 @@ export const invalidateCacheMiddleware = (patterns: string[] | ((req: Request) =
   };
 };
 
-// 사용자별 캐시 무효화
+/**
+ * 사용자별 캐시 무효화 미들웨어
+ * 
+ * 사용자 관련 캐시들을 한 번에 무효화.
+ * 
+ * @param userId - 무효화할 사용자의 ID
+ * @returns 미들웨어 함수
+ */
 export const invalidateUserCache = (userId: string) => {
   return invalidateCacheMiddleware([
     `user:${userId}*`,
@@ -115,7 +156,12 @@ export const invalidateUserCache = (userId: string) => {
   ]);
 };
 
-// 특정 라우트용 캐시 미들웨어들
+/**
+ * 자주 사용하는 캐시 미들웨어들
+ * 
+ * 사용자 프로필, 거래 내역, 예산 정보, 분석 데이터 등 주요 라우트에 대해
+ * 미리 정의된 캐시 미들웨어들을 제공.
+ */
 export const cacheMiddlewares = {
   // 사용자 프로필 (장기 캐시)
   userProfile: createCacheMiddleware({
@@ -163,7 +209,12 @@ export const cacheMiddlewares = {
   }),
 };
 
-// 캐시 무효화 미들웨어들
+/**
+ * 자주 사용하는 캐시 무효화 미들웨어들
+ * 
+ * 거래, 예산, 카테고리, 사용자 프로필 등 주요 리소스 변경 시
+ * 관련된 캐시들을 무효화하는 미들웨어 모음.
+ */
 export const cacheInvalidators = {
   // 거래 생성/수정/삭제 시
   transactions: (req: Request) => invalidateCacheMiddleware([

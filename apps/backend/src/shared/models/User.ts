@@ -1,3 +1,17 @@
+/**
+ * User 관련 API 라우터 모델
+ * 
+ * 사용자 프로필 조회, 업데이트, 계정 삭제, 비밀번호 변경 등의 기능을 제공하는 API 라우터.
+ * 각 엔드포인트는 인증 미들웨어를 통해 보호되며, 사용자 데이터의 보안과 무결성을 보장.
+ * 
+ * 주요 기능:
+ * - 사용자 프로필 조회 및 업데이트
+ * - 사용자 계정 삭제
+ * - 비밀번호 변경
+ * - 입력 데이터 검증 및 오류 처리
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
 import express from 'express';
 import pool from '../../core/config/database';
 import { authenticateToken } from '../middleware/auth';
@@ -6,7 +20,16 @@ import { handleValidationErrors } from '../middleware/validation';
 
 const router = express.Router();
 
-// 프로필 조회
+/**
+ * GET /api/users/profile
+ * 사용자 프로필 조회
+ * 
+ * 인증된 사용자의 프로필 정보를 조회하여 반환.
+ * 
+ * @route GET /api/users/profile
+ * @access Private (인증 필요)
+ * @returns {Object} 사용자 프로필 정보
+ */
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const userId = (req as any).user.userId;
@@ -39,7 +62,16 @@ router.get('/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// 프로필 업데이트
+/**
+ * PUT /api/users/profile
+ * 사용자 프로필 업데이트
+ * 
+ * 인증된 사용자가 자신의 프로필 정보를 수정.
+ * 
+ * @route PUT /api/users/profile
+ * @access Private (인증 필요)
+ * @body {string} [name] - 사용자 이름
+ */
 router.put('/profile', authenticateToken, async (req, res) => {
   console.log('📝 프로필 업데이트 요청:', req.body);
   
@@ -152,7 +184,16 @@ router.put('/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// 사용자 계정 삭제 (프로필 경로)
+/**
+ * DELETE /api/users/profile
+ * 사용자 프로필 삭제
+ * 
+ * 인증된 사용자가 자신의 계정을 삭제.
+ * 
+ * @route DELETE /api/users/profile
+ * @access Private (인증 필요)
+ * @returns {Object} 삭제 성공 메시지
+ */
 router.delete('/profile', authenticateToken, async (req, res) => {
   try {
     const userId = (req as any).user.userId;
@@ -184,7 +225,16 @@ router.delete('/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// 사용자 계정 삭제
+/**
+ * DELETE /api/users/account
+ * 사용자 계정 삭제 (프로필 경로)
+ * 
+ * 인증된 사용자가 자신의 계정 삭제.
+ * 
+ * @route DELETE /api/users/account
+ * @access Private (인증 필요)
+ * @returns {Object} 삭제 성공 메시지
+ */
 router.delete('/account', authenticateToken, async (req, res) => {
   try {
     const userId = (req as any).user.userId;
@@ -222,7 +272,18 @@ router.delete('/account', authenticateToken, async (req, res) => {
   }
 });
 
-// 비밀번호 변경
+/**
+ * PATCH /api/users/password
+ * 비밀번호 변경
+ * 
+ * 인증된 사용자가 자신의 비밀번호를 변경.
+ * 
+ * @route PATCH /api/users/password
+ * @access Private (인증 필요)
+ * @body {string} currentPassword - 현재 비밀번호
+ * @body {string} newPassword - 새 비밀번호
+ * @returns {Object} 변경 성공 메시지
+ */
 router.patch(
   '/password',
   authenticateToken,

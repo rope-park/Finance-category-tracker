@@ -1,29 +1,56 @@
+/**
+ * 커뮤니티 데이터 접근 레이어 (Repository)
+ * 
+ * 커뮤니티 게시글, 댓글, 좋아요 등 사용자 간 소통과 정보 공유 기능의 데이터 접근 계층.
+ * 익명 게시 기능과 적절한 콘텐츠 필터링을 통해 건전한 커뮤니티 환경 지원.
+ *
+ * 주요 기능:
+ * - 게시글 CRUD: 게시글 작성, 조회, 수정, 삭제
+ * - 댓글 관리: 댓글 작성, 대댓글 지원, 수정, 삭제
+ * - 좋아요 기능: 게시글 및 댓글에 대한 좋아요/취소
+ * - 게시글 조회수 및 통계: 인기 게시글, 태그별 인기글, 사용자 활동 통계
+ * - 익명 게시 지원: 익명 게시글 및 댓글 작성 기능
+ * - 콘텐츠 필터링: 부적절한 내용 필터링 및 신고 기능 연동
+ * - 페이징 및 정렬: 게시글 및 댓글 목록의 페이징 처리와 다양한 정렬 옵션 지원
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import pool from '../../core/config/database';
 
+/** 게시글 생성 데이터 인터페이스 */
 export interface PostData {
-  title: string;
-  content: string;
-  category: string;
-  tags?: string[];
-  isAnonymous?: boolean;
-  authorId: number;
-  status: string;
-  likesCount: number;
-  commentsCount: number;
-  viewsCount: number;
+  title: string;          // 게시글 제목
+  content: string;        // 게시글 내용
+  category: string;       // 카테고리
+  tags?: string[];        // 태그 목록
+  isAnonymous?: boolean;  // 익명 여부
+  authorId: number;       // 작성자 ID
+  status: string;         // 게시글 상태
+  likesCount: number;     // 좋아요 수
+  commentsCount: number;  // 댓글 수
+  viewsCount: number;     // 조회수
 }
 
+/** 댓글 생성 데이터 인터페이스 */
 export interface CommentData {
-  postId: number;
-  authorId: number;
-  content: string;
-  parentCommentId?: number;
-  isAnonymous?: boolean;
-  likesCount: number;
+  postId: number;             // 대상 게시글 ID
+  authorId: number;           // 댓글 작성자 ID
+  content: string;            // 댓글 내용
+  parentCommentId?: number;   // 부모 댓글 ID (대댓글인 경우)
+  isAnonymous?: boolean;      // 익명 여부
+  likesCount: number;         // 좋아요 수
 }
 
+/**
+ * 커뮤니티 관련 데이터베이스 작업을 처리하는 리포지토리 클래스
+ */
 export class CommunityRepository {
-  // 포스트 생성
+  /**
+   * 새로운 게시글 생성
+   * @param postData - 게시글 생성에 필요한 데이터 객체
+   * @return 생성된 게시글 객체
+   */
   async createPost(postData: PostData): Promise<any> {
     const query = `
       INSERT INTO community_posts (author_id, title, content, category, tags, likes_count, comments_count, views_count, is_anonymous, status, created_at, updated_at)
@@ -48,7 +75,11 @@ export class CommunityRepository {
     return result.rows[0];
   }
 
-  // 포스트 목록 조회
+  /**
+   * 게시글 목록 필터 조건에 따라 조회
+   * @param filters - 필터 및 페이징 옵션 객체
+   * @return 필터링된 게시글 목록과 전체 개수
+   */
   async findPosts(filters: any): Promise<{ posts: any[]; total: number }> {
     let whereClause = 'WHERE p.status = $1';
     const values: any[] = ['published'];
@@ -117,7 +148,11 @@ export class CommunityRepository {
     };
   }
 
-  // 포스트 상세 조회
+  /**
+   * 게시글 ID로 단일 게시글 조회
+   * @param postId - 조회할 게시글 ID
+   * @return 조회된 게시글 객체
+   */
   async findPostById(postId: number): Promise<any> {
     const query = `
       SELECT p.*, 
@@ -138,7 +173,10 @@ export class CommunityRepository {
     return post;
   }
 
-  // 조회수 증가
+  /**
+   * 게시글 조회수 1 증가
+   * @param postId - 조회수를 증가시킬 게시글 ID
+   */
   async incrementViews(postId: number): Promise<void> {
     const query = `
       UPDATE community_posts 
@@ -149,7 +187,11 @@ export class CommunityRepository {
     await pool.query(query, [postId]);
   }
 
-  // 댓글 생성
+  /**
+   * 새로운 댓글 생성
+   * @param commentData - 댓글 생성에 필요한 데이터 객체
+   * @return 생성된 댓글 객체
+   */
   async createComment(commentData: CommentData): Promise<any> {
     const query = `
       INSERT INTO post_comments (post_id, author_id, content, parent_comment_id, is_anonymous, likes_count, created_at, updated_at)
@@ -170,7 +212,10 @@ export class CommunityRepository {
     return result.rows[0];
   }
 
-  // 댓글 수 증가
+  /**
+   * 게시글의 댓글 수 1 증가
+   * @param postId - 댓글 수를 증가시킬 게시글 ID
+   */
   async incrementCommentCount(postId: number): Promise<void> {
     const query = `
       UPDATE community_posts 
@@ -181,7 +226,12 @@ export class CommunityRepository {
     await pool.query(query, [postId]);
   }
 
-  // 좋아요 조회
+  /**
+   * 사용자의 특정 게시글 좋아요 여부 확인
+   * @param postId - 확인할 게시글 ID
+   * @param userId - 확인할 사용자 ID
+   * @return 좋아요 여부 (있으면 객체, 없으면 null)
+   */
   async findLike(postId: number, userId: number): Promise<any> {
     const query = `
       SELECT * FROM post_likes 
@@ -192,7 +242,12 @@ export class CommunityRepository {
     return result.rows[0];
   }
 
-  // 좋아요 생성
+  /**
+   * 게시글에 좋아요 추가
+   * @param postId - 좋아요를 추가할 게시글 ID
+   * @param userId - 좋아요를 추가할 사용자 ID
+   * @return 생성된 좋아요 객체
+   */
   async createLike(postId: number, userId: number): Promise<any> {
     const query = `
       INSERT INTO post_likes (post_id, user_id, created_at)
@@ -204,7 +259,11 @@ export class CommunityRepository {
     return result.rows[0];
   }
 
-  // 좋아요 삭제
+  /**
+   * 게시글에서 좋아요 제거
+   * @param postId - 좋아요를 제거할 게시글 ID
+   * @param userId - 좋아요를 제거할 사용자 ID
+   */
   async removeLike(postId: number, userId: number): Promise<void> {
     const query = `
       DELETE FROM post_likes 
@@ -214,7 +273,11 @@ export class CommunityRepository {
     await pool.query(query, [postId, userId]);
   }
 
-  // 좋아요 수 증가
+  /**
+   * 게시글의 좋아요 수 1 증가
+   * @param postId - 좋아요 수를 증가시킬 게시글 ID
+   * @return 업데이트된 게시글 객체
+   */
   async incrementLikeCount(postId: number): Promise<any> {
     const query = `
       UPDATE community_posts 
@@ -227,7 +290,11 @@ export class CommunityRepository {
     return result.rows[0];
   }
 
-  // 좋아요 수 감소
+  /**
+   * 게시글의 좋아요 수 1 감소
+   * @param postId - 좋아요 수를 감소시킬 게시글 ID
+   * @return 업데이트된 게시글 객체
+   */
   async decrementLikeCount(postId: number): Promise<any> {
     const query = `
       UPDATE community_posts 
@@ -240,7 +307,13 @@ export class CommunityRepository {
     return result.rows[0];
   }
 
-  // 사용자가 좋아요한 포스트 목록
+  /**
+   * 사용자가 좋아요 누른 게시물 조회
+   * @param userId - 조회할 사용자 ID
+   * @param page - 페이지 번호 (1부터 시작)
+   * @param limit - 페이지당 게시물 수
+   * @return 사용자가 좋아요 누른 게시물 목록과 전체 개수
+   */
   async findUserLikedPosts(userId: number, page: number, limit: number): Promise<{ posts: any[]; total: number }> {
     const countQuery = `
       SELECT COUNT(*) as total
@@ -274,7 +347,13 @@ export class CommunityRepository {
     };
   }
 
-  // 사용자 포스트 목록
+  /**
+   * 특정 사용자가 작성한 게시글 목록 조회
+   * @param userId - 조회할 사용자 ID
+   * @param page - 페이지 번호 (1부터 시작)
+   * @param limit - 페이지당 게시물 수
+   * @return 사용자가 작성한 게시물 목록과 전체 개수
+   */
   async findUserPosts(userId: number, page: number, limit: number): Promise<{ posts: any[]; total: number }> {
     const countQuery = `
       SELECT COUNT(*) as total
@@ -305,7 +384,13 @@ export class CommunityRepository {
     };
   }
 
-  // 게시글 수정
+  /**
+   * 게시글 내용 수정
+   * @param postId - 수정할 게시글 ID
+   * @param userId - 수정할 사용자 ID
+   * @param updateData - 수정할 데이터 객체
+   * @return 수정된 게시글 객체
+   */
   static async updatePost(postId: number, userId: number, updateData: {
     title?: string;
     content?: string;
@@ -363,7 +448,11 @@ export class CommunityRepository {
     }
   }
 
-  // 게시글 삭제
+  /**
+   * 게시글 삭제
+   * @param postId - 삭제할 게시글 ID
+   * @param userId - 삭제할 사용자 ID
+   */
   static async deletePost(postId: number, userId: number): Promise<void> {
     try {
       const result = await pool.query(
@@ -380,7 +469,12 @@ export class CommunityRepository {
     }
   }
 
-  // 게시글 댓글 목록 조회
+  /**
+   * 게시글의 댓글 목록 조회
+   * @param postId - 댓글을 조회할 게시글 ID
+   * @param filters - 페이징 및 정렬 옵션 객체
+   * @return 댓글 목록과 전체 개수
+   */
   static async getPostComments(postId: number, filters: {
     page?: number;
     limit?: number;
@@ -444,7 +538,13 @@ export class CommunityRepository {
     }
   }
 
-  // 댓글 수정
+  /**
+   * 댓글 내용 수정
+   * @param commentId - 수정할 댓글 ID
+   * @param userId - 수정할 사용자 ID
+   * @param updateData - 수정할 데이터 객체
+   * @return 수정된 댓글 객체
+   */
   static async updateComment(commentId: number, userId: number, updateData: {
     content: string;
   }): Promise<any> {
@@ -467,7 +567,11 @@ export class CommunityRepository {
     }
   }
 
-  // 댓글 삭제
+  /**
+   * 댓글 삭제
+   * @param commentId - 삭제할 댓글 ID
+   * @param userId - 삭제할 사용자 ID
+   */
   static async deleteComment(commentId: number, userId: number): Promise<void> {
     try {
       const result = await pool.query(
@@ -484,7 +588,12 @@ export class CommunityRepository {
     }
   }
 
-  // 댓글 좋아요/취소
+  /**
+   * 댓글에 좋아요 추가/취소
+   * @param commentId - 좋아요를 토글할 댓글 ID
+   * @param userId - 좋아요를 토글할 사용자 ID
+   * @return 좋아요 상태 및 현재 좋아요 수
+   */
   static async toggleCommentLike(commentId: number, userId: number): Promise<{ liked: boolean; likeCount: number }> {
     try {
       // 기존 좋아요 확인
@@ -527,7 +636,11 @@ export class CommunityRepository {
     }
   }
 
-  // 인기 게시글 조회
+  /**
+   * 기간별 인기 게시글 조회
+   * @param filters - 필터 옵션 객체 (기간, 카테고리, 개수)
+   * @return 인기 게시글 목록
+   */
   static async getPopularPosts(filters: {
     period?: 'day' | 'week' | 'month';
     limit?: number;
@@ -582,7 +695,11 @@ export class CommunityRepository {
     }
   }
 
-  // 게시글 통계
+  /**
+   * 게시글 통계 정보 조회
+   * @param postId - 게시글 ID
+   * @returns 게시글 통계 정보
+   */
   static async getPostStats(postId: number): Promise<{
     viewCount: number;
     likeCount: number;
@@ -620,7 +737,11 @@ export class CommunityRepository {
     }
   }
 
-  // 사용자 활동 통계
+  /**
+   * 사용자 활동 통계 정보 조회
+   * @param userId - 사용자 ID
+   * @returns 사용자 활동 통계 정보
+   */
   static async getUserActivityStats(userId: number): Promise<{
     postCount: number;
     commentCount: number;
@@ -664,7 +785,11 @@ export class CommunityRepository {
     }
   }
 
-  // 인기 태그 조회
+  /**
+   * 인기 태그 조회
+   * @param limit - 상위 N개의 태그 조회
+   * @returns 태그와 해당 태그가 사용된 게시글 수
+   */
   async getPopularTags(limit: number): Promise<Array<{ tag: string; count: number }>> {
     const query = `
       SELECT tag, COUNT(*) as count
@@ -685,7 +810,10 @@ export class CommunityRepository {
     }));
   }
 
-  // 커뮤니티 통계
+  /**
+   * 커뮤니티 전체 통계 정보 조회
+   * @return 커뮤니티 통계 정보 객체
+   */
   async getCommunityStats(): Promise<any> {
     const query = `
       SELECT 
@@ -721,7 +849,12 @@ export class CommunityRepository {
     };
   }
 
-  // 추천 포스트
+  /**
+   * 사용자 관심사 기반 추천 게시글 조회
+   * @param userId - 사용자 ID
+   * @param limit - 추천 게시글 수
+   * @return 추천 게시글 목록
+   */
   async getRecommendedPosts(userId: number, limit: number): Promise<any[]> {
     // 사용자의 최근 좋아요한 포스트의 카테고리 분석
     const userPrefsQuery = `

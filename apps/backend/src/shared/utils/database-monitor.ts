@@ -1,15 +1,32 @@
+/**
+ * 데이터베이스 성능 모니터링 유틸리티
+ *
+ * PostgreSQL 데이터베이스의 쿼리 성능, 연결 상태, 슬로우 쿼리 등을 실시간 모니터링.
+ * 데이터베이스 병목 현상을 사전에 감지하고 성능 최적화 지점 식별.
+ * 
+ * 주요 기능:
+ * - SQL 쿼리 실행 시간 및 빈도 모니터링
+ * - 슬로우 쿼리 감지 및 경고 시스템 (임계값 설정)
+ * - 데이터베이스 연결 풀 모니터링
+ * - 쿼리 패턴 분석 및 성능 추적
+ * - 인덱스 사용률 및 효율성 모니터링
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
 import { QueryRunner } from 'typeorm';
 import logger, { loggerHelpers } from './logger';
 import { metricsHelpers } from './metrics';
 
+// 쿼리 성능 데이터 인터페이스
 interface QueryPerformanceData {
-  query: string;
-  parameters?: any[];
-  executionTime: number;
-  rowsAffected?: number;
-  error?: Error;
+  query: string;          // 실행된 SQL 쿼리
+  parameters?: any[];     // 쿼리 매개변수
+  executionTime: number;  // 쿼리 실행 시간 (밀리초)
+  rowsAffected?: number;  // 영향받은 행 수
+  error?: Error;          // 실행 중 발생한 에러 (있을 경우)
 }
 
+// 느린 쿼리 임계값 설정 (밀리초 단위)
 interface SlowQueryThresholds {
   select: number;
   insert: number;
@@ -18,6 +35,12 @@ interface SlowQueryThresholds {
   default: number;
 }
 
+/**
+ * 데이터베이스 성능 모니터링 클래스
+ * 
+ * TypeORM의 QueryRunner를 래핑하여 쿼리 실행 시점에 성능 데이터를 수집.
+ * 느린 쿼리 감지, 통계 집계, 로그 기록, 메트릭 보고 기능 포함.
+ */
 export class DatabasePerformanceMonitor {
   private static slowQueryThresholds: SlowQueryThresholds = {
     select: 1000, // 1초
@@ -285,7 +308,11 @@ export class DatabasePerformanceMonitor {
   }
 }
 
-// TypeORM QueryRunner 패치
+/**
+ * TypeORM QueryRunner 패치
+ * @param queryRunner - 패치할 TypeORM QueryRunner 인스턴스
+ * @returns 패치된 QueryRunner 인스턴스
+ */
 export const patchQueryRunner = (queryRunner: QueryRunner): QueryRunner => {
   const originalQuery = queryRunner.query.bind(queryRunner);
   

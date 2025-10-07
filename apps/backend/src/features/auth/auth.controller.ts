@@ -1,3 +1,19 @@
+/**
+ * 인증 관리 컨트롤러
+ * 
+ * 사용자 인증 관련 모든 기능 담당하는 핵심 컨트롤러.
+ * 보안이 최우선이므로 모든 코드 신중히 작성.
+ * 
+ * 주요 기능:
+ * - 회원가입 (비밀번호 해싱, 중복 검사)
+ * - 로그인 (JWT 토큰 발급, 세션 관리)
+ * - 토큰 갱신 (리프레시 토큰 처리)
+ * - 로그아웃 (토큰 무효화)
+ * - 디바이스 정보 추적 (보안 강화)
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import { Request, Response } from 'express';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
@@ -12,10 +28,16 @@ import {
 import { AuthRequest } from '../../shared/middleware/auth';
 import { JWTService, DeviceInfo } from '../../shared/services/jwtService';
 
+/**
+ * 토큰 갱신 요청 바디 인터페이스
+ */
 interface RefreshTokenRequest {
   refreshToken: string;
 }
 
+/**
+ * 확장된 사용자 응답 인터페이스
+ */
 interface EnhancedAuthResponse extends AuthResponse {
   refreshToken: string;
   accessTokenExpiresAt: string;
@@ -42,7 +64,12 @@ const signJWT = (payload: object, secret: string, expiresIn: string): string => 
   return (jwt as any).sign(payload, secret, { expiresIn });
 };
 
-// 회원가입
+/**
+ * 사용자 등록
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ * @returns 사용자 등록 결과
+ */
 export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, name }: RegisterRequest = req.body;
@@ -120,7 +147,12 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
-// 로그인
+/**
+ * 사용자 로그인
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ * @returns 로그인 결과
+ */
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password, rememberMe }: LoginRequest = req.body;
@@ -203,7 +235,12 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-// 토큰 갱신
+/**
+ * 토큰 갱신
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ * @returns 토큰 갱신 결과
+ */
 export const refreshToken = async (req: Request, res: Response) => {
   try {
     const { refreshToken }: RefreshTokenRequest = req.body;
@@ -247,7 +284,11 @@ export const refreshToken = async (req: Request, res: Response) => {
   }
 };
 
-// 로그아웃 (특정 세션)
+/**
+ * 로그아웃 (특정 세션)
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ */
 export const logout = async (req: Request, res: Response) => {
   try {
     const { refreshToken }: { refreshToken?: string } = req.body;
@@ -269,7 +310,12 @@ export const logout = async (req: Request, res: Response) => {
   }
 };
 
-// 전체 로그아웃 (모든 세션)
+/**
+ * 모든 세션에서 로그아웃
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ * @returns 모든 세션에서의 로그아웃 결과
+ */
 export const logoutAll = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user?.id) {
@@ -294,7 +340,12 @@ export const logoutAll = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 활성 세션 조회
+/**
+ * 현재 활성 세션 조회
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ * @returns 활성 세션 목록
+ */
 export const getActiveSessions = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user?.id) {
@@ -320,7 +371,11 @@ export const getActiveSessions = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 현재 사용자 정보 조회
+/**
+ * 현재 사용자 정보 조회
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ */
 export const getCurrentUser = async (req: AuthRequest, res: Response) => {
   try {
     const response: ApiResponse = {
@@ -340,7 +395,11 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 토큰 검증
+/**
+ * 토큰 검증
+ * @param req - HTTP 요청 객체
+ * @param res - HTTP 응답 객체
+ */
 export const verifyToken = async (req: AuthRequest, res: Response) => {
   res.json({
     success: true,

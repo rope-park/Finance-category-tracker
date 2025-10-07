@@ -1,35 +1,59 @@
+/**
+ * 거래 데이터 접근 레이어 (Repository)
+ * 
+ * 사용자의 모든 금융 거래 데이터에 대한 데이터 접근 계층.
+ * 거래 생성, 조회, 수정, 삭제 및 복잡한 필터링 쿼리 담당.
+ * 
+ * 주요 기능:
+ * - 거래 CRUD 작업 및 데이터 무결성 보장
+ * - 다양한 필터 조건으로 거래 검색 및 정렬
+ * - 페이지네이션과 성능 최적화된 쿼리
+ * - 거래 통계 및 집계 데이터 생성
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import { BaseRepository } from '../../shared/repositories/BaseRepository';
 
+/**
+ * 거래 레코드 인터페이스
+ */
 export interface TransactionRecord {
-  id: string;
-  user_id: string;
-  account_id: string;
-  category_id: string | null;
-  amount: number;
-  description: string | null;
-  transaction_date: Date;
-  type: 'income' | 'expense' | 'transfer';
-  status: 'pending' | 'completed' | 'cancelled';
-  notes: string | null;
-  created_at: Date;
-  updated_at: Date;
+  id: string;                                              // 고유 거래 식별자
+  user_id: number;                                         // 거래 소유자 ID
+  account_id: string;                                      // 거래가 발생한 계좌 ID
+  category_id: number | null;                              // 거래 카테고리 ID (선택사항)
+  amount: number;                                          // 거래 금액
+  description: string | null;                              // 거래 설명 (선택사항)
+  transaction_date: Date;                                  // 거래 발생 날짜
+  type: 'income' | 'expense' | 'transfer';                 // 거래 유형 (수입/지출/이체)
+  status: 'pending' | 'completed' | 'cancelled';           // 거래 상태
+  notes: string | null;                                    // 추가 메모 (선택사항)
+  created_at: Date;                                        // 레코드 생성 시간
+  updated_at: Date;                                        // 마지막 수정 시간
 }
 
+/**
+ * 새로운 거래 생성에 필요한 데이터 인터페이스
+ */
 export interface CreateTransactionData {
-  user_id: string;
-  account_id: string;
-  category_id?: string;
-  amount: number;
-  description?: string;
-  transaction_date: Date;
-  type: 'income' | 'expense' | 'transfer';
+  user_id: number;                                         // 거래를 등록하는 사용자 ID
+  account_id: number;                                      // 거래가 발생할 계좌 ID
+  category_id?: number;                                    // 거래 카테고리 ID (선택사항)
+  amount: number;                                          // 거래 금액 (양수)
+  description?: string;                                    // 거래 설명 (선택사항)
+  transaction_date: Date;                                  // 거래 발생 날짜
+  type: 'income' | 'expense' | 'transfer';                 // 거래 유형
   status?: 'pending' | 'completed' | 'cancelled';
   notes?: string;
 }
 
+/**
+ * 거래 업데이트에 필요한 데이터 인터페이스
+ */
 export interface UpdateTransactionData {
   account_id?: string;
-  category_id?: string;
+  category_id?: number;
   amount?: number;
   description?: string;
   transaction_date?: Date;
@@ -38,10 +62,16 @@ export interface UpdateTransactionData {
   notes?: string;
 }
 
+/**
+ * 거래 필터링 조건 인터페이스
+ * 
+ * 거래 조회 시 사용할 수 있는 다양한 필터 옵션을 정의.
+ * 각 필드는 선택사항이며, 조합하여 복잡한 쿼리 생성 가능.
+ */
 export interface TransactionFilters {
-  user_id?: string;
+  user_id?: number;
   account_id?: string;
-  category_id?: string;
+  category_id?: number;
   type?: 'income' | 'expense' | 'transfer';
   status?: 'pending' | 'completed' | 'cancelled';
   amount_min?: number;
@@ -49,20 +79,29 @@ export interface TransactionFilters {
   start_date?: Date;
   end_date?: Date;
   search?: string;
-  page?: number;
-  limit?: number;
+  page?: number;    // 페이지네이션용 (1부터 시작)
+  limit?: number;   // 페이지당 항목 수
 }
 
+/**
+ * 거래 통계 인터페이스
+ * 
+ * 사용자의 거래 데이터를 기반으로 생성된 다양한 통계 정보를 포함.
+ * 대시보드 및 보고서에 활용 가능.
+ */
 export interface TransactionStatistics {
-  totalIncome: number;
-  totalExpenses: number;
-  netAmount: number;
-  transactionCount: number;
-  avgTransactionAmount: number;
-  topCategory: string | null;
-  topCategoryAmount: number;
+  totalIncome: number;  // 총 수입
+  totalExpenses: number; // 총 지출
+  netAmount: number;  // 순수입 (수입 - 지출)
+  transactionCount: number;  // 총 거래 건수
+  avgTransactionAmount: number; // 평균 거래 금액
+  topCategory: string | null; // 가장 많이 사용된 카테고리 키
+  topCategoryAmount: number;  // 가장 많이 사용된 카테고리의 총 금액
 }
 
+/**
+ * 카테고리별 요약 인터페이스
+ */
 export interface CategorySummary {
   category_key: string;
   transaction_type: 'income' | 'expense';
@@ -72,6 +111,9 @@ export interface CategorySummary {
   percentage: number;
 }
 
+/**
+ * 월별 트렌드 인터페이스
+ */
 export interface MonthlyTrend {
   year: number;
   month: number;
@@ -81,11 +123,18 @@ export interface MonthlyTrend {
   transaction_count: number;
 }
 
+/**
+ * TransactionRepository 클래스
+ * 
+ * transactions 테이블에 대한 모든 데이터베이스 작업을 처리.
+ */
 export class TransactionRepository extends BaseRepository {
   private readonly tableName = 'transactions';
 
   /**
-   * 거래를 생성합니다
+   * 거래 생성
+   * @param transactionData - 생성할 거래 데이터
+   * @return 생성된 거래 객체
    */
   async createTransaction(transactionData: CreateTransactionData): Promise<TransactionRecord> {
     return await super.create<TransactionRecord>(
@@ -95,7 +144,9 @@ export class TransactionRepository extends BaseRepository {
   }
 
   /**
-   * ID로 거래를 조회합니다
+   * ID로 거래 조회
+   * @param id - 조회할 거래 ID
+   * @return 거래 객체 또는 null (없을 경우)
    */
   async findById(id: string, userId: string): Promise<TransactionRecord | null> {
     return await this.findOne<TransactionRecord>(
@@ -105,7 +156,9 @@ export class TransactionRepository extends BaseRepository {
   }
 
   /**
-   * 거래를 업데이트합니다
+   * 거래 업데이트
+   * @param id - 업데이트할 거래 ID
+   * @return 업데이트된 거래 객체 또는 null (없을 경우)
    */
   async updateTransaction(id: string, userId: string, data: UpdateTransactionData): Promise<TransactionRecord | null> {
     return await super.update<TransactionRecord>(
@@ -116,14 +169,21 @@ export class TransactionRepository extends BaseRepository {
   }
 
   /**
-   * 거래를 삭제합니다
+   * 거래 삭제
+   * @param id - 삭제할 거래 ID
+   * @return 삭제 성공 여부
    */
   async deleteTransaction(id: string, userId: string): Promise<boolean> {
     return await super.delete(this.tableName, { id, user_id: userId });
   }
 
   /**
-   * 필터와 페이지네이션으로 거래 목록을 조회합니다
+   * 필터와 페이지네이션으로 거래 목록 조회
+   * @param filters - 다양한 필터 조건
+   * @param limit - 페이지당 항목 수 (기본값 50)
+   * @param offset - 페이지 오프셋 (기본값 0)
+   * @param orderBy - 정렬 기준 (기본값 'transaction_date DESC, created_at DESC')
+   * @return 거래 목록과 전체 개수
    */
   async findWithFilters(
     filters: TransactionFilters,
@@ -190,7 +250,11 @@ export class TransactionRepository extends BaseRepository {
   }
 
   /**
-   * 사용자의 거래 통계를 조회합니다
+   * 사용자의 거래 통계 조회
+   * @param userId - 사용자 ID
+   * @param startDate - 시작일 (선택사항)
+   * @param endDate - 종료일 (선택사항)
+   * @return 거래 통계 객체
    */
   async getStatistics(
     userId: string,
@@ -261,7 +325,11 @@ export class TransactionRepository extends BaseRepository {
   }
 
   /**
-   * 카테고리별 요약을 조회합니다
+   * 카테고리별 요약 조회
+   * @param userId - 사용자 ID
+   * @param startDate - 시작일 (선택사항)
+   * @param endDate - 종료일 (선택사항)
+   * @return 카테고리별 요약 목록
    */
   async getCategorySummary(
     userId: number,
@@ -314,7 +382,10 @@ export class TransactionRepository extends BaseRepository {
   }
 
   /**
-   * 월별 트렌드를 조회합니다
+   * 월별 트렌드 조회
+   * @param userId - 사용자 ID
+   * @param months - 조회할 개월 수 (기본값 12개월)
+   * @return 월별 트렌드 목록
    */
   async getMonthlyTrend(
     userId: number,
@@ -353,7 +424,10 @@ export class TransactionRepository extends BaseRepository {
   }
 
   /**
-   * 일별 지출 평균을 계산합니다
+   * 일별 지출 평균 조회
+   * @param userId - 사용자 ID
+   * @param days - 조회할 일수 (기본값 30일)
+   * @return 일별 평균 지출 금액
    */
   async getDailyAverageSpending(
     userId: number,
@@ -375,11 +449,16 @@ export class TransactionRepository extends BaseRepository {
   }
 
   /**
-   * 특정 카테고리의 거래를 조회합니다
+   * 특정 카테고리의 거래 조회
+   * @param userId - 사용자 ID
+   * @param categoryId - 카테고리 ID
+   * @param limit - 페이지당 항목 수 (기본값 50)
+   * @param offset - 페이지 오프셋 (기본값 0)
+   * @return 거래 목록과 전체 개수
    */
   async findByCategory(
-    userId: string,
-    categoryId: string,
+    userId: number,
+    categoryId: number,
     limit: number = 50,
     offset: number = 0
   ): Promise<{
@@ -394,7 +473,13 @@ export class TransactionRepository extends BaseRepository {
   }
 
   /**
-   * 중복 거래를 확인합니다 (같은 날짜, 같은 금액, 같은 설명)
+   * 중복 거래 확인 (같은 날짜, 같은 금액, 같은 설명)
+   * @param userId - 사용자 ID
+   * @param amount - 거래 금액
+   * @param description - 거래 설명
+   * @param transactionDate - 거래 날짜
+   * @param excludeId - 제외할 거래 ID (업데이트 시 자기 자신 제외용)
+   * @return 중복 거래 목록
    */
   async findDuplicates(
     userId: string,
@@ -421,7 +506,9 @@ export class TransactionRepository extends BaseRepository {
   }
 
   /**
-   * 거래 데이터를 일괄 생성합니다 (CSV 임포트 등에 사용)
+   * 거래 데이터 일괄 생성 (CSV 임포트 등에 사용)
+   * @param transactions - 생성할 거래 데이터 배열
+   * @return 생성된 거래 객체 배열
    */
   async bulkCreate(transactions: CreateTransactionData[]): Promise<TransactionRecord[]> {
     return await this.executeTransaction(async (client) => {
@@ -453,7 +540,9 @@ export class TransactionRepository extends BaseRepository {
   }
 
   /**
-   * 사용자의 모든 거래를 삭제합니다 (계정 삭제 시 사용)
+   * 사용자의 모든 거래 삭제 (계정 삭제 시 사용)
+   * @param userId - 사용자 ID
+   * @return 삭제된 거래 건수
    */
   async deleteAllByUser(userId: number): Promise<number> {
     const result = await this.executeRawQuery(

@@ -1,30 +1,61 @@
+/**
+ * Redis 기반 캐싱 관리 서비스
+ * 
+ * 고성능 데이터 캐싱을 위한 Redis 기반의 고도화된 캐싱 서비스.
+ * 대용량 데이터 처리와 분산 환경에서 일관성 있는 캐싱을 제공.
+ * 
+ * 주요 기능:
+ * - 분산 환경에서 일관된 캐싱 데이터 관리
+ * - TTL (Time To Live) 기반 자동 데이터 만료 및 정리
+ * - JSON 데이터 직렬화/역직렬화 지원
+ * - 연결 상태 모니터링 및 자동 재연결
+ * - 고성능 대량 데이터 처리
+ * - 아토믹 연산 및 트랜잭션 지원
+ * 
+ * 사용 시나리오:
+ * - 사용자 세션 데이터 저장
+ * - API 응답 결과 캐싱
+ * - 대시보드 통계 데이터 임시 저장
+ * - 빈번한 데이터베이스 엑세스 감소
+ * - 분산 락 및 세마포어
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
 import Redis from 'ioredis';
 import logger from '../utils/logger';
 
-// Redis 기반 캐시 서비스
+/**
+ * Redis 기반 캐싱 서비스 클래스
+ * 
+ * 고성능 데이터 캐싱과 세션 관리를 담당
+ */
 class CacheService {
   private redis: Redis;
   private isConnected: boolean = false;
 
+  // 생성자 - Redis 클라이언트 초기화
   constructor() {
     this.redis = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      password: process.env.REDIS_PASSWORD || undefined,
-      maxRetriesPerRequest: 3,
-      lazyConnect: true,
+      host: process.env.REDIS_HOST || 'localhost',      // Redis 서버 호스트
+      port: parseInt(process.env.REDIS_PORT || '6379'), // Redis 포트 번호
+      password: process.env.REDIS_PASSWORD || undefined,// Redis 비밀번호
+      maxRetriesPerRequest: 3,                          // 요청당 최대 재시도 횟수
+      lazyConnect: true,                                 // 빠른 시작을 위한 지연 연결
     });
 
+    // Redis 연결 성공 이벤트
     this.redis.on('connect', () => {
       logger.info('✅ Redis connected');
       this.isConnected = true;
     });
 
+    // Redis 연결 오류 이벤트
     this.redis.on('error', (err) => {
       logger.error('❌ Redis error:', err);
       this.isConnected = false;
     });
 
+    // Redis 연결 종료 이벤트
     this.redis.on('close', () => {
       logger.warn('⚠️  Redis connection closed');
       this.isConnected = false;

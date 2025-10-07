@@ -1,90 +1,113 @@
+/**
+ * 금융 교육 데이터 접근 레이어 (Repository)
+ * 
+ * 교육 콘텐츠, 사용자 학습 진행률, 재정 건강도 평가 등
+ * 금융 리터러시 향상을 위한 데이터 접근 계층.
+ * 복잡한 SQL 쿼리를 통해 맞춤형 교육 콘텐츠 제공 및 사용자 학습 추적.
+ * 
+ * 주요 기능:
+ * - 교육 콘텐츠 CRUD
+ * - 사용자 학습 진행률 추적 및 업데이트
+ * - 재정 건강도 점수 계산 및 기록
+ * - 절약 팁 및 개인화된 조언 제공
+ * - 교육 대시보드용 통계 및 요약 데이터 제공
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import { BaseRepository } from '../../shared/repositories/BaseRepository';
 
-// 교육 콘텐츠 인터페이스
+/** 교육 콘텐츠 인터페이스 */
 export interface EducationContent {
-  id: number;
-  title: string;
-  content: string;
-  category: string;
-  difficulty_level: string;
-  content_type: string;
-  reading_time_minutes: number;
-  tags: string[];
-  author: string;
-  published_date: Date;
-  updated_date: Date;
-  is_featured: boolean;
-  view_count: number;
-  like_count: number;
-  created_at: Date;
+  id: number;                      // 콘텐츠 ID
+  title: string;                   // 제목
+  content: string;                 // 내용
+  category: string;                // 카테고리
+  difficulty_level: string;        // 난이도
+  content_type: string;            // 콘텐츠 유형
+  reading_time_minutes: number;    // 예상 읽기 시간(분)
+  tags: string[];                  // 태그 목록
+  author: string;                  // 작성자
+  published_date: Date;            // 발행일
+  updated_date: Date;              // 수정일
+  is_featured: boolean;            // 주요 콘텐츠 여부
+  view_count: number;              // 조회수
+  like_count: number;              // 좋아요 수
+  created_at: Date;                // 생성일
 }
 
-// 사용자 교육 진행 상황
+/** 사용자 교육 진행 상황 인터페이스 */
 export interface UserEducationProgress {
-  id: number;
-  user_id: number;
-  content_id: number;
-  is_completed: boolean;
-  completion_date?: Date;
-  reading_progress: number;
-  quiz_score?: number;
-  time_spent_minutes: number;
-  bookmarked: boolean;
-  rating?: number;
-  created_at: Date;
-  updated_at: Date;
+  id: number;                      // 진행 레코드 ID
+  user_id: number;                 // 사용자 ID
+  content_id: number;              // 콘텐츠 ID
+  is_completed: boolean;           // 완료 여부
+  completion_date?: Date;          // 완료일
+  reading_progress: number;        // 읽기 진행률(%)
+  quiz_score?: number;             // 퀴즈 점수
+  time_spent_minutes: number;      // 소요 시간(분)
+  bookmarked: boolean;             // 북마크 여부
+  rating?: number;                 // 평점
+  created_at: Date;                // 생성일
+  updated_at: Date;                // 수정일
 }
 
-// 재정 건강도 점수
+/** 재정 건강도 점수 인터페이스 */
 export interface FinancialHealthScore {
-  id: number;
-  user_id: number;
-  overall_score: number;
-  budgeting_score: number;
-  saving_score: number;
-  debt_score: number;
-  investment_score: number;
-  emergency_fund_score: number;
-  calculation_date: Date;
-  factors_analysis: any;
-  recommendations: string[];
-  created_at: Date;
+  id: number;                      // 점수 레코드 ID
+  user_id: number;                 // 사용자 ID
+  overall_score: number;           // 전체 점수
+  budgeting_score: number;         // 예산 관리 점수
+  saving_score: number;            // 저축 점수
+  debt_score: number;              // 부채 관리 점수
+  investment_score: number;        // 투자 점수
+  emergency_fund_score: number;    // 비상금 점수
+  calculation_date: Date;          // 계산일
+  factors_analysis: any;           // 요인 분석 데이터
+  recommendations: string[];       // 추천 사항
+  created_at: Date;                // 생성일
 }
 
-// 절약 팁
+/** 절약 팁 인터페이스 */
 export interface SavingTip {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  difficulty: string;
-  estimated_savings_amount?: number;
-  estimated_savings_percentage?: number;
-  applicable_to: string[];
-  seasonal: boolean;
-  tags: string[];
-  source_url?: string;
-  is_active: boolean;
-  created_at: Date;
+  id: number;                           // 팁 ID
+  title: string;                        // 제목
+  description: string;                  // 설명
+  category: string;                     // 카테고리
+  difficulty: string;                   // 난이도
+  estimated_savings_amount?: number;    // 예상 절약 금액
+  estimated_savings_percentage?: number; // 예상 절약 비율
+  applicable_to: string[];              // 적용 대상
+  seasonal: boolean;                    // 계절성 여부
+  tags: string[];                       // 태그
+  source_url?: string;                  // 출처 URL
+  is_active: boolean;                   // 활성 여부
+  created_at: Date;                     // 생성일
 }
 
-// 개인화된 조언
+/** 개인화된 조언 인터페이스 */
 export interface PersonalizedAdvice {
-  id: number;
-  user_id: number;
-  advice_type: string;
-  title: string;
-  content: string;
-  priority: string;
-  based_on: any;
-  is_read: boolean;
-  is_dismissed: boolean;
-  expires_at?: Date;
-  created_at: Date;
-  updated_at: Date;
+  id: number;              // 조언 ID
+  user_id: number;         // 사용자 ID
+  advice_type: string;     // 조언 유형
+  title: string;           // 제목
+  content: string;         // 내용
+  priority: string;        // 우선순위
+  based_on: any;           // 근거 데이터
+  is_read: boolean;        // 읽음 여부
+  is_dismissed: boolean;   // 무시 여부
+  expires_at?: Date;       // 만료일
+  created_at: Date;        // 생성일
+  updated_at: Date;        // 수정일
 }
 
+/**
+ * 금융 교육 데이터 접근 클래스
+ * 
+ * 데이터베이스와의 상호작용을 통해 금융 교육 관련 데이터 처리
+ */
 export class EducationRepository extends BaseRepository {
+  // 테이블 이름 상수
   private readonly contentTable = 'financial_education_content';
   private readonly progressTable = 'user_education_progress';
   private readonly healthTable = 'user_financial_health_scores';
@@ -92,7 +115,14 @@ export class EducationRepository extends BaseRepository {
   private readonly adviceTable = 'personalized_advice';
   private readonly interactionTable = 'user_saving_tips_interaction';
 
-  // 교육 콘텐츠 관련 메소드
+  /**
+   * 모든 교육 콘텐츠 조회
+   * @param category - 카테고리 필터 (선택사항)
+   * @param difficulty - 난이도 필터 (선택사항)
+   * @param limit - 조회할 콘텐츠 수
+   * @param offset - 페이징 오프셋
+   * @return 교육 콘텐츠 배열
+   */
   async getAllContent(category?: string, difficulty?: string, limit = 20, offset = 0): Promise<EducationContent[]> {
     let query = `SELECT * FROM ${this.contentTable} WHERE 1=1`;
     const params: any[] = [];
@@ -117,6 +147,11 @@ export class EducationRepository extends BaseRepository {
     return result.rows.map(this.mapRowToContent);
   }
 
+  /**
+   * 콘텐츠 ID로 콘텐츠 조회
+   * @param id - 콘텐츠 ID
+   * @returns 콘텐츠 객체 또는 null
+   */
   async getContentById(id: number): Promise<EducationContent | null> {
     const result = await this.executeRawQuery(
       `SELECT * FROM ${this.contentTable} WHERE id = $1`,
@@ -134,6 +169,11 @@ export class EducationRepository extends BaseRepository {
     return this.mapRowToContent(result.rows[0]);
   }
 
+  /**
+   * 주요 콘텐츠 조회
+   * @param limit - 조회할 주요 콘텐츠 수
+   * @returns 주요 콘텐츠 배열
+   */
   async getFeaturedContent(limit = 5): Promise<EducationContent[]> {
     const result = await this.executeRawQuery(
       `SELECT * FROM ${this.contentTable} WHERE is_featured = true ORDER BY published_date DESC LIMIT $1`,
@@ -142,6 +182,12 @@ export class EducationRepository extends BaseRepository {
     return result.rows.map(this.mapRowToContent);
   }
 
+  /**
+   * 콘텐츠 검색
+   * @param searchTerm - 검색어
+   * @param limit - 조회할 콘텐츠 수
+   * @returns 콘텐츠 배열
+   */
   async searchContent(searchTerm: string, limit = 20): Promise<EducationContent[]> {
     const result = await this.executeRawQuery(`
       SELECT * FROM ${this.contentTable} 
@@ -155,7 +201,12 @@ export class EducationRepository extends BaseRepository {
     return result.rows.map(this.mapRowToContent);
   }
 
-  // 사용자 진행 상황 관련 메소드
+  /**
+   * 사용자 교육 진행 상황 조회
+   * @param userId - 사용자 ID
+   * @param contentId - 특정 콘텐츠 ID (선택사항)
+   * @return 진행 상황 배열
+   */
   async getUserProgress(userId: number, contentId?: number): Promise<UserEducationProgress[]> {
     let query = `SELECT * FROM ${this.progressTable} WHERE user_id = $1`;
     const params: any[] = [userId];
@@ -171,6 +222,13 @@ export class EducationRepository extends BaseRepository {
     return result.rows.map(this.mapRowToProgress);
   }
 
+  /**
+   * 진행 상황 업데이트 또는 생성
+   * @param userId - 사용자 ID
+   * @param contentId - 콘텐츠 ID
+   * @param progressData - 진행 상황 데이터
+   * @return 업데이트되거나 생성된 진행 상황 객체
+   */
   async updateProgress(
     userId: number, 
     contentId: number, 
@@ -219,7 +277,11 @@ export class EducationRepository extends BaseRepository {
     }
   }
 
-  // 재정 건강도 점수 관련 메소드
+  /**
+   * 사용자의 재정 건강도 점수 계산 및 저장
+   * @param userId - 사용자 ID
+   * @return 계산된 재정 건강도 점수 객체
+   */
   async calculateHealthScore(userId: number): Promise<FinancialHealthScore> {
     // 사용자의 거래 데이터를 기반으로 건강도 점수 계산
     const transactionData = await this.executeRawQuery(`
@@ -295,6 +357,11 @@ export class EducationRepository extends BaseRepository {
     return this.mapRowToHealthScore(result.rows[0]);
   }
 
+  /**
+   * 사용자의 최신 재정 건강도 점수 조회
+   * @param userId - 사용자 ID
+   * @return 최신 재정 건강도 점수 객체 또는 null
+   */
   async getLatestHealthScore(userId: number): Promise<FinancialHealthScore | null> {
     const result = await this.executeRawQuery(
       `SELECT * FROM ${this.healthTable} WHERE user_id = $1 ORDER BY calculation_date DESC LIMIT 1`,
@@ -305,7 +372,13 @@ export class EducationRepository extends BaseRepository {
     return this.mapRowToHealthScore(result.rows[0]);
   }
 
-  // 절약 팁 관련 메소드
+  /**
+   * 절약 팁 목록 조회
+   * @param category - 카테고리 필터 (선택사항)
+   * @param difficulty - 난이도 필터 (선택사항)
+   * @param limit - 조회할 팁 수
+   * @return 절약 팁 배열
+   */
   async getSavingTips(category?: string, difficulty?: string, limit = 10): Promise<SavingTip[]> {
     let query = `SELECT * FROM ${this.tipsTable} WHERE is_active = true`;
     const params: any[] = [];
@@ -365,7 +438,11 @@ export class EducationRepository extends BaseRepository {
     return result.rows.map(this.mapRowToTip);
   }
 
-  // 개인화된 조언 관련 메소드
+  /**
+   * 사용자 맞춤형 재정 조언 생성
+   * @param userId - 사용자 ID
+   * @returns 생성된 재정 조언 배열
+   */
   async generatePersonalizedAdvice(userId: number): Promise<PersonalizedAdvice[]> {
     const adviceList: any[] = [];
 
@@ -419,6 +496,11 @@ export class EducationRepository extends BaseRepository {
     return this.getPersonalizedAdvice(userId);
   }
 
+  /**
+   * 사용자 맞춤형 재정 조언 조회
+   * @param userId - 사용자 ID
+   * @return 맞춤형 재정 조언 배열
+   */
   async getPersonalizedAdvice(userId: number): Promise<PersonalizedAdvice[]> {
     const result = await this.executeRawQuery(`
       SELECT * FROM ${this.adviceTable} 
@@ -526,7 +608,11 @@ export class EducationRepository extends BaseRepository {
     };
   }
 
-  // 조언 읽음 처리
+  /**
+   * 개인화된 조언을 읽음 상태로 표시
+   * @param userId - 사용자 ID
+   * @param adviceId - 조언 ID
+   */
   async markAdviceAsRead(userId: number, adviceId: number): Promise<void> {
     await this.executeRawQuery(`
       UPDATE personalized_advice 
@@ -535,7 +621,11 @@ export class EducationRepository extends BaseRepository {
     `, [adviceId, userId]);
   }
 
-  // 조언 해제
+  /**
+   * 개인화된 조언을 무시 상태로 설정
+   * @param userId - 사용자 ID
+   * @param adviceId - 조언 ID
+   */
   async dismissAdvice(userId: number, adviceId: number): Promise<void> {
     await this.executeRawQuery(`
       UPDATE personalized_advice 
@@ -544,7 +634,13 @@ export class EducationRepository extends BaseRepository {
     `, [adviceId, userId]);
   }
 
-  // 절약 팁 도움 표시
+  /**
+   * 절약 팁에 대한 도움도 피드백 저장
+   * @param userId - 사용자 ID
+   * @param tipId - 팁 ID
+   * @param isHelpful - 도움이 되었는지 여부
+   * @param feedback - 추가 피드백 (선택사항)
+   */
   async markTipAsHelpful(userId: number, tipId: number, isHelpful: boolean, feedback?: string): Promise<void> {
     await this.executeRawQuery(`
       INSERT INTO user_tip_feedback (user_id, tip_id, is_helpful, feedback, created_at)
@@ -554,7 +650,12 @@ export class EducationRepository extends BaseRepository {
     `, [userId, tipId, isHelpful, feedback]);
   }
 
-  // 재정 건강도 점수 이력 조회
+  /**
+   * 사용자의 재정 건강도 점수 변화 이력 조회
+   * @param userId - 사용자 ID
+   * @param limit - 조회할 이력 수
+   * @return 재정 건강도 점수 배열
+   */
   async getHealthScoreHistory(userId: number, limit = 12): Promise<FinancialHealthScore[]> {
     const result = await this.executeRawQuery(`
       SELECT * FROM user_financial_health_scores 

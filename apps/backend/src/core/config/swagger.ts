@@ -1,8 +1,42 @@
+/**
+ * Swagger API 문서화 설정 및 구성
+ * 
+ * Finance Category Tracker의 전체 REST API를 자동 문서화하고 인터랙티브한 테스트 환경을 제공하는 Swagger 설정.
+ * OpenAPI 3.0 명세에 따라 전체 API 스펙을 정의하고, 개발자와 클라이언트가 쉽게 API를 이해하고 테스트할 수 있도록 지원.
+ * 
+ * 핵심 기능:
+ * - 전체 REST API 엔드포인트 자동 검색 및 문서화
+ * - JWT Bearer Token 인증 스키마 정의 및 테스트 지원
+ * - TypeScript 인터페이스 기반 데이터 모델 자동 생성
+ * - API 요청/응답 예시 및 스키마 유효성 검사
+ * - 인터랙티브 테스트 인터페이스 (Swagger UI)
+ * - 다양한 환경 (dev, staging, prod)에서의 API 엔드포인트 지원
+ * 
+ * API 그룹별 분류:
+ * - Authentication: 로그인, 회원가입, 토큰 관리
+ * - Users: 사용자 프로필 및 설정 관리
+ * - Transactions: 거래 내역 CRUD 및 분석
+ * - Budgets: 예산 설정 및 모니터링
+ * - Categories: 카테고리 관리 및 추천
+ * - Analytics: 대시보드 및 통계 데이터
+ * - Social: 소셜 기능 및 커뮤니티
+ * - Education: 금융 교육 컨텐츠
+ * 
+ * 보안 및 인증:
+ * - JWT Bearer Token 인증 스키마
+ * - API 키 기반 인증 (선택적)
+ * - 인증이 필요한 엔드포인트 자동 표시
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { Express } from 'express';
 
-// Swagger 설정
+/**
+ * Swagger JSDoc 설정 객체
+ * OpenAPI 3.0 명세에 따라 API 문서를 자동 생성하기 위한 기본 설정
+ */
 const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
@@ -12,7 +46,7 @@ const swaggerOptions = {
       description: '개인 재정 관리 및 카테고리 추적 API 문서입니다.',
       contact: {
         name: 'API Support',
-        email: 'support@finance-tracker.com'
+        email: 'eulmidesign@gmail.com'
       },
       license: {
         name: 'MIT',
@@ -608,7 +642,12 @@ const swaggerUiOptions = {
   }
 };
 
-// API 문서화 설정 함수
+/**
+ * API 문서화 설정 함수
+ * 
+ * Express 애플리케이션에 Swagger UI 및 JSON 엔드포인트를 설정.
+ * @param app Express 애플리케이션 인스턴스
+ */
 export const setupSwagger = (app: Express): void => {
   // Swagger JSON 엔드포인트
   app.get('/api-docs.json', (req, res) => {
@@ -622,7 +661,10 @@ export const setupSwagger = (app: Express): void => {
   console.log('📚 API Documentation available at /api-docs');
 };
 
-// 개발 환경에서만 문서 활성화
+/**
+ * 조건부 Swagger 설정 함수
+ * @param app Express 애플리케이션 인스턴스
+ */
 export const conditionalSwagger = (app: Express): void => {
   if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DOCS === 'true') {
     setupSwagger(app);

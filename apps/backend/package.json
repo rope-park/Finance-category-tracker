@@ -1,7 +1,7 @@
 {
   "name": "@finance-tracker/backend",
   "version": "1.0.0",
-  "description": "Backend API for Finance Category Tracker",
+  "description": "Finance Category Tracker Backend API - 개인 재정 관리 및 카테고리 기반 지출 추적을 위한 RESTful API 서버",
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",

@@ -1,26 +1,53 @@
+/**
+ * 통합 로깅 유틸리티
+ * 
+ * Finance Category Tracker 애플리케이션의 전체 로깅을 중앙집중식으로 관리.
+ * Winston 라이브러리를 기반으로 개발, 테스트, 프로덕션 환경에서 최적화된 로깅을 제공.
+ * 
+ * 주요 기능:
+ * - 다중 로그 레벨 및 색상 코딩 지원
+ * - 콘솔, 파일, 원격 로깅 서비스 통합
+ * - Sentry와 연동된 오류 추적 및 모니터링
+ * - 성능 메트릭 및 시스템 건강 상태 로깅
+ * - 사용자 행동 및 보안 이벤트 추적
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import * as winston from 'winston';
 import * as Transport from 'winston-transport';
 import * as path from 'path';
 import * as Sentry from '@sentry/node';
 
-// 로그 레벨 정의
+/**
+ * 로그 레벨 우선순위 정의
+ * 
+ * Winston 로그 레벨을 수치로 정의하여 우선순위를 결정.
+ * 낮은 수치일수록 더 중요한 로그로 간주되며, 환경별로 다른 레벨을 설정 가능.
+ */
 const logLevels = {
-  error: 0,
-  warn: 1,
-  info: 2,
-  http: 3,
-  debug: 4
+  error: 0,    // 심각한 오류 - 시스템 중단이나 데이터 손실 가능
+  warn: 1,     // 경고 - 주의가 필요하지만 작동은 계속 가능
+  info: 2,     // 일반 정보 - 시스템 정상 작동 및 주요 이벤트
+  http: 3,     // HTTP 요청 - API 호출 및 웹 요청 로깅
+  debug: 4     // 디버그 - 개발 시 상세한 디버깅 정보
 };
 
-// 로그 색상 정의
+/**
+ * 로그 레벨별 콘솔 색상 정의
+ * 
+ * 콘솔에서 로그를 볼 때 레벨에 따라 다른 색상으로 표시하여 가독성 향상.
+ * 개발 환경에서 빠른 로그 파악과 디버깅을 도움.
+ */
 const logColors = {
-  error: 'red',
-  warn: 'yellow',
-  info: 'green',
-  http: 'magenta',
-  debug: 'blue'
+  error: 'red',       // 빨간색 - 오류 및 예외 상황
+  warn: 'yellow',     // 노란색 - 경고 및 주의 사항
+  info: 'green',      // 초록색 - 정상 작동 및 성공 메시지
+  http: 'magenta',    // 자주색 - HTTP 요청 및 API 호출
+  debug: 'blue'       // 파란색 - 디버깅 및 상세 정보
 };
 
+// Winston에 사용자 정의 색상 등록
 winston.addColors(logColors);
 
 // Sentry 로깅 헬퍼 함수

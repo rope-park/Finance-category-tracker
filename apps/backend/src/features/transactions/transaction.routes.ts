@@ -1,3 +1,18 @@
+/**
+ * 거래 관리 API 라우트
+ * 
+ * 사용자의 모든 금융 거래(수입, 지출, 이체)에 대한 RESTful API 엔드포인트 제공.
+ * 거래 등록, 조회, 수정, 삭제와 자동 카테고리 분류 기능 포함.
+ * 
+ * 주요 기능:
+ * - CRUD 작업을 위한 RESTful API 엔드포인트
+ * - ML 기반 자동 카테고리 분류 API
+ * - 고급 필터링 및 검색 API
+ * - 거래 통계 및 집계 데이터 API
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 const express = require('express');
 import { authenticateToken } from '../../shared/middleware/auth';
 import { apiLimiter } from '../../shared/middleware/rateLimiter';
@@ -11,14 +26,25 @@ import { TransactionService } from './transaction.service';
 
 const router = express.Router();
 
-// 자동 카테고리 분류 기반 거래 생성
+/**
+ * POST /api/transactions/auto-category
+ * 자동 카테고리 분류 기반 거래 생성
+ * 
+ * 사용자가 입력한 거래 설명과 가맹점 정보를 ML 알고리즘으로 분석하여
+ * 자동으로 적절한 카테고리를 분류하고 거래를 등록.
+ * 
+ * @route POST /api/transactions/auto-category
+ * @access Private (인증 필요)
+ * @rateLimit 제한된 요청 빈도 적용
+ */
 router.post('/auto-category',
-  apiLimiter,
-  authenticateToken,
+  apiLimiter,           // API 요청 빈도 제한
+  authenticateToken,    // 사용자 인증 확인
   asyncHandler(async (req, res) => {
     const userId = req.user!.id;
     const { transaction_type, amount, description, merchant, transaction_date, account_id } = req.body;
-    // category_key 없이 description/merchant만 받아 자동 분류
+    
+    // category_key 없이 description/merchant만 받아 ML 알고리즘으로 자동 분류
     const transaction = await CategoryAutoService.createWithAutoCategory({
       user_id: userId,
       account_id,
@@ -205,7 +231,16 @@ router.get('/user/:userId',
   })
 );
 
-// 모든 거래 내역 조회
+/**
+ * GET /api/transactions
+ * 모든 거래 내역 조회
+ * 
+ * 사용자의 전체 거래 내역을 필터링, 검색, 페이지네이션하여 조회.
+ * 
+ * @route GET /api/transactions
+ * @access Private (인증 필요)
+ * @returns 거래 내역 목록 및 메타데이터
+ */
 router.get('/', 
   apiLimiter,
   authenticateToken, 
@@ -240,7 +275,16 @@ router.get('/',
   })
 );
 
-// 거래 통계 조회
+/**
+ * GET /api/transactions/stats
+ * 거래 통계 조회
+ * 
+ * 사용자의 거래 통계(총 수입, 총 지출, 순이익 등) 조회.
+ * 
+ * @route GET /api/transactions/stats
+ * @access Private (인증 필요)
+ * @returns 거래 통계 정보
+ */
 router.get('/stats',
   apiLimiter,
   authenticateToken,
@@ -258,7 +302,16 @@ router.get('/stats',
   })
 );
 
-// 카테고리별 통계 조회
+/**
+ * GET /api/transactions/categories/top
+ * 상위 카테고리 조회
+ * 
+ * 사용자의 거래 내역 중 가장 많이 사용된 카테고리 목록 조회.
+ * 
+ * @route GET /api/transactions/categories/top
+ * @access Private (인증 필요)
+ * @returns 상위 카테고리 목록
+ */
 router.get('/categories/top',
   apiLimiter,
   authenticateToken,
@@ -276,7 +329,16 @@ router.get('/categories/top',
   })
 );
 
-// 특정 거래 조회
+/**
+ * GET /api/transactions/:id
+ * 특정 거래 조회
+ * 
+ * 사용자의 특정 거래 내역을 ID로 조회.
+ * 
+ * @route GET /api/transactions/:id
+ * @access Private (인증 필요)
+ * @returns 특정 거래 정보
+ */
 router.get('/:id', 
   apiLimiter,
   authenticateToken, 
@@ -289,7 +351,17 @@ router.get('/:id',
   })
 );
 
-// 새 거래 생성
+/**
+ * POST /api/transactions
+ * 새 거래 생성
+ * 
+ * 새로운 거래 내역 생성.
+ * 거래 유형, 금액, 카테고리, 설명, 날짜 등 필수 정보 포함.
+ * 
+ * @route POST /api/transactions
+ * @access Private (인증 필요)
+ * @rateLimit 제한된 요청 빈도 적용
+ */
 router.post('/', 
   apiLimiter,
   authenticateToken, 
@@ -436,7 +508,16 @@ router.post('/dev/:userId',
   })
 );
 
-// 거래 수정
+/**
+ * PUT /api/transactions/:id
+ * 거래 수정
+ * 
+ * 기존 거래 내역 수정.
+ * 
+ * @route PUT /api/transactions/:id
+ * @access Private (인증 필요)
+ * @returns 수정된 거래 정보
+ */
 router.put('/:id', 
   apiLimiter,
   authenticateToken, 
@@ -462,7 +543,16 @@ router.put('/:id',
   })
 );
 
-// 거래 삭제
+/**
+ * DELETE /api/transactions/:id
+ * 거래 삭제
+ * 
+ * 특정 거래 내역을 완전히 삭제.
+ * 
+ * @route DELETE /api/transactions/:id
+ * @access Private (인증 필요)
+ * @returns 삭제된 거래 정보
+ */
 router.delete('/:id', 
   apiLimiter,
   authenticateToken, 

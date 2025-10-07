@@ -1,3 +1,18 @@
+/**
+ * 사용자 계정 관리 API 라우트
+ * 
+ * 사용자 프로필, 비밀번호, 계정 설정 등의 계정 관리 기능을 제공하는 RESTful API.
+ * 보안이 중요한 계정 정보 처리와 인증 및 권한 관리를 담당.
+ * 
+ * 주요 기능:
+ * - 사용자 프로필 조회 및 업데이트
+ * - 비밀번호 변경 및 보안 설정
+ * - 계정 비활성화 및 삭제 처리
+ * - 사용자 설정 및 환경 설정 관리
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 const express = require('express');
 import pool from '../../core/config/database';
 import { authenticateToken } from '../../shared/middleware/auth';
@@ -6,7 +21,16 @@ import { handleValidationErrors } from '../../shared/middleware/validation';
 
 const router = express.Router();
 
-// 프로필 조회
+/**
+ * GET /api/users/profile
+ * 사용자 프로필 조회
+ * 
+ * 인증된 사용자의 프로필 정보를 조회하여 반환.
+ * 
+ * @route GET /api/users/profile
+ * @access Private (인증 필요)
+ * @returns {Object} 사용자 프로필 정보
+ */
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const userId = (req as any).user.userId;
@@ -39,7 +63,22 @@ router.get('/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// 프로필 업데이트
+/**
+ * PUT /api/users/profile
+ * 사용자 프로필 업데이트
+ * 
+ * 인증된 사용자가 자신의 프로필 정보를 업데이트.
+ * 이름, 프로필 사진, 연락처, 나이대, 자기소개 등 변경 가능.
+ * 
+ * @route PUT /api/users/profile
+ * @access Private (인증 필요)
+ * @body {string} [name] - 사용자 이름
+ * @body {string} [profile_picture] - 프로필 사진 URL
+ * @body {string} [phone_number] - 전화번호
+ * @body {string} [age_group] - 나이대
+ * @body {string} [bio] - 자기소개
+ * @returns {Object} 업데이트된 사용자 프로필 정보
+ */
 router.put('/profile', authenticateToken, async (req, res) => {
   console.log('📝 프로필 업데이트 요청:', req.body);
   
@@ -152,7 +191,17 @@ router.put('/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// 사용자 계정 삭제 (프로필 경로)
+/**
+ * DELETE /api/users/profile
+ * 사용자 계정 삭제 (프로필 경로)
+ * 
+ * 인증된 사용자가 자신의 계정 삭제.
+ * 관련된 모든 사용자 데이터(거래, 예산 등)도 함께 삭제됨.
+ * 
+ * @route DELETE /api/users/profile
+ * @access Private (인증 필요)
+ * @returns {Object} 삭제 성공 메시지
+ */
 router.delete('/profile', authenticateToken, async (req, res) => {
   try {
     const userId = (req as any).user.userId;
@@ -184,7 +233,17 @@ router.delete('/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// 사용자 계정 삭제
+/**
+ * DELETE /api/users/account
+ * 사용자 계정 삭제 (계정 경로)
+ * 
+ * 인증된 사용자가 자신의 계정 삭제.
+ * 관련된 모든 사용자 데이터(거래, 예산 등)도 함께 삭제됨.
+ * 
+ * @route DELETE /api/users/account
+ * @access Private (인증 필요)
+ * @returns {Object} 삭제 성공 메시지
+ */
 router.delete('/account', authenticateToken, async (req, res) => {
   try {
     const userId = (req as any).user.userId;
@@ -222,7 +281,19 @@ router.delete('/account', authenticateToken, async (req, res) => {
   }
 });
 
-// 비밀번호 변경
+/**
+ * PATCH /api/users/password
+ * 비밀번호 변경
+ * 
+ * 인증된 사용자가 자신의 비밀번호 변경.
+ * 현재 비밀번호 확인 후 새 비밀번호로 업데이트.
+ * 
+ * @route PATCH /api/users/password
+ * @access Private (인증 필요)
+ * @body {string} currentPassword - 현재 비밀번호
+ * @body {string} newPassword - 새 비밀번호
+ * @returns {Object} 변경 성공 메시지
+ */
 router.patch(
   '/password',
   authenticateToken,

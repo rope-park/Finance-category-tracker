@@ -1,7 +1,32 @@
+/**
+ * Prometheus 기반 애플리케이션 메트릭 수집 유틸리티
+ * 
+ * Node.js 애플리케이션의 성능, 비즈니스 로직, 시스템 리소스 등 다양한 메트릭을
+ * Prometheus 형식으로 수집하고 모니터링 시스템에 제공하는 통합 메트릭 관리 도구.
+ * 
+ * 주요 기능:
+ * - HTTP 요청 및 응답 성능 메트릭 (처리량, 응답 시간, 상태 코드)
+ * - 데이터베이스 쿼리 성능 및 사용 통계
+ * - 비즈니스 로직 메트릭 (거래 생성, 예산 초과, 사용자 활동)
+ * - 시스템 리소스 모니터링 (메모리, CPU, 캐시 사용률)
+ * - 에러 추적 및 장애 지점 분석
+ * 
+ * 메트릭 유형:
+ * - Counter: 누적 카운터 (요청 수, 에러 수 등)
+ * - Histogram: 분포 측정 (응답 시간, 쿼리 시간 등)
+ * - Gauge: 현재 값 측정 (활성 사용자 수, 메모리 사용량 등)
+ * 
+ * 연동 시스템:
+ * - Prometheus 메트릭 서버
+ * - Grafana 대시보드
+ * - Alertmanager 알림 시스템
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
 import promClient from 'prom-client';
 import { Request, Response, NextFunction } from 'express';
 
-// Prometheus 기본 메트릭 활성화
+// Prometheus 기본 메트릭 활성화 (CPU, 메모리, 이벤트 루프 등)
 promClient.collectDefaultMetrics();
 
 // 커스텀 메트릭 정의

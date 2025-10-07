@@ -1,20 +1,46 @@
+/**
+ * 기본 리포지토리 클래스
+ * 
+ * 모든 리포지토리 클래스의 공통 기능을 제공하는 추상 기본 클래스.
+ * 데이터베이스 연결, 트랜잭션 처리, 페이지네이션, 동적 쿼리 생성 등의 공통 기능 제공.
+ * 
+ * 주요 기능:
+ * - 데이터베이스 연결 및 쿼리 실행 추상화
+ * - 트랜잭션 관리 및 롤백 지원
+ * - 페이지네이션 쿼리 빌더
+ * - 동적 WHERE 절 및 UPDATE SET 절 생성
+ * - SQL 인젝션 방지 및 보안 처리
+ * - 오류 처리 및 로깅 표준화
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
 import pool from '../../core/config/database';
 
+// 데이터베이스 연결 인터페이스
 export interface DatabaseConnection {
-  query(text: string, params?: any[]): Promise<any>;
-  getClient?(): Promise<any>;
-  release?(): void;
+  query(text: string, params?: any[]): Promise<any>;  // 쿼리 실행 메서드
+  getClient?(): Promise<any>;                         // 커넥션 풀에서 클라이언트 획득 메서드
+  release?(): void;                                   // 커넥션 반환 메서드
 }
 
+/**
+ * 기본 리포지토리 추상 클래스
+ * 
+ * 공통 데이터베이스 작업을 위한 메서드를 제공하며,
+ * 구체적인 리포지토리 클래스는 이 클래스를 상속받아 구현함.
+ */
 export abstract class BaseRepository {
   protected db: DatabaseConnection;
 
+  // 생성자 - 데이터베이스 연결 주입
   constructor(database: DatabaseConnection = pool) {
     this.db = database;
   }
 
   /**
-   * 트랜잭션을 실행합니다
+   * 트랜잭션 실행 메서드
+   * @param callback - 트랜잭션 내에서 실행할 비동기 콜백 함수
+   * @returns 콜백 함수의 결과
    */
   protected async executeTransaction<T>(
     callback: (client: any) => Promise<T>
@@ -35,7 +61,13 @@ export abstract class BaseRepository {
   }
 
   /**
-   * 페이지네이션을 위한 공통 쿼리 빌더
+   * 페이지네이션 쿼리 빌더
+   * @param baseQuery - 기본 데이터 조회 쿼리
+   * @param totalCountQuery - 전체 데이터 개수 조회 쿼리
+   * @param limit - 한 페이지에 표시할 데이터 개수
+   * @param offset - 데이터 조회 시작 위치
+   * @param orderBy - 정렬 기준
+   * @returns 페이지네이션 쿼리 객체
    */
   protected buildPaginationQuery(
     baseQuery: string,
@@ -58,7 +90,9 @@ export abstract class BaseRepository {
   }
 
   /**
-   * SQL 쿼리에서 다음 파라미터 인덱스를 계산합니다
+   * SQL 쿼리에서 다음 파라미터 인덱스 계산
+   * @param query - 쿼리 문자열
+   * @returns 다음 파라미터 인덱스
    */
   private getNextParamIndex(query: string): number {
     const matches = query.match(/\$\d+/g);
@@ -66,7 +100,9 @@ export abstract class BaseRepository {
   }
 
   /**
-   * WHERE 절을 동적으로 구성합니다
+   * WHERE 절 동적 구성
+   * @param conditions - WHERE 절에 사용할 조건 객체
+   * @returns WHERE 절과 값 배열
    */
   protected buildWhereClause(conditions: Record<string, any>): {
     whereClause: string;
@@ -104,7 +140,10 @@ export abstract class BaseRepository {
   }
 
   /**
-   * UPDATE SET 절을 동적으로 구성합니다
+   * UPDATE SET 절 동적 구성
+   * @param data - 업데이트할 필드와 값 객체
+   * @param startParamIndex - 시작 파라미터 인덱스
+   * @returns SET 절과 값 배열
    */
   protected buildSetClause(data: Record<string, any>, startParamIndex: number = 1): {
     setClause: string;
@@ -130,7 +169,11 @@ export abstract class BaseRepository {
   }
 
   /**
-   * 단일 레코드를 조회합니다
+   * 단일 레코드 조회
+   * @param tableName - 테이블 이름
+   * @param conditions - 조회 조건
+   * @param columns - 선택할 열
+   * @returns 단일 레코드 또는 null
    */
   protected async findOne<T>(
     tableName: string,
@@ -145,7 +188,14 @@ export abstract class BaseRepository {
   }
 
   /**
-   * 여러 레코드를 조회합니다
+   * 여러 레코드 조회
+   * @param tableName - 테이블 이름
+   * @param conditions - 조회 조건
+   * @param columns - 선택할 열
+   * @param orderBy - 정렬 기준
+   * @param limit - 최대 조회 개수
+   * @param offset - 조회 시작 위치
+   * @returns 레코드 배열
    */
   protected async findMany<T>(
     tableName: string,
@@ -173,7 +223,10 @@ export abstract class BaseRepository {
   }
 
   /**
-   * 레코드 개수를 조회합니다
+   * 레코드 개수 조회
+   * @param tableName - 테이블 이름
+   * @param conditions - 조회 조건
+   * @returns - 레코드 개수 
    */
   protected async count(
     tableName: string,
@@ -187,7 +240,11 @@ export abstract class BaseRepository {
   }
 
   /**
-   * 레코드를 생성합니다
+   * 레코드 생성
+   * @param tableName - 테이블 이름
+   * @param data - 생성할 레코드 데이터
+   * @param returningColumns - 반환할 열
+   * @returns - 생성된 레코드
    */
   protected async create<T>(
     tableName: string,
@@ -209,7 +266,12 @@ export abstract class BaseRepository {
   }
 
   /**
-   * 레코드를 업데이트합니다
+   * 레코드 업데이트
+   * @param tableName - 테이블 이름
+   * @param data - 업데이트할 데이터
+   * @param conditions - 업데이트할 조건
+   * @param returningColumns - 반환할 열
+   * @returns - 업데이트된 레코드
    */
   protected async update<T>(
     tableName: string,
@@ -237,7 +299,10 @@ export abstract class BaseRepository {
   }
 
   /**
-   * 레코드를 삭제합니다
+   * 레코드 삭제
+   * @param tableName - 테이블 이름
+   * @param conditions - 삭제할 조건
+   * @returns - 삭제 성공 여부
    */
   protected async delete(
     tableName: string,
@@ -251,7 +316,13 @@ export abstract class BaseRepository {
   }
 
   /**
-   * Upsert (INSERT ON CONFLICT UPDATE)를 수행합니다
+   * 레코드 생성 또는 업데이트 (Upsert)
+   * @param tableName - 테이블 이름
+   * @param data - 생성할 데이터
+   * @param conflictColumns - 충돌 검사할 열
+   * @param updateData - 업데이트할 데이터
+   * @param returningColumns - 반환할 열
+   * @returns - 생성 또는 업데이트된 레코드
    */
   protected async upsert<T>(
     tableName: string,
@@ -285,7 +356,10 @@ export abstract class BaseRepository {
   }
 
   /**
-   * 원시 SQL 쿼리를 실행합니다
+   * 원시 SQL 쿼리 실행
+   * @param query - 실행할 원시 SQL 쿼리
+   * @param params - 쿼리 파라미터
+   * @returns - 쿼리 결과
    */
   protected async executeRawQuery<T>(
     query: string,

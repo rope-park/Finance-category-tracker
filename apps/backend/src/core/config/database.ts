@@ -1,28 +1,73 @@
-// src/config/database.ts
+/**
+ * PostgreSQL 데이터베이스 연결 및 관리 설정
+ * 
+ * Finance Category Tracker 애플리케이션의 PostgreSQL 데이터베이스 연결을 최적화하고 관리.
+ * 연결 풀링, 재연결 로직, 성능 모니터링, 건강 상태 처리 등을 포함.
+ * 
+ * 주요 기능:
+ * - 환경별 데이터베이스 연결 설정 관리
+ * - 연결 푼 최적화 및 자동 스케일링
+ * - 데이터베이스 연결 재시도 및 오류 복구
+ * - 연결 상태 모니터링 및 로깅
+ * - 트랜잭션 관리 및 데이터 무결성 보장
+ * 
+ * @author Ju Eul Park (rope-park)
+ */
+
 import { Pool, PoolConfig, PoolClient } from 'pg';
 import * as dotenv from 'dotenv';
 
+// 환경변수 로드 (애플리케이션 시작 시 전역 설정 적용)
 dotenv.config();
 
-// 데이터베이스 설정 인터페이스
+/**
+ * 데이터베이스 연결 설정 인터페이스
+ * 
+ * PostgreSQL 연결 풀 설정을 확장하여 재연결 로직과 세밀한 성능 조정 옵션을 추가.
+ * 프로덕션 환경에서의 안정성과 성능을 위한 고급 설정들을 지원.
+ */
 interface DatabaseConfig extends PoolConfig {
-  retryAttempts?: number;
-  retryDelay?: number;
+  retryAttempts?: number;    // 연결 실패 시 재시도 횟수
+  retryDelay?: number;       // 재시도 간격 (밀리초)
 }
 
-// 환경별 데이터베이스 설정
+/**
+ * 환경별 데이터베이스 연결 설정 생성 함수
+ * 
+ * 개발, 테스트, 프로덕션 환경에 따라 최적화된 데이터베이스 연결 설정을 생성.
+ * 환경변수를 통해 유연하게 설정을 조정할 수 있으며, 기본값으로 안전한 설정을 제공.
+ * 
+ * @returns 데이터베이스 연결 설정 객체
+ * 
+ * @example
+ * ```typescript
+ * // 환경변수 설정 예시:
+ * // DB_HOST=localhost
+ * // DB_PORT=5432
+ * // DB_NAME=finance_tracker
+ * // DB_USER=postgres
+ * // DB_PASSWORD=your_password
+ * // DB_POOL_MAX=20
+ * // DB_POOL_MIN=5
+ * 
+ * const config = getDatabaseConfig();
+ * const pool = new Pool(config);
+ * ```
+ */
 const getDatabaseConfig = (): DatabaseConfig => {
   const baseConfig: DatabaseConfig = {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    database: process.env.DB_NAME || 'finance_tracker',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD,
-    // 연결 풀 최적화
-    max: parseInt(process.env.DB_POOL_MAX || '20'), // 최대 연결 수
-    min: parseInt(process.env.DB_POOL_MIN || '5'),  // 최소 연결 수
-    idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000'), // 30초
-    connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '5000'), // 5초
+    // 기본 데이터베이스 연결 정보
+    host: process.env.DB_HOST || 'localhost',                    // 데이터베이스 서버 호스트
+    port: parseInt(process.env.DB_PORT || '5432'),               // PostgreSQL 기본 포트
+    database: process.env.DB_NAME || 'finance_tracker',          // 데이터베이스 이름
+    user: process.env.DB_USER || 'postgres',                    // 데이터베이스 사용자
+    password: process.env.DB_PASSWORD,                          // 데이터베이스 비밀번호
+    
+    // 연결 풀 최적화 설정 (성능과 안정성 균형)
+    max: parseInt(process.env.DB_POOL_MAX || '20'),              // 최대 동시 연결 수
+    min: parseInt(process.env.DB_POOL_MIN || '5'),               // 최소 유지 연결 수
+    idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000'),        // 비활성 연결 제거 시간 (30초)
+    connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '5000'), // 연결 대기 시간 (5초)
     // SSL 설정 (Docker 환경에서는 비활성화, 프로덕션 환경에서만 활성화)
     ssl: process.env.NODE_ENV === 'production' && process.env.DB_SSL !== 'false' ? { rejectUnauthorized: false } : false,
     // 재시도 설정
@@ -60,7 +105,12 @@ pool.on('remove', () => {
   console.log('🗑️ 데이터베이스 연결이 제거되었습니다.');
 });
 
-// 연결 재시도 로직이 포함된 쿼리 실행 함수
+/**
+ * 쿼리 실행 함수
+ * @param text 쿼리 문자열
+ * @param params 쿼리 파라미터 배열
+ * @returns 쿼리 결과
+ */
 export const executeQuery = async (text: string, params?: any[]): Promise<any> => {
   const { retryAttempts = 3, retryDelay = 1000 } = config;
   
@@ -81,7 +131,11 @@ export const executeQuery = async (text: string, params?: any[]): Promise<any> =
   }
 };
 
-// 트랜잭션 헬퍼 함수
+/**
+ * 트랜잭션을 관리하는 헬퍼 함수
+ * @param callback 트랜잭션 내에서 실행할 콜백 함수
+ * @returns 트랜잭션 결과
+ */
 export const withTransaction = async <T>(
   callback: (client: PoolClient) => Promise<T>
 ): Promise<T> => {
@@ -100,7 +154,12 @@ export const withTransaction = async <T>(
   }
 };
 
-// 데이터베이스 연결 테스트 함수 (개선)
+/**
+ * 데이터베이스 연결 테스트 함수
+ * TODO: 연결 테스트 로직 개선
+ * @param retries 재시도 횟수
+ * @returns 연결 성공 여부
+ */
 export const testConnection = async (retries = 3): Promise<boolean> => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -131,7 +190,10 @@ export const testConnection = async (retries = 3): Promise<boolean> => {
   return false;
 };
 
-// 연결 풀 상태 확인 함수
+/**
+ * 데이터베이스 연결 풀 상태 정보를 반환하는 함수
+ * @returns 풀 상태 정보
+ */
 export const getPoolStatus = () => {
   return {
     totalCount: pool.totalCount,
@@ -142,7 +204,10 @@ export const getPoolStatus = () => {
   };
 };
 
-// 헬스 체크용 간단한 쿼리
+/**
+ * 데이터베이스 헬스 체크 함수
+ * @returns 헬스 체크 결과
+ */
 export const healthCheck = async (): Promise<boolean> => {
   try {
     const result = await pool.query('SELECT 1 as health');
@@ -153,7 +218,10 @@ export const healthCheck = async (): Promise<boolean> => {
   }
 };
 
-// 연결 상태 확인 함수 (모니터링용)
+/**
+ * 데이터베이스 연결 상태 및 지연 시간 정보를 확인하는 모니터링 함수
+ * @returns 데이터베이스 연결 상태 및 지연 시간 정보
+ */
 export const checkConnection = async (): Promise<{ isHealthy: boolean; status: string; latency?: number }> => {
   const startTime = Date.now();
   
@@ -180,7 +248,11 @@ export const checkConnection = async (): Promise<{ isHealthy: boolean; status: s
   }
 };
 
-// 우아한 종료를 위한 풀 종료 함수
+/**
+ * 우아한 종료를 위한 데이터베이스 연결 풀 종료 함수
+ * 
+ * 애플리케이션 종료 시 호출하여 모든 연결을 정상적으로 종료.
+ */
 export const closePool = async (): Promise<void> => {
   try {
     await pool.end();
